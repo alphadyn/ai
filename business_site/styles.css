@@ -1,11 +1,11 @@
 :root {
-  --bg: #07111f;
-  --panel: rgba(255, 255, 255, 0.08);
-  --panel-strong: rgba(255, 255, 255, 0.14);
-  --text: #f6f7fb;
-  --muted: #b9c4d6;
-  --accent: #8bd8ff;
-  --accent-2: #f4b860;
+  --bg: #040816;
+  --panel: rgba(255, 255, 255, 0.07);
+  --panel-strong: rgba(255, 255, 255, 0.12);
+  --text: #f5f7ff;
+  --muted: #aab6d0;
+  --accent: #6ee7ff;
+  --accent-2: #8b5cf6;
   --border: rgba(255, 255, 255, 0.16);
 }
 
@@ -18,8 +18,8 @@ body {
   font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(139, 216, 255, 0.16), transparent 28%),
-    linear-gradient(135deg, #07111f 0%, #111c31 45%, #0f172a 100%);
+    radial-gradient(circle at top left, rgba(110, 231, 255, 0.18), transparent 30%),
+    linear-gradient(135deg, #040816 0%, #091426 45%, #050b17 100%);
   line-height: 1.6;
 }
 
@@ -45,7 +45,7 @@ img {
   border: 1px solid var(--border);
   border-radius: 999px;
   backdrop-filter: blur(16px);
-  background: rgba(7, 17, 31, 0.7);
+  background: rgba(4, 8, 22, 0.74);
 }
 
 .brand {
@@ -191,7 +191,7 @@ h2 {
   border-radius: 24px;
   padding: 1.25rem;
   backdrop-filter: blur(14px);
-}
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
 
 .card p, .showcase-card p, .about-grid p, .contact-card p {
   color: var(--muted);
