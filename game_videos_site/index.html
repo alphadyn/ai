@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gaming Video Collection</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111f35;
+        --text: #f8fafc;
+        --muted: #aab7ca;
+        --accent: #38bdf8;
+        --accent-2: #8b5cf6;
+        --border: rgba(255,255,255,0.12);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: linear-gradient(135deg, #020617 0%, #0f172a 45%, #1e293b 100%);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 36px auto;
+        padding: 32px;
+        background: rgba(17, 31, 53, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 70px rgba(0,0,0,.28);
+      }
+
+      h1 { font-size: 2.2rem; margin-bottom: 8px; }
+      .subtitle { color: var(--muted); margin-bottom: 24px; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 16px;
+        transition: transform 180ms ease, border-color 180ms ease;
+      }
+      .card:hover { transform: translateY(-3px); border-color: var(--accent); }
+      .card h2 {
+        font-size: 1rem;
+        margin-top: 0;
+        margin-bottom: 6px;
+        color: #fff;
+      }
+      .card p { color: var(--muted); margin: 0 0 10px; font-size: 0.95rem; }
+      .card a {
+        display: inline-block;
+        text-decoration: none;
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      @media (max-width: 800px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>Gaming Video Collection</h1>
+        <p class="subtitle">A curated set of 10 YouTube links featuring people playing different games.</p>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Fortnite</h2>
+          <p>High-energy battle royale gameplay with creative builds and fast-paced action.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Minecraft</h2>
+          <p>Sandbox building, survival challenges, and adventure in a blocky world.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Call of Duty</h2>
+          <p>Competitive multiplayer action with tactical gameplay and intense matches.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>GTA V</h2>
+          <p>Open-world chaos, missions, and immersive story-driven gameplay.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Rocket League</h2>
+          <p>Fast arcade-style soccer with cars, dramatic saves, and quick reflexes.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>League of Legends</h2>
+          <p>Team strategy, champion battles, and high-level competitive play.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Super Mario</h2>
+          <p>Classic platforming fun with colorful worlds and nostalgic challenges.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Among Us</h2>
+          <p>Social deduction, teamwork, and deception in a space-themed setting.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Valorant</h2>
+          <p>Tactical shooter action with precise aiming and team coordination.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+        <article class="card">
+          <h2>Pokémon</h2>
+          <p>Adventure, creature collection, and strategic battles in a vibrant world.</p>
+          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener">Watch on YouTube</a>
+        </article>
+      </section>
+    </div>
+  </body>
+</html>

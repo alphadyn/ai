@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Harbor Medical Center | Business Plan</title>
+    <style>
+      :root {
+        --bg: #07141d;
+        --panel: #102635;
+        --text: #f4f8fb;
+        --muted: #a8bac7;
+        --accent: #4ecdc4;
+        --accent-2: #2a7fbd;
+        --border: rgba(255,255,255,0.12);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: linear-gradient(135deg, #041019 0%, #07141d 45%, #0b2233 100%);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 36px auto;
+        padding: 32px;
+        background: rgba(16, 38, 53, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+      }
+
+      h1, h2, h3 { line-height: 1.2; }
+      h1 { font-size: 2.2rem; margin-bottom: 8px; }
+      h2 {
+        font-size: 1.05rem;
+        margin-top: 0;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+      .subtitle { color: var(--muted); margin-bottom: 24px; }
+
+      .hero {
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+      }
+
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+      .card p, .card li { color: var(--muted); }
+      ul { padding-left: 18px; }
+      li { margin-bottom: 7px; }
+      .highlight { color: #ffffff; font-weight: 600; }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+      .metric {
+        background: rgba(78,205,196,0.12);
+        border: 1px solid rgba(78,205,196,0.24);
+        border-radius: 14px;
+        padding: 12px;
+        text-align: center;
+      }
+      .metric strong { display: block; font-size: 1.15rem; }
+
+      @media (max-width: 800px) {
+        .grid, .metrics { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <h2>Medical Center Business Plan</h2>
+        <h1>Harbor Medical Center</h1>
+        <p class="subtitle">A patient-centered healthcare facility focused on accessible, high-quality care, preventive medicine, and advanced diagnostic services.</p>
+
+        <div class="metrics">
+          <div class="metric"><strong>120+</strong> Staff Capacity</div>
+          <div class="metric"><strong>3 specialties</strong> Launch Focus</div>
+          <div class="metric"><strong>24/7</strong> Care Access</div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <div>
+          <div class="card">
+            <h2>Executive Summary</h2>
+            <p>Harbor Medical Center is a community-focused medical facility designed to deliver compassionate, efficient, and technologically advanced care. The center will combine primary care, urgent services, and specialty treatment in one accessible location.</p>
+            <p class="highlight">Our goal is to improve patient outcomes while reducing delays, fragmentation, and administrative burden.</p>
+          </div>
+
+          <div class="card">
+            <h2>Services Offered</h2>
+            <ul>
+              <li>Primary care and family medicine</li>
+              <li>Emergency and urgent care services</li>
+              <li>Diagnostics, imaging, and laboratory services</li>
+              <li>Preventive wellness and chronic disease management</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Market Need</h2>
+            <p>Many communities face long wait times, limited access to coordinated care, and rising healthcare costs. Harbor Medical Center addresses these issues with a patient-first model and integrated services.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>Operations Plan</h2>
+            <ul>
+              <li>Modern electronic health record systems</li>
+              <li>Digital scheduling and telehealth platforms</li>
+              <li>Strong clinical protocols and quality assurance</li>
+              <li>Multidisciplinary care teams for coordinated treatment</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Revenue Model</h2>
+            <ul>
+              <li>Insurance and self-pay patient services</li>
+              <li>Outpatient specialty procedures</li>
+              <li>Wellness programs and preventive packages</li>
+              <li>Partnerships with employers and community organizations</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Growth Strategy</h2>
+            <ul>
+              <li>Launch with a core set of high-demand services</li>
+              <li>Expand into specialty care after establishing strong referral networks</li>
+              <li>Invest in community outreach and preventive health education</li>
+              <li>Adopt digital tools to improve efficiency and patient satisfaction</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index Fund Investment Report</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #121d33;
+        --text: #f5f7fb;
+        --muted: #a8b3c7;
+        --green: #3ddc97;
+        --amber: #ffbf47;
+        --red: #ff6b6b;
+        --border: rgba(255,255,255,0.12);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: linear-gradient(135deg, #060b13 0%, #0b1220 50%, #101a2f 100%);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 36px auto;
+        padding: 32px;
+        background: rgba(18, 29, 51, 0.96);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 70px rgba(0,0,0,0.28);
+      }
+
+      h1, h2, h3 { line-height: 1.2; }
+      h1 { font-size: 2.2rem; margin-bottom: 8px; }
+      h2 {
+        font-size: 1.05rem;
+        margin-top: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+      }
+      .subtitle { color: var(--muted); margin-bottom: 24px; }
+
+      .overview {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+        gap: 14px;
+        margin-bottom: 24px;
+      }
+
+      .box {
+        border-radius: 16px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+      }
+      .box.low { background: rgba(61,220,151,0.12); }
+      .box.medium { background: rgba(255,191,71,0.12); }
+      .box.high { background: rgba(255,107,107,0.12); }
+      .box strong { display: block; font-size: 1.05rem; margin-bottom: 4px; }
+
+      .segment {
+        margin-bottom: 20px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px 20px;
+        background: rgba(255,255,255,0.03);
+      }
+
+      .segment-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .tag.low { background: rgba(61,220,151,0.16); color: var(--green); }
+      .tag.medium { background: rgba(255,191,71,0.16); color: var(--amber); }
+      .tag.high { background: rgba(255,107,107,0.16); color: var(--red); }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+
+      th, td {
+        padding: 10px 8px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+      th { color: var(--muted); font-weight: 600; }
+
+      .note { color: var(--muted); margin-top: 10px; }
+
+      @media (max-width: 800px) {
+        .overview { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>Best Index Fund Investments</h1>
+        <p class="subtitle">A practical overview of index funds grouped by risk profile for long-term investors.</p>
+      </header>
+
+      <section class="overview">
+        <div class="box low">
+          <strong>Low Risk</strong>
+          <span>Stable, conservative, and suitable for capital preservation.</span>
+        </div>
+        <div class="box medium">
+          <strong>Medium Risk</strong>
+          <span>Balanced growth with moderate market volatility.</span>
+        </div>
+        <div class="box high">
+          <strong>High Risk</strong>
+          <span>Higher growth potential with greater short-term swings.</span>
+        </div>
+      </section>
+
+      <section class="segment">
+        <div class="segment-header">
+          <h2>Low Risk Segment</h2>
+          <span class="tag low">Low</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fund</th>
+              <th>Focus</th>
+              <th>Typical Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Vanguard Total Bond Market ETF (BND)</td>
+              <td>Broad U.S. bond exposure</td>
+              <td>Income-oriented and lower-volatility allocation</td>
+            </tr>
+            <tr>
+              <td>iShares Core U.S. Aggregate Bond ETF (AGG)</td>
+              <td>Investment-grade bonds</td>
+              <td>Portfolio stability and diversification</td>
+            </tr>
+            <tr>
+              <td>Schwab U.S. Broad Market ETF (SCHB)</td>
+              <td>Large-cap U.S. stock market</td>
+              <td>Lower-risk core holding for long-term investors</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">Best for investors seeking steady exposure with reduced price swings.</p>
+      </section>
+
+      <section class="segment">
+        <div class="segment-header">
+          <h2>Medium Risk Segment</h2>
+          <span class="tag medium">Medium</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fund</th>
+              <th>Focus</th>
+              <th>Typical Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Vanguard S&P 500 ETF (VOO)</td>
+              <td>Large U.S. companies</td>
+              <td>Core growth holding for retirement and long-term saving</td>
+            </tr>
+            <tr>
+              <td>Schwab U.S. Large-Cap ETF (SCHX)</td>
+              <td>Large-cap U.S. equities</td>
+              <td>Broad market participation with low fees</td>
+            </tr>
+            <tr>
+              <td>iShares Core MSCI Total International Stock ETF (IXUS)</td>
+              <td>Global developed and emerging markets</td>
+              <td>International diversification</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">Best for investors who want long-term growth while tolerating moderate ups and downs.</p>
+      </section>
+
+      <section class="segment">
+        <div class="segment-header">
+          <h2>High Risk Segment</h2>
+          <span class="tag high">High</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fund</th>
+              <th>Focus</th>
+              <th>Typical Use</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Vanguard Total Stock Market ETF (VTI)</td>
+              <td>Entire U.S. equity market</td>
+              <td>High-growth exposure with strong diversification</td>
+            </tr>
+            <tr>
+              <td>Schwab U.S. Small-Cap ETF (SCHA)</td>
+              <td>Smaller U.S. companies</td>
+              <td>Higher return potential with greater volatility</td>
+            </tr>
+            <tr>
+              <td>iShares Core S&amp;P Small-Cap ETF (IJR)</td>
+              <td>Small-cap U.S. stocks</td>
+              <td>Growth-oriented allocation for aggressive investors</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">Best for investors with a long time horizon and a higher tolerance for market swings.</p>
+      </section>
+    </div>
+  </body>
+</html>
