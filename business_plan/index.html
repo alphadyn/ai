@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northstar AI | Business Plan</title>
+    <style>
+      :root {
+        --bg: #06111f;
+        --panel: #0f1d33;
+        --text: #f4f7ff;
+        --muted: #9eb0c8;
+        --accent: #6ee7ff;
+        --accent-2: #8b5cf6;
+        --border: rgba(255, 255, 255, 0.12);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        background: linear-gradient(135deg, #030812 0%, #07111f 45%, #0b1830 100%);
+        color: var(--text);
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 36px auto;
+        padding: 32px;
+        background: rgba(15, 29, 51, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+      }
+
+      h1, h2, h3 { line-height: 1.2; }
+      h1 { font-size: 2.2rem; margin-bottom: 8px; }
+      h2 { font-size: 1.15rem; margin-top: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 0.16em; }
+      .subtitle { color: var(--muted); margin-bottom: 24px; }
+
+      .hero {
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+      }
+
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 18px 20px;
+        margin-bottom: 18px;
+      }
+
+      .card p, .card li { color: var(--muted); }
+      ul { padding-left: 18px; }
+      li { margin-bottom: 7px; }
+
+      .highlight {
+        color: #ffffff;
+        font-weight: 600;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .metric {
+        background: rgba(110, 231, 255, 0.12);
+        border: 1px solid rgba(110, 231, 255, 0.24);
+        border-radius: 14px;
+        padding: 12px;
+        text-align: center;
+      }
+
+      .metric strong { display: block; font-size: 1.15rem; }
+
+      @media (max-width: 800px) {
+        .grid, .metrics { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <h2>AI Tech Startup Business Plan</h2>
+        <h1>Northstar AI</h1>
+        <p class="subtitle">An enterprise AI platform that helps organizations automate decision-making, improve productivity, and deploy secure AI solutions at scale.</p>
+
+        <div class="metrics">
+          <div class="metric"><strong>$4.2M</strong> Seed Funding Target</div>
+          <div class="metric"><strong>24 months</strong> Time to Product-Market Fit</div>
+          <div class="metric"><strong>3 verticals</strong> Initial Focus</div>
+        </div>
+      </header>
+
+      <div class="grid">
+        <div>
+          <div class="card">
+            <h2>Executive Summary</h2>
+            <p>Northstar AI builds AI copilots, workflow automation tools, and analytics platforms for mid-sized and enterprise companies. Our platform combines large language models, retrieval systems, and governance controls to help businesses adopt AI safely and efficiently.</p>
+            <p class="highlight">Our mission is to make advanced AI practical, trustworthy, and measurable for real business operations.</p>
+          </div>
+
+          <div class="card">
+            <h2>Problem</h2>
+            <p>Many organizations struggle to deploy AI because projects are expensive, difficult to integrate, and hard to govern. Teams need solutions that reduce manual work while maintaining compliance and transparency.</p>
+          </div>
+
+          <div class="card">
+            <h2>Solution</h2>
+            <ul>
+              <li>Custom AI copilots for support, sales, and operations teams</li>
+              <li>Workflow automation connected to existing business systems</li>
+              <li>Analytics dashboards for measuring AI adoption and ROI</li>
+              <li>Security, privacy, and audit controls built into the platform</li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h2>Market Opportunity</h2>
+            <p>The enterprise AI market is expanding rapidly as organizations seek productivity gains and automation. Northstar AI targets sectors such as healthcare, finance, logistics, and professional services.</p>
+          </div>
+
+          <div class="card">
+            <h2>Revenue Model</h2>
+            <ul>
+              <li>Subscription pricing for platform access</li>
+              <li>Implementation and integration fees</li>
+              <li>Premium enterprise support and governance packages</li>
+              <li>Usage-based billing for high-volume deployments</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Go-To-Market Strategy</h2>
+            <ul>
+              <li>Start with a strong pilot program for early adopters</li>
+              <li>Build partnerships with system integrators and cloud providers</li>
+              <li>Use case-driven marketing focused on measurable ROI</li>
+              <li>Expand through referrals, content, and enterprise sales</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
