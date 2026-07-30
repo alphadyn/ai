@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alex Morgan | AI Software Engineer Resume</title>
+    <style>
+      :root {
+        --bg: #07111f;
+        --panel: #0f1d33;
+        --panel-2: #14283f;
+        --text: #f5f7ff;
+        --muted: #9fb0c8;
+        --accent: #64d2ff;
+        --accent-2: #8b5cf6;
+        --border: rgba(255, 255, 255, 0.13);
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        color: var(--text);
+        background: linear-gradient(135deg, #030816 0%, #07111f 45%, #0a1830 100%);
+        line-height: 1.6;
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 32px auto;
+        background: rgba(15, 29, 51, 0.95);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      }
+
+      .hero {
+        padding: 36px 40px 28px;
+        background: linear-gradient(90deg, rgba(100, 210, 255, 0.15), rgba(139, 92, 246, 0.16));
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2.2rem;
+      }
+
+      .title {
+        color: var(--accent);
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 0.82rem;
+      }
+
+      .contact {
+        text-align: right;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .summary {
+        margin-top: 18px;
+        max-width: 900px;
+        color: #dce7f7;
+        font-size: 1rem;
+      }
+
+      .content {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 24px;
+        padding: 28px 40px 40px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 20px 22px;
+        margin-bottom: 18px;
+      }
+
+      .card h2 {
+        margin-top: 0;
+        font-size: 1.05rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--accent);
+      }
+
+      ul {
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      li { margin-bottom: 7px; }
+
+      .skill-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 8px 10px;
+        border-radius: 999px;
+        background: rgba(100, 210, 255, 0.12);
+        color: #e6f8ff;
+        border: 1px solid rgba(100, 210, 255, 0.24);
+        font-size: 0.92rem;
+      }
+
+      .job {
+        margin-bottom: 14px;
+      }
+
+      .job strong {
+        color: #ffffff;
+      }
+
+      .meta {
+        color: var(--accent);
+        font-size: 0.92rem;
+        margin-top: 3px;
+      }
+
+      .project {
+        margin-bottom: 12px;
+      }
+
+      .project strong {
+        color: #ffffff;
+      }
+
+      @media (max-width: 800px) {
+        .content { grid-template-columns: 1fr; }
+        .contact { text-align: left; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="title">AI Software Engineer</div>
+            <h1>Alex Morgan</h1>
+            <div>Building intelligent systems that turn data into real-world impact</div>
+          </div>
+          <div class="contact">
+            <div>alex.morgan@email.com</div>
+            <div>+1 (415) 555-0188</div>
+            <div>San Francisco, CA</div>
+            <div>linkedin.com/in/alexmorgan</div>
+          </div>
+        </div>
+        <p class="summary">
+          Product-minded AI engineer with 6+ years of experience designing and deploying machine learning,
+          NLP, and LLM-powered applications at scale. Skilled in Python, cloud-native platforms, MLOps,
+          and building reliable systems that bridge research and production.
+        </p>
+      </header>
+
+      <main class="content">
+        <section>
+          <div class="card">
+            <h2>Experience</h2>
+            <div class="job">
+              <strong>Senior AI Engineer — Northstar Labs</strong>
+              <div class="meta">2022–Present</div>
+              <ul>
+                <li>Led the development of an enterprise LLM assistant used by 10k+ users across support and operations.</li>
+                <li>Built evaluation pipelines, guardrails, and retrieval-augmented workflows to improve reliability and safety.</li>
+                <li>Collaborated with product, design, and infrastructure teams to ship AI features in 4 release cycles.</li>
+              </ul>
+            </div>
+            <div class="job">
+              <strong>Machine Learning Engineer — Vertex AI Studio</strong>
+              <div class="meta">2019–2022</div>
+              <ul>
+                <li>Designed predictive models and forecasting systems for customer churn and demand planning.</li>
+                <li>Implemented CI/CD and monitoring for ML pipelines in cloud environments with Kubernetes and Docker.</li>
+                <li>Mentored junior engineers and established best practices for experimentation and model governance.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Selected Projects</h2>
+            <div class="project">
+              <strong>LLM Support Copilot</strong>
+              <div>Created a domain-specific chatbot that reduced support resolution time by 35% using retrieval pipelines and prompt optimization.</div>
+            </div>
+            <div class="project">
+              <strong>Real-Time Forecasting Platform</strong>
+              <div>Built scalable time-series pipelines that ingested millions of records per day and served predictions with sub-second latency.</div>
+            </div>
+            <div class="project">
+              <strong>ML Observability Toolkit</strong>
+              <div>Developed dashboards and alerting systems to monitor drift, performance, and data quality across production models.</div>
+            </div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="card">
+            <h2>Core Skills</h2>
+            <div class="skill-grid">
+              <span class="pill">Python</span>
+              <span class="pill">PyTorch</span>
+              <span class="pill">TensorFlow</span>
+              <span class="pill">LangChain</span>
+              <span class="pill">LLMs</span>
+              <span class="pill">RAG</span>
+              <span class="pill">MLOps</span>
+              <span class="pill">AWS</span>
+              <span class="pill">Docker</span>
+              <span class="pill">Kubernetes</span>
+              <span class="pill">FastAPI</span>
+              <span class="pill">SQL</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Education</h2>
+            <ul>
+              <li><strong>M.S. Computer Science</strong> — Stanford University</li>
+              <li><strong>B.S. Software Engineering</strong> — University of Washington</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Certifications</h2>
+            <ul>
+              <li>AWS Certified Machine Learning – Specialty</li>
+              <li>Google Cloud Professional ML Engineer</li>
+            </ul>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </body>
+</html>
