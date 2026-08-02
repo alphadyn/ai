@@ -7,6 +7,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [business_site](business_site/) - A polished single-page marketing website for an AI company.
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
 - [crawler_indexer](crawler_indexer/) - A Python-based crawler and indexer for web content.
+- [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
 - [human_vs_ai_skills_report](human_vs_ai_skills_report/) - A report comparing human and AI capabilities.
 - [index_fund_report](index_fund_report/) - An index fund overview grouped by risk profile.
@@ -19,6 +20,8 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 ## How to use
 
 Most of the web-based projects are static HTML, CSS, and JavaScript files that can be opened directly in a browser.
+
+For the expense report and other static pages, simply open the relevant HTML file in your browser.
 
 For the legal docketing app, run a local server from the project folder:
 

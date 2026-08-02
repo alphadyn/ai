@@ -1,11 +1,14 @@
 # Expense Report
 
-This folder contains a polished expense report example in HTML format.
+This folder contains a polished, professional expense report template designed in HTML.
 
-## Files
-- `expense_report.html` — the professional expense report document
+## Contents
+- `expense_report.html` — a presentation-ready expense report with company branding, itemized expenses, summary totals, and approval sections.
 
-## How to view it
-1. Open the HTML file in any browser.
-2. For a print-friendly view, use the browser's Print option.
-3. You can also customize the company name, employee details, and expense amounts directly in the HTML file.
+## How to View
+1. Open `expense_report.html` in any modern web browser.
+2. Use the browser's Print or Save as PDF option for a polished document output.
+3. Edit the HTML file to update company details, employee information, dates, expense categories, and totals.
+
+## Purpose
+This document is intended as a professional example for corporate expense reporting, suitable for internal finance review or presentation use.
