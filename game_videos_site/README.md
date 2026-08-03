@@ -12,3 +12,12 @@ Open `index.html` in a browser to explore the page.
 ## Notes
 - This is a lightweight demo site with no backend or dependencies.
 - It is useful as a simple example of a content-focused landing page.
+
+## Generate the report
+Run the generator script to create a simple HTML output:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

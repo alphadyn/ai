@@ -13,3 +13,12 @@ Open `index.html` in a browser to see the page.
 ## Notes
 - The site is designed for offline viewing.
 - It includes sections for the platform, solutions, about, and contact information.
+
+## Generate the report
+Run the generator script to create a simple HTML output:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

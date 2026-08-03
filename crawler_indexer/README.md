@@ -24,3 +24,12 @@ python3 indexer.py ./documents
 
 ## Main file
 - `indexer.py` - the crawler and indexing logic
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

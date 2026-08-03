@@ -13,3 +13,12 @@ Open the file [index.html](index.html) in any modern web browser.
 ## Notes
 - The income figures are approximate and intended for general reference.
 - The report is a static page and can be viewed without running a server.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

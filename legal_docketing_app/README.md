@@ -33,3 +33,12 @@ Then open http://localhost:8000 in your browser.
 ## Notes
 - The app is intentionally lightweight and dependency-free.
 - It is suitable for demos, prototypes, or as a foundation for a larger legal case-management system.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

@@ -46,3 +46,7 @@ python3 prime_numbers/prime_finder.py
 ## Notes
 
 This repository is intended as a collection of sample projects and demos rather than a single production application. Each folder can be adapted and expanded independently.
+
+## Generation scripts
+
+Each project folder now includes a lightweight generator script named generate_report.py, which creates a simple HTML artifact named generated_report.html when run with Python 3.

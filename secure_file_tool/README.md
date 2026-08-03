@@ -40,3 +40,12 @@ python3 secure_file_tool/file_crypto.py decrypt /path/to/output.bin /path/to/res
 ```
 
 If you omit the password flag, the program will prompt for it securely.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

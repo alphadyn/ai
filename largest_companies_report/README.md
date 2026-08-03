@@ -14,3 +14,12 @@ Open the file [index.html](index.html) in any modern web browser.
 ## Notes
 - The figures are approximate and intended for informational use.
 - The report is fully self-contained and does not require any build step.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

@@ -13,3 +13,12 @@ Open `index.html` in a browser to read the report.
 ## Notes
 - The report is informational and intended as a simple finance-themed demo.
 - It does not provide personalized financial advice.
+
+## Generate the report
+Run the generator script to create a simple HTML output:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

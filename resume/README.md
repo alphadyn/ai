@@ -12,3 +12,12 @@ Open `index.html` in a browser to display the resume.
 ## Notes
 - The resume is a static portfolio-style document.
 - It is suitable for showcasing front-end presentation skills as well as career experience.
+
+## Generate the report
+Run the generator script to create a simple HTML output:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

@@ -12,3 +12,12 @@ This folder contains a polished, professional expense report template designed i
 
 ## Purpose
 This document is intended as a professional example for corporate expense reporting, suitable for internal finance review or presentation use.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for the project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

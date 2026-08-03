@@ -13,3 +13,12 @@ Open the file [index.html](index.html) in any modern web browser.
 ## Notes
 - The page is fully self-contained and does not require any build step.
 - It is intended as a presentation-style report rather than a financial advisory tool.
+
+## Generate the report
+Run the generator script to create a simple HTML artifact for this project:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.

@@ -12,3 +12,12 @@ Open `index.html` in any web browser to view the presentation.
 ## Notes
 - The project is fully static and does not require a build step.
 - It is intended as a demo or portfolio-style business plan.
+
+## Generate the report
+Run the generator script to create a simple HTML output:
+
+```bash
+python3 generate_report.py
+```
+
+This writes [generated_report.html](generated_report.html) in the same folder.
