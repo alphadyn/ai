@@ -6,6 +6,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 
 - [business_site](business_site/) - A polished single-page marketing website for an AI company.
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
+- [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
 - [crawler_indexer](crawler_indexer/) - A Python-based crawler and indexer for web content.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
