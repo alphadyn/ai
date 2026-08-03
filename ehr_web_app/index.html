@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northstar Health EHR</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-block">
+          <div class="brand-icon">+</div>
+          <div>
+            <h1>Northstar Health</h1>
+            <p>Electronic Health Record</p>
+          </div>
+        </div>
+
+        <nav class="nav-links">
+          <button class="nav-link active">Overview</button>
+          <button class="nav-link">Patients</button>
+          <button class="nav-link">Appointments</button>
+          <button class="nav-link">Labs & Meds</button>
+          <button class="nav-link">Billing</button>
+        </nav>
+
+        <div class="sidebar-card">
+          <h3>Care Coordination</h3>
+          <p>Track patient flow, follow-ups, and response time from one place.</p>
+          <button id="quickEncounterBtn" class="primary-btn">New Encounter</button>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Clinical operations dashboard</p>
+            <h2>Modern EHR experience for fast, secure care delivery</h2>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-box" for="patientSearch">
+              <span>🔎</span>
+              <input id="patientSearch" type="text" placeholder="Search patient" />
+            </label>
+            <button class="ghost-btn" id="exportBtn">Export Report</button>
+          </div>
+        </header>
+
+        <section class="stats-grid">
+          <article class="stat-card accent-blue">
+            <p>Patients Today</p>
+            <strong>48</strong>
+            <span>+12% vs. yesterday</span>
+          </article>
+          <article class="stat-card accent-green">
+            <p>Completed Charts</p>
+            <strong>36</strong>
+            <span>96% same-day completion</span>
+          </article>
+          <article class="stat-card accent-amber">
+            <p>Critical Follow-ups</p>
+            <strong>7</strong>
+            <span>2 high-priority alerts</span>
+          </article>
+          <article class="stat-card accent-purple">
+            <p>Medication Reconciliation</p>
+            <strong>91%</strong>
+            <span>Above target compliance</span>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Patient queue</p>
+                <h3>Active records</h3>
+              </div>
+              <span class="pill">Live</span>
+            </div>
+            <div id="patientList" class="patient-list"></div>
+          </div>
+
+          <div class="panel detail-panel">
+            <div id="patientDetail"></div>
+          </div>
+        </section>
+
+        <section class="content-grid lower-grid">
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Appointments</p>
+                <h3>Today’s schedule</h3>
+              </div>
+            </div>
+            <div id="appointmentsList" class="list-stack"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Care team</p>
+                <h3>Workflow snapshot</h3>
+              </div>
+            </div>
+            <div id="snapshotPanel" class="snapshot-panel"></div>
+          </div>
+        </section>
+
+        <section class="panel encounter-panel">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Encounter documentation</p>
+              <h3>Record a care note</h3>
+            </div>
+            <button class="primary-btn" type="submit" form="encounterForm">Save Encounter</button>
+          </div>
+
+          <form id="encounterForm" class="encounter-form">
+            <div class="row">
+              <label>
+                Visit reason
+                <input name="title" type="text" placeholder="Follow-up, medication review, discharge plan..." required />
+              </label>
+              <label>
+                Visit type
+                <select name="type">
+                  <option>Primary care</option>
+                  <option>Specialist consult</option>
+                  <option>Post-op follow-up</option>
+                  <option>Telehealth</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Clinical summary
+              <textarea name="summary" rows="4" placeholder="Document symptoms, findings, patient response, and care plan..."></textarea>
+            </label>
+            <div class="row">
+              <label>
+                Vital signs
+                <input name="vitals" type="text" placeholder="BP 118/76, HR 70, SpO₂ 98%" />
+              </label>
+              <label>
+                Follow-up date
+                <input name="followup" type="date" />
+              </label>
+            </div>
+          </form>
+          <p id="encounterStatus" class="status-message">Encounter notes are saved instantly for the current patient.</p>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
