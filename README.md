@@ -11,15 +11,17 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
 - [human_vs_ai_skills_report](human_vs_ai_skills_report/) - A report comparing human and AI capabilities.
 - [index_fund_report](index_fund_report/) - An index fund overview grouped by risk profile.
+- [largest_companies_report](largest_companies_report/) - A polished report of 100 of the world’s largest public companies with market-cap and website details.
 - [legal_docketing_app](legal_docketing_app/) - A fully functional legal docketing web app for tracking matters, deadlines, and tasks.
 - [prime_numbers](prime_numbers/) - A small Python utility for finding and analyzing prime numbers.
+- [top_20_occupations_income_report](top_20_occupations_income_report/) - A polished report of 20 occupations with the highest approximate median incomes.
 - [resume](resume/) - A polished HTML resume for an AI software engineer.
 - [secure_file_tool](secure_file_tool/) - A file encryption utility with command-line and GUI interfaces.
 - [sp500_quarterly_returns](sp500_quarterly_returns/) - A simple report highlighting strong S&P 500 quarterly performers.
 
 ## How to use
 
-Most of the web-based projects are static HTML, CSS, and JavaScript files that can be opened directly in a browser.
+Most of the web-based projects are static HTML, CSS, and JavaScript files that can be opened directly in a browser. Report folders such as [largest_companies_report](largest_companies_report/) and [top_20_occupations_income_report](top_20_occupations_income_report/) can also be viewed by opening their index.html files.
 
 For the expense report and other static pages, simply open the relevant HTML file in your browser.
 
