@@ -10,6 +10,8 @@ A polished, single-page electronic health record web application designed to loo
 - Care coordination snapshot with provider and billing context
 - Encounter form for documenting patient visits and follow-up plans
 - Local persistence using browser storage so notes remain available after refresh
+- Role-based workflow modes for clinicians and admins
+- Audit trail for patient access, encounter updates, scheduling actions, and exports
 
 ## Project structure
 
@@ -38,4 +40,4 @@ Then browse to http://localhost:8000.
 
 ## Notes
 
-This is a front-end prototype for demonstration and design purposes. It can be expanded into a full-stack system with authentication, patient records APIs, and real clinical workflows.
+This is a front-end application with working in-browser business logic for core demo workflows. It supports derived operational metrics, appointment completion and cancellation, care-task updates, patient summary exports, role-based workflow permissions, audit history, and richer encounter processing while still using local browser storage.

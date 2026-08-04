@@ -95,6 +95,10 @@ textarea {
   color: white;
 }
 
+.hidden-section {
+  display: none;
+}
+
 .sidebar-card {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -111,6 +115,30 @@ textarea {
   line-height: 1.5;
 }
 
+.role-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role-help {
+  color: #cbd5e1;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.role-label {
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.role-card select {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+}
+
 .primary-btn,
 .ghost-btn {
   border: 0;
@@ -122,6 +150,12 @@ textarea {
 .primary-btn {
   background: linear-gradient(135deg, var(--accent), #38bdf8);
   color: white;
+}
+
+.primary-btn:disabled,
+.ghost-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .ghost-btn {
@@ -312,6 +346,10 @@ textarea {
   margin: 0 0 10px;
 }
 
+.detail-notes {
+  margin-top: 12px;
+}
+
 .mini-card ul {
   margin: 0;
   padding-left: 18px;
@@ -332,6 +370,31 @@ textarea {
   background: #fbfdff;
 }
 
+.appointment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.appointment-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 12px;
+}
+
+.appointment-item.completed {
+  background: #f0fdf4;
+}
+
+.appointment-item.cancelled {
+  background: #fff7ed;
+}
+
 .list-item strong {
   display: block;
   margin-bottom: 4px;
@@ -349,6 +412,43 @@ textarea {
   padding: 12px 14px;
   background: #f8fbff;
   border-radius: 14px;
+}
+
+.audit-panel {
+  margin-top: 2px;
+}
+
+.audit-trail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.audit-entry {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  background: #fbfdff;
+}
+
+.audit-entry strong,
+.audit-entry span,
+.audit-entry p {
+  display: block;
+}
+
+.audit-entry span,
+.audit-entry p {
+  color: var(--muted);
+}
+
+.audit-entry span {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+.audit-entry p {
+  margin: 8px 0 0;
+  line-height: 1.5;
 }
 
 .encounter-panel {

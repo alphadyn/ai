@@ -10,10 +10,13 @@ Northstar Health EHR is a desktop-friendly, responsive web application for revie
 2. Review the patient’s demographics, vitals, labs, allergies, and recent notes.
 3. Use the appointment panel and care snapshot to prepare for the visit.
 4. Record an encounter in the form at the bottom of the page.
+5. Switch between the Clinician and Admin roles from the sidebar to review permission-based workflows.
+6. Review recent system actions in the audit trail panel. Admins can see the full audit list.
 
 ## Persistence
 
 The app stores patient data and encounter notes in your browser using local storage. Refreshing the page preserves the selected patient and saved encounter history.
+The active role and audit trail are also persisted in browser storage.
 
 ## Customizing the experience
 

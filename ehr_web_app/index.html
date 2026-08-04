@@ -18,17 +18,28 @@
         </div>
 
         <nav class="nav-links">
-          <button class="nav-link active">Overview</button>
-          <button class="nav-link">Patients</button>
-          <button class="nav-link">Appointments</button>
-          <button class="nav-link">Labs & Meds</button>
-          <button class="nav-link">Billing</button>
+          <button class="nav-link active" data-view="overview">Overview</button>
+          <button class="nav-link" data-view="patients">Patients</button>
+          <button class="nav-link" data-view="appointments">Appointments</button>
+          <button class="nav-link" data-view="labs">Labs & Meds</button>
+          <button class="nav-link" data-view="billing">Billing</button>
         </nav>
 
         <div class="sidebar-card">
           <h3>Care Coordination</h3>
           <p>Track patient flow, follow-ups, and response time from one place.</p>
           <button id="quickEncounterBtn" class="primary-btn">New Encounter</button>
+        </div>
+
+        <div class="sidebar-card role-card">
+          <h3>Active Role</h3>
+          <p id="roleValue">Clinician</p>
+          <span id="roleHelp" class="role-help">Can record encounters and complete care tasks.</span>
+          <label for="roleSelector" class="role-label">Switch role</label>
+          <select id="roleSelector">
+            <option value="clinician">Clinician</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
       </aside>
 
@@ -47,31 +58,31 @@
           </div>
         </header>
 
-        <section class="stats-grid">
+        <section id="overviewSection" class="stats-grid view-section">
           <article class="stat-card accent-blue">
             <p>Patients Today</p>
-            <strong>48</strong>
-            <span>+12% vs. yesterday</span>
+            <strong id="patientsTodayValue">0</strong>
+            <span id="patientsTodayMeta">0 scheduled visits</span>
           </article>
           <article class="stat-card accent-green">
             <p>Completed Charts</p>
-            <strong>36</strong>
-            <span>96% same-day completion</span>
+            <strong id="completedChartsValue">0</strong>
+            <span id="completedChartsMeta">0% completion rate</span>
           </article>
           <article class="stat-card accent-amber">
             <p>Critical Follow-ups</p>
-            <strong>7</strong>
-            <span>2 high-priority alerts</span>
+            <strong id="criticalFollowupsValue">0</strong>
+            <span id="criticalFollowupsMeta">0 overdue tasks</span>
           </article>
           <article class="stat-card accent-purple">
             <p>Medication Reconciliation</p>
-            <strong>91%</strong>
-            <span>Above target compliance</span>
+            <strong id="medRecValue">0%</strong>
+            <span id="medRecMeta">0 patient charts reviewed</span>
           </article>
         </section>
 
-        <section class="content-grid">
-          <div class="panel">
+        <section id="recordsSection" class="content-grid view-section">
+          <div class="panel" id="patientQueuePanel">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Patient queue</p>
@@ -82,13 +93,13 @@
             <div id="patientList" class="patient-list"></div>
           </div>
 
-          <div class="panel detail-panel">
+          <div class="panel detail-panel" id="patientDetailPanel">
             <div id="patientDetail"></div>
           </div>
         </section>
 
-        <section class="content-grid lower-grid">
-          <div class="panel">
+        <section id="operationsSection" class="content-grid lower-grid view-section">
+          <div class="panel" id="appointmentsPanel">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Appointments</p>
@@ -98,7 +109,7 @@
             <div id="appointmentsList" class="list-stack"></div>
           </div>
 
-          <div class="panel">
+          <div class="panel" id="snapshotSection">
             <div class="panel-header">
               <div>
                 <p class="eyebrow">Care team</p>
@@ -109,13 +120,13 @@
           </div>
         </section>
 
-        <section class="panel encounter-panel">
+        <section id="encounterSection" class="panel encounter-panel view-section">
           <div class="panel-header">
             <div>
               <p class="eyebrow">Encounter documentation</p>
               <h3>Record a care note</h3>
             </div>
-            <button class="primary-btn" type="submit" form="encounterForm">Save Encounter</button>
+            <button id="saveEncounterBtn" class="primary-btn" type="submit" form="encounterForm">Save Encounter</button>
           </div>
 
           <form id="encounterForm" class="encounter-form">
@@ -150,6 +161,16 @@
             </div>
           </form>
           <p id="encounterStatus" class="status-message">Encounter notes are saved instantly for the current patient.</p>
+        </section>
+
+        <section id="auditSection" class="panel audit-panel view-section">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Audit trail</p>
+              <h3>Recent access and workflow actions</h3>
+            </div>
+          </div>
+          <div id="auditTrailList" class="audit-trail-list"></div>
         </section>
       </main>
     </div>
