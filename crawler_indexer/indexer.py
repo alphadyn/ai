@@ -60,6 +60,12 @@ def normalize_token(token: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", token.lower())
 
 
+def normalize_url(url: str) -> str:
+    # Strip fragment so #section variants don't bypass deduplication
+    parsed = urllib.parse.urlparse(url)
+    return parsed._replace(fragment="").geturl()
+
+
 def build_index(text: str) -> Dict[str, int]:
     counts: Counter[str] = Counter()
     for match in re.finditer(r"[A-Za-z0-9]+", text):
@@ -94,10 +100,17 @@ def fetch_url(url: str) -> str:
     return body.decode("utf-8", errors="ignore")
 
 
+def _index_fingerprint(index: Dict[str, int]) -> int:
+    return hash(frozenset(index.items()))
+
+
 def crawl_url(start_url: str, max_pages: int = 10, same_domain: bool = False) -> List[Dict[str, Any]]:
+    start_url = normalize_url(start_url)
     seen = {start_url}
     queue = [start_url]
     results: List[Dict[str, Any]] = []
+    seen_indexes: set = set()
+    seen_result_urls: set = set()
     start_netloc = urllib.parse.urlparse(start_url).netloc if same_domain else None
 
     while queue and len(results) < max_pages:
@@ -110,10 +123,15 @@ def crawl_url(start_url: str, max_pages: int = 10, same_domain: bool = False) ->
 
         text = extract_text_from_html(html)
         index = build_index(text)
+        fingerprint = _index_fingerprint(index)
+        if fingerprint in seen_indexes or current_url in seen_result_urls:
+            continue
+        seen_indexes.add(fingerprint)
+        seen_result_urls.add(current_url)
         results.append({"url": current_url, "text": text, "index": index})
 
         for href in extract_links_from_html(html):
-            absolute_url = urllib.parse.urljoin(current_url, href)
+            absolute_url = normalize_url(urllib.parse.urljoin(current_url, href))
             if not absolute_url.startswith("http") or absolute_url in seen:
                 continue
             if same_domain and urllib.parse.urlparse(absolute_url).netloc != start_netloc:

@@ -7,7 +7,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [business_site](business_site/) - A polished single-page marketing website for an AI company.
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
 - [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
-- [crawler_indexer](crawler_indexer/) - A Python-based crawler and indexer for web content.
+- [crawler_indexer](crawler_indexer/) - A Python-based web crawler and indexer with domain-scoped crawling and duplicate-page filtering.
 - [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
@@ -41,7 +41,7 @@ For the Python projects, run them from their respective folders with Python 3.
 Example:
 
 ```bash
-python3 crawler_indexer/indexer.py https://example.com --max-pages 5 --output index.json
+python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
 python3 prime_numbers/prime_finder.py
 ```
 
