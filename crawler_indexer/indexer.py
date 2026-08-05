@@ -94,16 +94,14 @@ def fetch_url(url: str) -> str:
     return body.decode("utf-8", errors="ignore")
 
 
-def crawl_url(start_url: str, max_pages: int = 10) -> List[Dict[str, Any]]:
-    visited = set()
+def crawl_url(start_url: str, max_pages: int = 10, same_domain: bool = False) -> List[Dict[str, Any]]:
+    seen = {start_url}
     queue = [start_url]
     results: List[Dict[str, Any]] = []
+    start_netloc = urllib.parse.urlparse(start_url).netloc if same_domain else None
 
     while queue and len(results) < max_pages:
         current_url = queue.pop()
-        if current_url in visited:
-            continue
-        visited.add(current_url)
 
         try:
             html = fetch_url(current_url)
@@ -116,8 +114,12 @@ def crawl_url(start_url: str, max_pages: int = 10) -> List[Dict[str, Any]]:
 
         for href in extract_links_from_html(html):
             absolute_url = urllib.parse.urljoin(current_url, href)
-            if absolute_url.startswith("http") and absolute_url not in visited:
-                queue.append(absolute_url)
+            if not absolute_url.startswith("http") or absolute_url in seen:
+                continue
+            if same_domain and urllib.parse.urlparse(absolute_url).netloc != start_netloc:
+                continue
+            seen.add(absolute_url)
+            queue.append(absolute_url)
 
     return results
 
@@ -157,6 +159,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Index a URL or a local file/directory")
     parser.add_argument("target", help="A URL, file path, or directory path")
     parser.add_argument("--max-pages", type=int, default=10, help="Maximum number of web pages to crawl")
+    parser.add_argument("--same-domain", action="store_true", help="Only follow links within the same domain as the input URL")
     parser.add_argument("--output", default="index.json", help="Where to save the index JSON")
     args = parser.parse_args()
 
@@ -164,7 +167,7 @@ def main() -> None:
     output_path = Path(args.output)
 
     if target.startswith(("http://", "https://")):
-        documents = crawl_url(target, max_pages=args.max_pages)
+        documents = crawl_url(target, max_pages=args.max_pages, same_domain=args.same_domain)
         payload = {"type": "url", "source": target, "documents": documents}
     else:
         path = Path(target)
