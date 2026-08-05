@@ -49,6 +49,17 @@ python3 prime_numbers/prime_finder.py
 
 This repository is intended as a collection of sample projects and demos rather than a single production application. Each folder can be adapted and expanded independently.
 
+## Automated tests
+
+The repository now includes unit tests for the crawler indexer and the secure file tool. Install the test dependency and run the suite from the repository root:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+python3 -m pytest
+```
+
+The pytest configuration is stored in [pytest.ini](pytest.ini).
+
 ## Generation scripts
 
 Each project folder now includes a lightweight generator script named generate_report.py, which creates a simple HTML artifact named generated_report.html when run with Python 3.
