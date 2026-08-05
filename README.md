@@ -8,6 +8,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
 - [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
 - [crawler_indexer](crawler_indexer/) - A Python-based crawler and indexer for web content.
+- [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
 - [human_vs_ai_skills_report](human_vs_ai_skills_report/) - A report comparing human and AI capabilities.
