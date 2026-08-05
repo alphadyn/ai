@@ -14,6 +14,13 @@ Open `index.html` in a browser to see the page.
 - The site is designed for offline viewing.
 - It includes sections for the platform, solutions, about, and contact information.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML output:
 

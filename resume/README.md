@@ -13,6 +13,13 @@ Open `index.html` in a browser to display the resume.
 - The resume is a static portfolio-style document.
 - It is suitable for showcasing front-end presentation skills as well as career experience.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML output:
 

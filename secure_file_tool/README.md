@@ -41,6 +41,13 @@ python3 secure_file_tool/file_crypto.py decrypt /path/to/output.bin /path/to/res
 
 If you omit the password flag, the program will prompt for it securely.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 

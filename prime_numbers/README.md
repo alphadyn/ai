@@ -18,6 +18,13 @@ This will print all prime numbers up to 1000 by default.
 ## Main file
 - `prime_finder.py` - contains the prime-checking and prime-list generation logic
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 

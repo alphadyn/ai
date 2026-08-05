@@ -8,6 +8,13 @@ This folder contains a simple report comparing human technical capabilities with
 ## Summary
 Humans are strongest in judgment, ethics, empathy, and contextual understanding, while AI is strongest in speed, scale, pattern recognition, and automation.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this report:
 

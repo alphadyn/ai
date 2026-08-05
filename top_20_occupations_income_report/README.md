@@ -14,6 +14,13 @@ Open the file [index.html](index.html) in any modern web browser.
 - The income figures are approximate and intended for general reference.
 - The report is a static page and can be viewed without running a server.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 

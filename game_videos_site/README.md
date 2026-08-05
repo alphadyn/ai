@@ -13,6 +13,13 @@ Open `index.html` in a browser to explore the page.
 - This is a lightweight demo site with no backend or dependencies.
 - It is useful as a simple example of a content-focused landing page.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML output:
 

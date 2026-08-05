@@ -14,6 +14,13 @@ Open `index.html` in a browser to read the report.
 - The report is informational and intended as a simple finance-themed demo.
 - It does not provide personalized financial advice.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML output:
 

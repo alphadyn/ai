@@ -34,6 +34,13 @@ Then open http://localhost:8000 in your browser.
 - The app is intentionally lightweight and dependency-free.
 - It is suitable for demos, prototypes, or as a foundation for a larger legal case-management system.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 

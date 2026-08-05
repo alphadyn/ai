@@ -13,6 +13,13 @@ This folder contains a polished, professional expense report template designed i
 ## Purpose
 This document is intended as a professional example for corporate expense reporting, suitable for internal finance review or presentation use.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for the project:
 

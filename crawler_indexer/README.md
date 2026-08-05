@@ -39,6 +39,13 @@ python3 indexer.py ./documents
 ## Main file
 - `indexer.py` - the crawler and indexing logic
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 

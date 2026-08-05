@@ -14,6 +14,13 @@ Open the file [index.html](index.html) in any modern web browser.
 - The page is fully self-contained and does not require any build step.
 - It is intended as a presentation-style report rather than a financial advisory tool.
 
+## Test the project
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Generate the report
 Run the generator script to create a simple HTML artifact for this project:
 
