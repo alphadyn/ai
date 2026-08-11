@@ -10,6 +10,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [crawler_indexer](crawler_indexer/) - A Python-based web crawler and indexer with domain-scoped crawling and duplicate-page filtering.
 - [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
+- [fractal_patterns_app](fractal_patterns_app/) - A browser-based fractal visualizer that generates 10 classic fractal patterns on an interactive canvas.
 - [game_videos_site](game_videos_site/) - A simple website that showcases gaming video links.
 - [human_vs_ai_skills_report](human_vs_ai_skills_report/) - A report comparing human and AI capabilities.
 - [index_fund_report](index_fund_report/) - An index fund overview grouped by risk profile.
@@ -25,7 +26,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 
 Most of the web-based projects are static HTML, CSS, and JavaScript files that can be opened directly in a browser. Report folders such as [largest_companies_report](largest_companies_report/) and [top_20_occupations_income_report](top_20_occupations_income_report/) can also be viewed by opening their index.html files.
 
-For the expense report and other static pages, simply open the relevant HTML file in your browser.
+For the expense report, fractal app, and other static pages, simply open the relevant HTML file in your browser.
 
 For the legal docketing app, run a local server from the project folder:
 
@@ -62,4 +63,4 @@ The pytest configuration is stored in [pytest.ini](pytest.ini).
 
 ## Generation scripts
 
-Each project folder now includes a lightweight generator script named generate_report.py, which creates a simple HTML artifact named generated_report.html when run with Python 3.
+Most project folders include a lightweight generator script named generate_report.py, which creates a simple HTML artifact named generated_report.html when run with Python 3.
