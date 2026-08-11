@@ -69,9 +69,11 @@ const randomBtn = document.getElementById("random-btn");
 const zoomInBtn = document.getElementById("zoom-in-btn");
 const zoomOutBtn = document.getElementById("zoom-out-btn");
 const resetViewBtn = document.getElementById("reset-view-btn");
+const toggleControlsBtn = document.getElementById("toggle-controls-btn");
 const descEl = document.getElementById("pattern-description");
 const listEl = document.getElementById("fractal-list");
 const statusEl = document.getElementById("status");
+const appShellEl = document.getElementById("app-shell");
 const canvas = document.getElementById("fractal-canvas");
 const ctx = canvas.getContext("2d");
 
@@ -90,6 +92,9 @@ let isPinching = false;
 let lastPinchDistance = 0;
 let lastPinchMidX = 0;
 let lastPinchMidY = 0;
+let controlsHidden = false;
+
+const CONTROLS_STORAGE_KEY = "fractal-atlas-controls-hidden";
 
 function updateCanvasResolution() {
   const pixelRatio = window.devicePixelRatio || 1;
@@ -144,6 +149,25 @@ function withViewTransform(drawFn) {
   ctx.restore();
 }
 
+function updateControlsToggleLabel() {
+  toggleControlsBtn.textContent = controlsHidden ? "Show Controls" : "Hide Controls";
+}
+
+function setControlsHidden(nextHidden, shouldPersist = true) {
+  controlsHidden = nextHidden;
+  appShellEl.classList.toggle("controls-hidden", controlsHidden);
+  updateControlsToggleLabel();
+
+  if (shouldPersist) {
+    localStorage.setItem(CONTROLS_STORAGE_KEY, controlsHidden ? "1" : "0");
+  }
+
+  requestAnimationFrame(() => {
+    updateCanvasResolution();
+    renderActiveFractal();
+  });
+}
+
 function getTouchDistance(touchA, touchB) {
   return Math.hypot(touchB.clientX - touchA.clientX, touchB.clientY - touchA.clientY);
 }
@@ -193,6 +217,85 @@ function clearCanvas() {
   ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 }
 
+function autoFitRenderedContent() {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const image = ctx.getImageData(0, 0, w, h);
+  const data = image.data;
+
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const idx = (y * w + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const a = data[idx + 3];
+
+      if (a === 0) {
+        continue;
+      }
+
+      const isBackground = r === 9 && g === 11 && b === 20;
+      if (isBackground) {
+        continue;
+      }
+
+      if (x < minX) {
+        minX = x;
+      }
+      if (y < minY) {
+        minY = y;
+      }
+      if (x > maxX) {
+        maxX = x;
+      }
+      if (y > maxY) {
+        maxY = y;
+      }
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return;
+  }
+
+  const padX = Math.max(2, Math.floor(w * 0.01));
+  const padY = Math.max(2, Math.floor(h * 0.01));
+  minX = Math.max(0, minX - padX);
+  minY = Math.max(0, minY - padY);
+  maxX = Math.min(w - 1, maxX + padX);
+  maxY = Math.min(h - 1, maxY + padY);
+
+  const srcW = maxX - minX + 1;
+  const srcH = maxY - minY + 1;
+
+  if (srcW <= 0 || srcH <= 0) {
+    return;
+  }
+
+  const crop = ctx.getImageData(minX, minY, srcW, srcH);
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = srcW;
+  sourceCanvas.height = srcH;
+  sourceCanvas.getContext("2d").putImageData(crop, 0, 0);
+
+  const scale = Math.max(w / srcW, h / srcH);
+  const drawW = srcW * scale;
+  const drawH = srcH * scale;
+  const drawX = (w - drawW) / 2;
+  const drawY = (h - drawH) / 2;
+
+  clearCanvas();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH);
+}
+
 function hsvToRgb(h, s, v) {
   const c = v * s;
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
@@ -232,14 +335,19 @@ function drawMandelbrot(detail) {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   const maxIter = 40 + detail * 30;
+  const xMin = -2.2;
+  const xMax = 0.85;
+  const xRange = xMax - xMin;
+  const yRange = xRange * (h / w);
+  const yMin = -yRange / 2;
   const image = ctx.createImageData(w, h);
   const data = image.data;
 
   for (let py = 0; py < h; py += 1) {
     for (let px = 0; px < w; px += 1) {
       const sample = screenToFractalSpace(px, py);
-      const x0 = (sample.x / w) * 3.5 - 2.5;
-      const y0 = (sample.y / h) * 2.4 - 1.2;
+      const x0 = xMin + (sample.x / w) * xRange;
+      const y0 = yMin + (sample.y / h) * yRange;
       let x = 0;
       let y = 0;
       let iter = 0;
@@ -276,14 +384,19 @@ function drawJulia(detail) {
   const maxIter = 45 + detail * 28;
   const cRe = -0.79;
   const cIm = 0.15;
+  const xMin = -1.45;
+  const xMax = 1.45;
+  const xRange = xMax - xMin;
+  const yRange = xRange * (h / w);
+  const yMin = -yRange / 2;
   const image = ctx.createImageData(w, h);
   const data = image.data;
 
   for (let py = 0; py < h; py += 1) {
     for (let px = 0; px < w; px += 1) {
       const sample = screenToFractalSpace(px, py);
-      let x = (sample.x / w) * 3 - 1.5;
-      let y = (sample.y / h) * 2.2 - 1.1;
+      let x = xMin + (sample.x / w) * xRange;
+      let y = yMin + (sample.y / h) * yRange;
       let iter = 0;
 
       while (x * x + y * y < 4 && iter < maxIter) {
@@ -316,6 +429,11 @@ function drawNewton(detail) {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   const maxIter = 12 + detail * 4;
+  const xMin = -1.35;
+  const xMax = 1.35;
+  const xRange = xMax - xMin;
+  const yRange = xRange * (h / w);
+  const yMin = -yRange / 2;
   const roots = [
     { x: 1, y: 0, color: [255, 99, 72] },
     { x: -0.5, y: 0.8660254, color: [36, 255, 167] },
@@ -328,8 +446,8 @@ function drawNewton(detail) {
   for (let py = 0; py < h; py += 1) {
     for (let px = 0; px < w; px += 1) {
       const sample = screenToFractalSpace(px, py);
-      let x = (sample.x / w) * 3 - 1.5;
-      let y = (sample.y / h) * 3 - 1.5;
+      let x = xMin + (sample.x / w) * xRange;
+      let y = yMin + (sample.y / h) * yRange;
       let iter = 0;
 
       for (; iter < maxIter; iter += 1) {
@@ -390,9 +508,9 @@ function drawSierpinskiTriangle(detail) {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     const points = [
-      { x: w / 2, y: 36 },
-      { x: 32, y: h - 32 },
-      { x: w - 32, y: h - 32 }
+      { x: w / 2, y: 10 },
+      { x: 10, y: h - 10 },
+      { x: w - 10, y: h - 10 }
     ];
 
     let x = w * 0.37;
@@ -415,7 +533,7 @@ function drawSierpinskiCarpet(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const size = Math.min(w, h) - 80;
+    const size = Math.min(w, h) - 16;
     const startX = (w - size) / 2;
     const startY = (h - size) / 2;
 
@@ -451,7 +569,7 @@ function drawKochSnowflake(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const radius = Math.min(w, h) * 0.32;
+    const radius = Math.min(w, h) * 0.45;
 
     const p1 = { x: w / 2, y: h / 2 - radius };
     const p2 = { x: w / 2 - radius * 0.866, y: h / 2 + radius / 2 };
@@ -507,9 +625,9 @@ function drawDragonCurve(detail) {
       turns = [...turns, 1, ...revInvert];
     }
 
-    const step = Math.max(2, Math.min(w, h) / (40 + detail * 10));
-    let x = w * 0.54;
-    let y = h * 0.45;
+    const step = Math.max(2, Math.min(w, h) / (18 + detail * 4));
+    let x = w * 0.34;
+    let y = h * 0.64;
     let angle = 0;
 
     ctx.strokeStyle = "#eae2b7";
@@ -561,8 +679,8 @@ function drawBarnsleyFern(detail) {
       x = nextX;
       y = nextY;
 
-      const px = Math.round(w / 2 + x * (w / 12));
-      const py = Math.round(h - y * (h / 12) - 20);
+      const px = Math.round(w / 2 + x * (w / 7.8));
+      const py = Math.round(h - y * (h / 9.2) - 8);
       ctx.fillRect(px, py, 1, 1);
     }
   });
@@ -595,7 +713,7 @@ function drawFractalTree(detail) {
       branch(x2, y2, length * 0.74, angle - 0.35, depth - 1);
     }
 
-    branch(w / 2, h - 24, h * 0.21, Math.PI / 2, detail + 2);
+    branch(w / 2, h - 8, h * 0.3, Math.PI / 2, detail + 2);
   });
 }
 
@@ -605,7 +723,7 @@ function drawCantorSet(detail) {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     const levels = detail + 2;
-    const rowGap = (h - 80) / levels;
+    const rowGap = (h - 24) / levels;
 
     ctx.fillStyle = "#fcbf49";
 
@@ -619,7 +737,7 @@ function drawCantorSet(detail) {
       carve(x + 2 * third, y + rowGap, third, depth - 1);
     }
 
-    carve(32, 40, w - 64, levels);
+    carve(8, 8, w - 16, levels);
   });
 }
 
@@ -647,6 +765,7 @@ async function renderActiveFractal() {
   const draw = drawMap[fractal.key];
   if (draw) {
     draw(detail);
+    autoFitRenderedContent();
   }
 
   setStatus(`Rendered ${fractal.name} | detail ${detail} | zoom ${view.zoom.toFixed(2)}x | pan (${Math.round(view.panX)}, ${Math.round(view.panY)})`);
@@ -678,6 +797,10 @@ zoomOutBtn.addEventListener("click", () => {
 resetViewBtn.addEventListener("click", () => {
   resetView();
   renderActiveFractal();
+});
+
+toggleControlsBtn.addEventListener("click", () => {
+  setControlsHidden(!controlsHidden);
 });
 
 randomBtn.addEventListener("click", () => {
@@ -818,5 +941,6 @@ window.addEventListener("resize", () => {
 
 buildUI();
 resetView();
+setControlsHidden(localStorage.getItem(CONTROLS_STORAGE_KEY) === "1", false);
 updateCanvasResolution();
 renderActiveFractal();

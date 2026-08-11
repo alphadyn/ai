@@ -47,6 +47,7 @@ No build tools or installation are required.
 - **Mouse wheel** zooms in and out around the cursor position.
 - **Click and drag** on the canvas to pan.
 - **Reset View** returns to default zoom and center.
+- **Hide Controls / Show Controls** toggles a near full-screen canvas mode and remembers your preference.
 - On touch devices:
 	- **One finger drag** pans.
 	- **Pinch gesture** zooms in and out.
