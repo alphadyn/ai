@@ -8,6 +8,8 @@ A browser-based web app that generates and displays 10 popular fractal patterns 
 - 10 fractal patterns in one app
 - Pattern selector and random pattern button
 - Adjustable detail slider per fractal
+- Zoom controls, mouse-wheel zoom, and drag-to-pan
+- Mobile touch gestures: one-finger pan and pinch-to-zoom
 - Responsive layout for desktop and mobile
 
 ## Included Fractal Patterns
@@ -38,6 +40,16 @@ No build tools or installation are required.
 3. Adjust the detail slider.
 4. Click **Render** to generate the fractal.
 5. Optionally click **Random Pick** to explore patterns quickly.
+
+## Navigation Controls
+
+- **Zoom In / Zoom Out** buttons adjust scale around the center.
+- **Mouse wheel** zooms in and out around the cursor position.
+- **Click and drag** on the canvas to pan.
+- **Reset View** returns to default zoom and center.
+- On touch devices:
+	- **One finger drag** pans.
+	- **Pinch gesture** zooms in and out.
 
 ## Notes
 
