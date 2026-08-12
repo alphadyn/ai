@@ -4,6 +4,8 @@ const accuracyRange = document.getElementById('accuracyRange');
 const accuracyValue = document.getElementById('accuracyValue');
 const strokeLengthRange = document.getElementById('strokeLengthRange');
 const strokeLengthValue = document.getElementById('strokeLengthValue');
+const colorBlurRange = document.getElementById('colorBlurRange');
+const colorBlurValue = document.getElementById('colorBlurValue');
 const brightnessRange = document.getElementById('brightnessRange');
 const brightnessValue = document.getElementById('brightnessValue');
 const redFilterRange = document.getElementById('redFilterRange');
@@ -89,6 +91,7 @@ function colorDodgeBlend(grayValue, blurredInvertedValue) {
 function updateLabels() {
   accuracyValue.textContent = `${accuracyRange.value}%`;
   strokeLengthValue.textContent = `${strokeLengthRange.value}%`;
+  colorBlurValue.textContent = `${colorBlurRange.value}%`;
   brightnessValue.textContent = `${brightnessRange.value}%`;
   redFilterValue.textContent = `${redFilterRange.value}%`;
   greenFilterValue.textContent = `${greenFilterRange.value}%`;
@@ -127,6 +130,7 @@ function generateSketch() {
   const mode = modeSelect.value;
   const accuracy = Number(accuracyRange.value) / 100;
   const strokeLength = Number(strokeLengthRange.value) / 100;
+  const colorBlurLevel = Number(colorBlurRange.value) / 100;
   const brightness = Number(brightnessRange.value) / 100;
   const redIntensity = Number(redFilterRange.value) / 100;
   const greenIntensity = Number(greenFilterRange.value) / 100;
@@ -134,13 +138,20 @@ function generateSketch() {
 
   const gray = getGrayChannel(sourceData);
   const invertedGray = invertChannel(gray);
-  const blurRadius = Math.max(1, Math.round(2 + strokeLength * 22));
+  const blurRadius = Math.max(2, Math.round(6 + strokeLength * 32));
   const blurredInverted = boxBlurChannel(invertedGray, width, height, blurRadius);
+  const colorBlurBoostRadius = Math.max(1, Math.round(1 + colorBlurLevel * 30));
+  const colorBlurredInverted = mode === 'color'
+    ? boxBlurChannel(blurredInverted, width, height, colorBlurBoostRadius)
+    : blurredInverted;
   const brightnessScale = 0.45 + brightness * 1.5;
-  const sourceMix = accuracy;
+  const colorSourceMix = 0.04 + accuracy * 0.28;
+  const colorSaturation = 0.12 + accuracy * 0.24;
+  const paperBlend = 0.2 + strokeLength * 0.22;
 
   for (let px = 0, i = 0; i < sourceData.length; i += 4, px += 1) {
-    const sketchTone = colorDodgeBlend(gray[px], blurredInverted[px]);
+    const blurSource = mode === 'color' ? colorBlurredInverted : blurredInverted;
+    const sketchTone = colorDodgeBlend(gray[px], blurSource[px]);
 
     if (mode === 'bw') {
       const value = clampByte(Math.round(sketchTone * brightnessScale));
@@ -154,15 +165,47 @@ function generateSketch() {
     const r = sourceData[i];
     const g = sourceData[i + 1];
     const b = sourceData[i + 2];
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    const desatR = luminance + (r - luminance) * colorSaturation;
+    const desatG = luminance + (g - luminance) * colorSaturation;
+    const desatB = luminance + (b - luminance) * colorSaturation;
+
     const sketchBase = sketchTone / 255;
+    const pencilShade = Math.pow(sketchBase, 1.34);
+    const linePressure = 0.85 + (1 - accuracy) * 0.45;
+    const shadowScale = 1 - (1 - pencilShade) * linePressure;
 
-    const redSketch = clampByte(Math.round((r * sketchBase * redIntensity)));
-    const greenSketch = clampByte(Math.round((g * sketchBase * greenIntensity)));
-    const blueSketch = clampByte(Math.round((b * sketchBase * blueIntensity)));
+    const x = px % width;
+    const y = Math.floor(px / width);
+    const hatchA = Math.sin(x * 0.19 + y * 0.11);
+    const hatchB = Math.sin(x * -0.13 + y * 0.23);
+    const hatchC = Math.sin(x * 0.08 + y * 0.31);
+    const hatchMix = hatchA * 0.5 + hatchB * 0.35 + hatchC * 0.15;
+    const midtoneMask = Math.max(0, 1 - Math.abs(sketchBase - 0.55) * 1.7);
+    const hatchStrength = ((1 - accuracy) * 0.28 + strokeLength * 0.16) * midtoneMask;
+    const hatchShade = 1 - Math.max(0, hatchMix) * hatchStrength;
 
-    const mixedRed = redSketch * (1 - sourceMix) + r * sourceMix;
-    const mixedGreen = greenSketch * (1 - sourceMix) + g * sourceMix;
-    const mixedBlue = blueSketch * (1 - sourceMix) + b * sourceMix;
+    const grainSeed = ((x * 73856093) ^ (y * 19349663)) & 255;
+    const grain = grainSeed / 255 - 0.5;
+    const grainAmount = (1 - accuracy) * 0.12 + 0.05;
+    const grainShade = 1 - grain * grainAmount;
+    const texturedShade = Math.max(0, Math.min(1.2, shadowScale * hatchShade * grainShade));
+
+    const redSketch = desatR * texturedShade * redIntensity;
+    const greenSketch = desatG * texturedShade * greenIntensity;
+    const blueSketch = desatB * texturedShade * blueIntensity;
+
+    const warmPaperR = 247;
+    const warmPaperG = 242;
+    const warmPaperB = 231;
+
+    const paperRed = redSketch * (1 - paperBlend) + warmPaperR * paperBlend;
+    const paperGreen = greenSketch * (1 - paperBlend) + warmPaperG * paperBlend;
+    const paperBlue = blueSketch * (1 - paperBlend) + warmPaperB * paperBlend;
+
+    const mixedRed = paperRed * (1 - colorSourceMix) + r * colorSourceMix;
+    const mixedGreen = paperGreen * (1 - colorSourceMix) + g * colorSourceMix;
+    const mixedBlue = paperBlue * (1 - colorSourceMix) + b * colorSourceMix;
 
     outputData[i] = clampByte(Math.round(mixedRed * brightnessScale));
     outputData[i + 1] = clampByte(Math.round(mixedGreen * brightnessScale));
@@ -175,7 +218,7 @@ function generateSketch() {
   sketchCtx.putImageData(output, 0, 0);
   setStatus(mode === 'bw'
     ? `Black-and-white pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness, red ${redFilterRange.value}%, green ${greenFilterRange.value}%, blue ${blueFilterRange.value}%.`
-    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness, red ${redFilterRange.value}%, green ${greenFilterRange.value}%, blue ${blueFilterRange.value}%.`);
+    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${colorBlurRange.value}% blurriness, ${brightnessRange.value}% brightness, red ${redFilterRange.value}%, green ${greenFilterRange.value}%, blue ${blueFilterRange.value}%.`);
 }
 
 function handleFileSelection(event) {
@@ -213,6 +256,12 @@ accuracyRange.addEventListener('input', () => {
   }
 });
 strokeLengthRange.addEventListener('input', () => {
+  updateLabels();
+  if (currentImage) {
+    generateSketch();
+  }
+});
+colorBlurRange.addEventListener('input', () => {
   updateLabels();
   if (currentImage) {
     generateSketch();

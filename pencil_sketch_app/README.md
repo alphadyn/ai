@@ -11,6 +11,7 @@ grayscale conversion, invert, blur, and color-dodge blending.
 - Choose between black-and-white and color sketch modes
 - Adjust the sketch accuracy from more artistic to more faithful to the source image
 - Adjust the pencil stroke length (maps to blur radius in the invert+blur stage)
+- Adjust color pencil blurriness to control how soft the color sketch appears
 - Adjust brightness to make the sketch lighter or darker
 - Use red, green, and blue filters to tint and balance the color output
 - Preview the original image and generated sketch side by side
@@ -41,12 +42,15 @@ http://localhost:8000/
 4. Move the “Pencil stroke length” slider:
    - Lower values use a smaller blur radius for harder, tighter lines
    - Higher values use a larger blur radius for softer, broader shading
-5. Adjust the “Brightness” slider:
+5. Move the “Color pencil blurriness” slider:
+   - Lower values keep color edges more defined
+   - Higher values make color strokes softer and more blended
+6. Adjust the “Brightness” slider:
    - Lower values darken the sketch
    - Higher values lighten the sketch
-6. Use the red, green, and blue filter sliders to tint the sketch and balance its color channels.
-7. Click “Generate Sketch” if needed.
-8. Use “Download PNG” to save the result.
+7. Use the red, green, and blue filter sliders to tint the sketch and balance its color channels.
+8. Click “Generate Sketch” if needed.
+9. Use “Download PNG” to save the result.
 
 ## Files
 
@@ -67,4 +71,4 @@ The black-and-white sketch is generated with this pipeline:
 
 5. Clamp output values to 0-255.
 
-Color mode applies the same pencil tone as a luminance mask and blends with the original image according to the accuracy slider.
+Color mode applies the same pencil tone as a luminance mask, then applies an extra blur pass controlled by the blurriness slider.
