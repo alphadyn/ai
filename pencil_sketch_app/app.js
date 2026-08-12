@@ -1,4 +1,5 @@
 const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
 const modeSelect = document.getElementById('modeSelect');
 const accuracyRange = document.getElementById('accuracyRange');
 const accuracyValue = document.getElementById('accuracyValue');
@@ -229,12 +230,11 @@ function generateSketch() {
   sketchCanvas.height = height;
   sketchCtx.putImageData(output, 0, 0);
   setStatus(mode === 'bw'
-    ? `Black-and-white pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness.`
-    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${colorBlurRange.value}% blurriness, ${brightnessRange.value}% brightness, tint ${colorTintInput.value.toUpperCase()}.`);
+    ? `Black-and-white pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness. Drag the sketch to save it locally.`
+    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${colorBlurRange.value}% blurriness, ${brightnessRange.value}% brightness, tint ${colorTintInput.value.toUpperCase()}. Drag the sketch to save it locally.`);
 }
 
-function handleFileSelection(event) {
-  const file = event.target.files?.[0];
+function loadImageFile(file) {
   if (!file) return;
 
   if (!file.type.startsWith('image/')) {
@@ -260,7 +260,35 @@ function handleFileSelection(event) {
   reader.readAsDataURL(file);
 }
 
+function handleFileSelection(event) {
+  const file = event.target.files?.[0];
+  loadImageFile(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  dropZone.classList.remove('dragover');
+
+  const file = event.dataTransfer?.files?.[0];
+  loadImageFile(file);
+}
+
 fileInput.addEventListener('change', handleFileSelection);
+dropZone.addEventListener('dragenter', (event) => {
+  event.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragover', (event) => {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'copy';
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', (event) => {
+  if (event.target === dropZone) {
+    dropZone.classList.remove('dragover');
+  }
+});
+dropZone.addEventListener('drop', handleDrop);
 accuracyRange.addEventListener('input', () => {
   updateLabels();
   if (currentImage) {
@@ -298,6 +326,29 @@ modeSelect.addEventListener('change', () => {
   }
 });
 
+sketchCanvas.addEventListener('dragstart', async (event) => {
+  if (!currentImage) {
+    event.preventDefault();
+    return;
+  }
+
+  const blob = await new Promise((resolve) => sketchCanvas.toBlob(resolve, 'image/png'));
+  if (!blob) {
+    event.preventDefault();
+    return;
+  }
+
+  const file = new File([blob], 'pencil-sketch.png', { type: 'image/png' });
+  event.dataTransfer.effectAllowed = 'copy';
+  event.dataTransfer.setData('DownloadURL', `image/png:pencil-sketch.png:${URL.createObjectURL(blob)}`);
+  event.dataTransfer.setData('text/uri-list', URL.createObjectURL(blob));
+  event.dataTransfer.setData('text/plain', 'pencil-sketch.png');
+  if (event.dataTransfer.items && event.dataTransfer.items.length >= 0) {
+    event.dataTransfer.items.clear();
+    event.dataTransfer.items.add(file);
+  }
+});
+
 downloadBtn.addEventListener('click', () => {
   if (!currentImage) {
     setStatus('Generate a sketch before downloading.', true);
@@ -308,6 +359,7 @@ downloadBtn.addEventListener('click', () => {
   link.download = 'pencil-sketch.png';
   link.href = sketchCanvas.toDataURL('image/png');
   link.click();
+  setStatus('Sketch download started. You can also drag the sketch out of the browser to save it.');
 });
 
 updateLabels();

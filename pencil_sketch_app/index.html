@@ -17,8 +17,9 @@
 
       <main class="app-card">
         <section class="controls">
-          <label class="file-picker">
+          <label class="file-picker" id="dropZone" for="fileInput">
             <span>Choose an image</span>
+            <small>or drag &amp; drop here</small>
             <input id="fileInput" type="file" accept="image/*" />
           </label>
 
@@ -86,7 +87,8 @@
 
           <figure class="panel">
             <figcaption>Sketch</figcaption>
-            <canvas id="sketchCanvas" width="640" height="480"></canvas>
+            <canvas id="sketchCanvas" width="640" height="480" draggable="true"></canvas>
+            <span class="drag-hint">Drag to save</span>
           </figure>
         </section>
       </main>
