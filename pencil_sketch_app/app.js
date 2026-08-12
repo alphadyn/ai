@@ -8,12 +8,8 @@ const colorBlurRange = document.getElementById('colorBlurRange');
 const colorBlurValue = document.getElementById('colorBlurValue');
 const brightnessRange = document.getElementById('brightnessRange');
 const brightnessValue = document.getElementById('brightnessValue');
-const redFilterRange = document.getElementById('redFilterRange');
-const redFilterValue = document.getElementById('redFilterValue');
-const greenFilterRange = document.getElementById('greenFilterRange');
-const greenFilterValue = document.getElementById('greenFilterValue');
-const blueFilterRange = document.getElementById('blueFilterRange');
-const blueFilterValue = document.getElementById('blueFilterValue');
+const colorTintInput = document.getElementById('colorTintInput');
+const colorTintValue = document.getElementById('colorTintValue');
 const generateBtn = document.getElementById('generateBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 const statusText = document.getElementById('status');
@@ -88,14 +84,25 @@ function colorDodgeBlend(grayValue, blurredInvertedValue) {
   return clampByte(Math.round((grayValue * 256) / (255 - blurredInvertedValue)));
 }
 
+function hexToRgb(hexColor) {
+  const clean = hexColor.replace('#', '');
+  const expanded = clean.length === 3
+    ? clean.split('').map((ch) => ch + ch).join('')
+    : clean;
+
+  return {
+    r: parseInt(expanded.slice(0, 2), 16),
+    g: parseInt(expanded.slice(2, 4), 16),
+    b: parseInt(expanded.slice(4, 6), 16)
+  };
+}
+
 function updateLabels() {
   accuracyValue.textContent = `${accuracyRange.value}%`;
   strokeLengthValue.textContent = `${strokeLengthRange.value}%`;
   colorBlurValue.textContent = `${colorBlurRange.value}%`;
   brightnessValue.textContent = `${brightnessRange.value}%`;
-  redFilterValue.textContent = `${redFilterRange.value}%`;
-  greenFilterValue.textContent = `${greenFilterRange.value}%`;
-  blueFilterValue.textContent = `${blueFilterRange.value}%`;
+  colorTintValue.textContent = colorTintInput.value.toUpperCase();
 }
 
 function setStatus(message, isError = false) {
@@ -132,9 +139,10 @@ function generateSketch() {
   const strokeLength = Number(strokeLengthRange.value) / 100;
   const colorBlurLevel = Number(colorBlurRange.value) / 100;
   const brightness = Number(brightnessRange.value) / 100;
-  const redIntensity = Number(redFilterRange.value) / 100;
-  const greenIntensity = Number(greenFilterRange.value) / 100;
-  const blueIntensity = Number(blueFilterRange.value) / 100;
+  const tint = hexToRgb(colorTintInput.value);
+  const tintR = tint.r / 255;
+  const tintG = tint.g / 255;
+  const tintB = tint.b / 255;
 
   const gray = getGrayChannel(sourceData);
   const invertedGray = invertChannel(gray);
@@ -191,9 +199,13 @@ function generateSketch() {
     const grainShade = 1 - grain * grainAmount;
     const texturedShade = Math.max(0, Math.min(1.2, shadowScale * hatchShade * grainShade));
 
-    const redSketch = desatR * texturedShade * redIntensity;
-    const greenSketch = desatG * texturedShade * greenIntensity;
-    const blueSketch = desatB * texturedShade * blueIntensity;
+    const tintRedScale = 0.25 + tintR * 0.9;
+    const tintGreenScale = 0.25 + tintG * 0.9;
+    const tintBlueScale = 0.25 + tintB * 0.9;
+
+    const redSketch = desatR * texturedShade * tintRedScale;
+    const greenSketch = desatG * texturedShade * tintGreenScale;
+    const blueSketch = desatB * texturedShade * tintBlueScale;
 
     const warmPaperR = 247;
     const warmPaperG = 242;
@@ -217,8 +229,8 @@ function generateSketch() {
   sketchCanvas.height = height;
   sketchCtx.putImageData(output, 0, 0);
   setStatus(mode === 'bw'
-    ? `Black-and-white pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness, red ${redFilterRange.value}%, green ${greenFilterRange.value}%, blue ${blueFilterRange.value}%.`
-    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${colorBlurRange.value}% blurriness, ${brightnessRange.value}% brightness, red ${redFilterRange.value}%, green ${greenFilterRange.value}%, blue ${blueFilterRange.value}%.`);
+    ? `Black-and-white pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${brightnessRange.value}% brightness.`
+    : `Color pencil sketch generated at ${accuracyRange.value}% accuracy, ${strokeLengthRange.value}% stroke length, ${colorBlurRange.value}% blurriness, ${brightnessRange.value}% brightness, tint ${colorTintInput.value.toUpperCase()}.`);
 }
 
 function handleFileSelection(event) {
@@ -273,19 +285,7 @@ brightnessRange.addEventListener('input', () => {
     generateSketch();
   }
 });
-redFilterRange.addEventListener('input', () => {
-  updateLabels();
-  if (currentImage) {
-    generateSketch();
-  }
-});
-greenFilterRange.addEventListener('input', () => {
-  updateLabels();
-  if (currentImage) {
-    generateSketch();
-  }
-});
-blueFilterRange.addEventListener('input', () => {
+colorTintInput.addEventListener('input', () => {
   updateLabels();
   if (currentImage) {
     generateSketch();

@@ -1,6 +1,6 @@
 # Pencil Sketch Studio
 
-A simple browser app for turning uploaded images into pencil-style sketches. It supports both black-and-white and color pencil effects and lets the user tune how closely the result matches the original, how fine or coarse the pencil strokes feel, and how the image is balanced by brightness and RGB color filters.
+A simple browser app for turning uploaded images into pencil-style sketches. It supports both black-and-white and color pencil effects and lets the user tune how closely the result matches the original, how fine or coarse the pencil strokes feel, and how the image is balanced by brightness and a color tint picker.
 
 The sketch engine follows the same core idea used in the GeeksforGeeks example:
 grayscale conversion, invert, blur, and color-dodge blending.
@@ -13,7 +13,7 @@ grayscale conversion, invert, blur, and color-dodge blending.
 - Adjust the pencil stroke length (maps to blur radius in the invert+blur stage)
 - Adjust color pencil blurriness to control how soft the color sketch appears
 - Adjust brightness to make the sketch lighter or darker
-- Use red, green, and blue filters to tint and balance the color output
+- Use one color picker to set the color pencil tint
 - Preview the original image and generated sketch side by side
 - Download the final sketch as a PNG
 
@@ -48,7 +48,7 @@ http://localhost:8000/
 6. Adjust the “Brightness” slider:
    - Lower values darken the sketch
    - Higher values lighten the sketch
-7. Use the red, green, and blue filter sliders to tint the sketch and balance its color channels.
+7. Use the color picker to set the pencil tint for color mode.
 8. Click “Generate Sketch” if needed.
 9. Use “Download PNG” to save the result.
 

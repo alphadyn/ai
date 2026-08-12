@@ -111,14 +111,32 @@ h1 {
 #strokeLengthValue,
 #colorBlurValue,
 #brightnessValue,
-#redFilterValue,
-#greenFilterValue,
-#blueFilterValue,
+#colorTintValue,
 #angleValue {
   min-width: 52px;
   text-align: right;
   color: var(--text);
   font-weight: 700;
+}
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+#colorTintInput {
+  height: 38px;
+  width: 56px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
 .button-row {
