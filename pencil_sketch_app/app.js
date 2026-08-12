@@ -23,6 +23,69 @@ const sketchCtx = sketchCanvas.getContext('2d');
 
 let currentImage = null;
 
+function clampByte(value) {
+  return Math.min(255, Math.max(0, value));
+}
+
+function getGrayChannel(data) {
+  const gray = new Uint8ClampedArray(data.length / 4);
+  for (let i = 0, j = 0; i < data.length; i += 4, j += 1) {
+    gray[j] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+  }
+  return gray;
+}
+
+function invertChannel(channel) {
+  const inverted = new Uint8ClampedArray(channel.length);
+  for (let i = 0; i < channel.length; i += 1) {
+    inverted[i] = 255 - channel[i];
+  }
+  return inverted;
+}
+
+function boxBlurChannel(channel, width, height, radius) {
+  if (radius <= 0) {
+    return new Uint8ClampedArray(channel);
+  }
+
+  const horizontalPass = new Uint8ClampedArray(channel.length);
+  const output = new Uint8ClampedArray(channel.length);
+  const kernelSize = radius * 2 + 1;
+
+  for (let y = 0; y < height; y += 1) {
+    const rowStart = y * width;
+    for (let x = 0; x < width; x += 1) {
+      let sum = 0;
+      for (let k = -radius; k <= radius; k += 1) {
+        const sampleX = Math.min(width - 1, Math.max(0, x + k));
+        sum += channel[rowStart + sampleX];
+      }
+      horizontalPass[rowStart + x] = Math.round(sum / kernelSize);
+    }
+  }
+
+  for (let x = 0; x < width; x += 1) {
+    for (let y = 0; y < height; y += 1) {
+      let sum = 0;
+      for (let k = -radius; k <= radius; k += 1) {
+        const sampleY = Math.min(height - 1, Math.max(0, y + k));
+        sum += horizontalPass[sampleY * width + x];
+      }
+      output[y * width + x] = Math.round(sum / kernelSize);
+    }
+  }
+
+  return output;
+}
+
+function colorDodgeBlend(grayValue, blurredInvertedValue) {
+  if (blurredInvertedValue >= 255) {
+    return 255;
+  }
+
+  return clampByte(Math.round((grayValue * 256) / (255 - blurredInvertedValue)));
+}
+
 function updateLabels() {
   accuracyValue.textContent = `${accuracyRange.value}%`;
   strokeLengthValue.textContent = `${strokeLengthRange.value}%`;
@@ -69,48 +132,42 @@ function generateSketch() {
   const greenIntensity = Number(greenFilterRange.value) / 100;
   const blueIntensity = Number(blueFilterRange.value) / 100;
 
-  for (let i = 0; i < sourceData.length; i += 4) {
+  const gray = getGrayChannel(sourceData);
+  const invertedGray = invertChannel(gray);
+  const blurRadius = Math.max(1, Math.round(2 + strokeLength * 22));
+  const blurredInverted = boxBlurChannel(invertedGray, width, height, blurRadius);
+  const brightnessScale = 0.45 + brightness * 1.5;
+  const sourceMix = accuracy;
+
+  for (let px = 0, i = 0; i < sourceData.length; i += 4, px += 1) {
+    const sketchTone = colorDodgeBlend(gray[px], blurredInverted[px]);
+
+    if (mode === 'bw') {
+      const value = clampByte(Math.round(sketchTone * brightnessScale));
+      outputData[i] = value;
+      outputData[i + 1] = value;
+      outputData[i + 2] = value;
+      outputData[i + 3] = 255;
+      continue;
+    }
+
     const r = sourceData[i];
     const g = sourceData[i + 1];
     const b = sourceData[i + 2];
-    const gray = (r + g + b) / 3;
-    const inverted = 255 - gray;
-    const softLine = Math.min(255, Math.max(0, inverted * 1.2));
-    const textureScale = 0.5 + strokeLength * 4.2;
-    const texture = Math.sin((i / 4) * (0.07 + strokeLength * 0.15)) * 0.5 + 0.5;
-    const grain = (texture - 0.5) * (12 + (1 - strokeLength) * 32);
-    const brightnessScale = 0.45 + brightness * 1.5;
+    const sketchBase = sketchTone / 255;
 
-    if (mode === 'bw') {
-      const detailRetention = 0.35 + accuracy * 0.9;
-      const contourBoost = 0.8 + (1 - accuracy) * 1.3;
-      const value = 255 - (gray * detailRetention + softLine * contourBoost + grain * (0.7 + strokeLength));
-      const tone = Math.min(255, Math.max(0, value * brightnessScale));
-      outputData[i] = tone;
-      outputData[i + 1] = tone;
-      outputData[i + 2] = tone;
-      outputData[i + 3] = 255;
-    } else {
-      const warmR = Math.min(255, (255 - r) * 0.75 + 40);
-      const warmG = Math.min(255, (255 - g) * 0.72 + 25);
-      const warmB = Math.min(255, (255 - b) * 0.82 + 30);
-      const paperLight = (softLine + 0.6 * gray) / 1.6;
-      const inheritedMix = 0.15 + accuracy * 0.75;
-      const pencilMix = 1 - inheritedMix;
-      const textureBlend = 0.25 + strokeLength * 0.8;
-      const redTarget = r * inheritedMix + warmR * pencilMix + paperLight * (0.7 + (1 - accuracy) * 0.5) + grain * textureBlend;
-      const greenTarget = g * inheritedMix + warmG * pencilMix + paperLight * (0.7 + (1 - accuracy) * 0.5) + grain * textureBlend;
-      const blueTarget = b * inheritedMix + warmB * pencilMix + paperLight * (0.7 + (1 - accuracy) * 0.5) + grain * textureBlend;
+    const redSketch = clampByte(Math.round((r * sketchBase * redIntensity)));
+    const greenSketch = clampByte(Math.round((g * sketchBase * greenIntensity)));
+    const blueSketch = clampByte(Math.round((b * sketchBase * blueIntensity)));
 
-      const red = Math.min(255, Math.max(0, Math.round(redTarget * redIntensity * brightnessScale)));
-      const green = Math.min(255, Math.max(0, Math.round(greenTarget * greenIntensity * brightnessScale)));
-      const blue = Math.min(255, Math.max(0, Math.round(blueTarget * blueIntensity * brightnessScale)));
+    const mixedRed = redSketch * (1 - sourceMix) + r * sourceMix;
+    const mixedGreen = greenSketch * (1 - sourceMix) + g * sourceMix;
+    const mixedBlue = blueSketch * (1 - sourceMix) + b * sourceMix;
 
-      outputData[i] = red;
-      outputData[i + 1] = green;
-      outputData[i + 2] = blue;
-      outputData[i + 3] = 255;
-    }
+    outputData[i] = clampByte(Math.round(mixedRed * brightnessScale));
+    outputData[i + 1] = clampByte(Math.round(mixedGreen * brightnessScale));
+    outputData[i + 2] = clampByte(Math.round(mixedBlue * brightnessScale));
+    outputData[i + 3] = 255;
   }
 
   sketchCanvas.width = width;
