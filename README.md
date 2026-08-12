@@ -8,6 +8,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
 - [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
 - [crawler_indexer](crawler_indexer/) - A Python-based web crawler and indexer with domain-scoped crawling and duplicate-page filtering.
+- [pencil_sketch_app](pencil_sketch_app/) - A browser app that lets users upload an image and generate black-and-white or color pencil sketches with adjustable accuracy, pencil stroke length, brightness, and RGB color filters.
 - [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
 - [fractal_patterns_app](fractal_patterns_app/) - A browser-based fractal visualizer that generates 10 classic fractal patterns on an interactive canvas.
