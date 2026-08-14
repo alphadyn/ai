@@ -8,6 +8,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [business_plan](business_plan/) - A startup business plan presentation for an AI-focused venture.
 - [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
 - [crawler_indexer](crawler_indexer/) - A Python-based web crawler and indexer with domain-scoped crawling and duplicate-page filtering.
+- [enterprise_executive_dashboard](enterprise_executive_dashboard/) - A multi-page executive operations dashboard for a large-cap company with KPI tracking, revenue analytics, operations visibility, and AI strategy views.
 - [pencil_sketch_app](pencil_sketch_app/) - A browser app that lets users upload an image and generate black-and-white or color pencil sketches with adjustable accuracy, pencil stroke length, brightness, and RGB color filters.
 - [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.
 - [expense_report](expense_report/) - A professional HTML expense report template with polished corporate styling.
@@ -33,6 +34,15 @@ For the legal docketing app, run a local server from the project folder:
 
 ```bash
 cd legal_docketing_app
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000 in your browser.
+
+For the enterprise dashboard, run a local server from the app folder:
+
+```bash
+cd enterprise_executive_dashboard
 python3 -m http.server 8000
 ```
 
