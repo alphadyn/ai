@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northstar | Risk</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-page="risk">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-wrap">
+          <div class="brand-mark">N</div>
+          <div>
+            <p class="eyebrow">Enterprise</p>
+            <h1>Northstar</h1>
+          </div>
+        </div>
+        <nav class="nav">
+          <a class="nav-item" href="index.html"><span class="nav-icon">◫</span>Overview</a>
+          <a class="nav-item" href="revenue.html"><span class="nav-icon">◌</span>Revenue</a>
+          <a class="nav-item" href="operations.html"><span class="nav-icon">◎</span>Operations</a>
+          <a class="nav-item" href="customers.html"><span class="nav-icon">▣</span>Customers</a>
+          <a class="nav-item active" href="risk.html"><span class="nav-icon">◍</span>Risk</a>
+          <a class="nav-item" href="ai.html"><span class="nav-icon">✦</span>AI Copilot</a>
+        </nav>
+        <div class="sidebar-card">
+          <p class="eyebrow">Board focus</p>
+          <h3>Risk posture</h3>
+          <div class="mini-bars">
+            <span style="height: 30%"></span>
+            <span style="height: 48%"></span>
+            <span style="height: 64%"></span>
+            <span style="height: 73%"></span>
+            <span style="height: 84%"></span>
+          </div>
+          <strong>Low</strong>
+          <small>overall enterprise risk</small>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Risk management</p>
+            <h2>Operational risk watch</h2>
+          </div>
+          <div class="topbar-tools">
+            <button class="secondary-btn">Risk register</button>
+            <button class="primary-btn">Escalate issue</button>
+          </div>
+        </header>
+
+        <section class="page-hero">
+          <div>
+            <h3>Exposure remains controlled</h3>
+            <p class="lead">Risk is trending down as supplier diversification, monitoring, and governance controls continue to mature across critical operating regions.</p>
+          </div>
+        </section>
+
+        <section class="page-grid">
+          <div class="metric-card">
+            <div class="label">Open issues</div>
+            <h3>18</h3>
+            <div class="delta">-6 from last review</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Critical events</div>
+            <h3>2</h3>
+            <div class="delta">Below threshold</div>
+          </div>
+          <div class="metric-card">
+            <div class="label">Risk score</div>
+            <h3>31/100</h3>
+            <div class="delta">Improving quarter-over-quarter</div>
+          </div>
+        </section>
+
+        <section class="split-grid">
+          <div class="table-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Exposure</p>
+                <h3>Current risk areas</h3>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Area</th><th>Severity</th><th>Owner</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Vendor concentration</td><td>Medium</td><td>Procurement</td><td><span class="status-badge warning">Mitigating</span></td></tr>
+                <tr><td>Cyber resilience</td><td>Low</td><td>Security</td><td><span class="status-badge">Stable</span></td></tr>
+                <tr><td>Logistics network</td><td>Medium</td><td>Ops</td><td><span class="status-badge warning">Action</span></td></tr>
+                <tr><td>Climate exposure</td><td>Low</td><td>Strategy</td><td><span class="status-badge">Stable</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="list-card">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Controls</p>
+                <h3>Mitigation progress</h3>
+              </div>
+            </div>
+            <ul>
+              <li><span>Supplier diversification</span><span class="score-pill">82%</span></li>
+              <li><span>Cyber hardening</span><span class="score-pill">91%</span></li>
+              <li><span>Routing resilience</span><span class="score-pill">76%</span></li>
+              <li><span>Board governance</span><span class="score-pill">95%</span></li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>

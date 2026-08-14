@@ -1,9 +1,6 @@
 const dataByRange = {
   Q1: {
-    revenue: '$4.21B',
-    margin: '26.9%',
-    clients: '17,520',
-    pipeline: '$8.1B',
+    revenue: '$4.21B', margin: '26.9%', clients: '17,520', pipeline: '$8.1B',
     bars: [52, 58, 62, 68, 74, 84],
     regions: [
       { name: 'North America', growth: '+10.2%', bookings: '$1.42B' },
@@ -28,10 +25,7 @@ const dataByRange = {
     ]
   },
   Q2: {
-    revenue: '$4.82B',
-    margin: '29.8%',
-    clients: '18,940',
-    pipeline: '$9.4B',
+    revenue: '$4.82B', margin: '29.8%', clients: '18,940', pipeline: '$9.4B',
     bars: [56, 61, 67, 74, 82, 94],
     regions: [
       { name: 'North America', growth: '+14.6%', bookings: '$1.66B' },
@@ -56,10 +50,7 @@ const dataByRange = {
     ]
   },
   Q3: {
-    revenue: '$5.27B',
-    margin: '31.2%',
-    clients: '20,340',
-    pipeline: '$10.6B',
+    revenue: '$5.27B', margin: '31.2%', clients: '20,340', pipeline: '$10.6B',
     bars: [62, 68, 76, 84, 92, 99],
     regions: [
       { name: 'North America', growth: '+17.2%', bookings: '$1.82B' },
@@ -84,10 +75,7 @@ const dataByRange = {
     ]
   },
   YTD: {
-    revenue: '$15.46B',
-    margin: '30.1%',
-    clients: '18,940',
-    pipeline: '$9.4B',
+    revenue: '$15.46B', margin: '30.1%', clients: '18,940', pipeline: '$9.4B',
     bars: [46, 54, 63, 71, 81, 89],
     regions: [
       { name: 'North America', growth: '+15.5%', bookings: '$4.92B' },
@@ -97,7 +85,7 @@ const dataByRange = {
     ],
     initiatives: [
       { name: 'AI field automation', progress: 91, tag: 'blue', detail: 'Average time-to-resolution improved by 28% across enterprise accounts.' },
-      { name: 'Margin recovery program', progress: 85, tag: 'green', detail: 'year-to-date operating margin expanded by 4.2 points against plan.' },
+      { name: 'Margin recovery program', progress: 85, tag: 'green', detail: 'Year-to-date operating margin expanded by 4.2 points against plan.' },
       { name: 'Customer expansion push', progress: 81, tag: 'yellow', detail: 'Large account expansion pipeline remains diversified and durable.' }
     ],
     risks: [
@@ -114,10 +102,7 @@ const dataByRange = {
 };
 
 const metricMap = {
-  revenue: 'Revenue',
-  margin: 'Net margin',
-  clients: 'Enterprise clients',
-  pipeline: 'Pipeline value'
+  revenue: 'Revenue', margin: 'Net margin', clients: 'Enterprise clients', pipeline: 'Pipeline value'
 };
 
 const regionTable = document.getElementById('regionTable');
@@ -125,11 +110,11 @@ const growthBars = document.getElementById('growthBars');
 const initiativeList = document.getElementById('initiativeList');
 const riskList = document.getElementById('riskList');
 const activityList = document.getElementById('activityList');
-
 const rangeButtons = document.querySelectorAll('.range-btn');
 const metrics = document.querySelectorAll('.metric');
 
 function renderRegions(items) {
+  if (!regionTable) return;
   regionTable.innerHTML = items.map((item) => `
     <tr>
       <td>${item.name}</td>
@@ -140,6 +125,7 @@ function renderRegions(items) {
 }
 
 function renderBars(values) {
+  if (!growthBars) return;
   const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   const max = 100;
 
@@ -153,6 +139,7 @@ function renderBars(values) {
 }
 
 function renderInitiatives(items) {
+  if (!initiativeList) return;
   initiativeList.innerHTML = items.map((item) => `
     <div class="initiative-item">
       <div class="initiative-meta">
@@ -167,6 +154,7 @@ function renderInitiatives(items) {
 }
 
 function renderRisks(items) {
+  if (!riskList) return;
   riskList.innerHTML = items.map((item) => `
     <div class="risk-item">
       <div class="risk-row">
@@ -179,6 +167,7 @@ function renderRisks(items) {
 }
 
 function renderActivity(items) {
+  if (!activityList) return;
   activityList.innerHTML = items.map((item) => `
     <div class="activity-item">
       <span class="activity-bullet"></span>
@@ -193,6 +182,7 @@ function renderActivity(items) {
 
 function updateMetrics(rangeKey) {
   const active = dataByRange[rangeKey];
+  if (!active) return;
 
   metrics.forEach((metric) => {
     const key = metric.dataset.metric;
@@ -224,8 +214,20 @@ function setCurrentTime() {
   });
 
   const dateCell = document.querySelector('.eyebrow');
-  dateCell.textContent = `Executive command center • ${label}`;
+  if (dateCell) dateCell.textContent = `Executive command center • ${label}`;
 }
 
-updateMetrics('Q2');
+const page = document.body.dataset.page;
+const navItems = document.querySelectorAll('.nav-item');
+if (navItems.length) {
+  navItems.forEach((item) => {
+    const href = item.getAttribute('href');
+    const isActive = href === `${page}.html` || (page === 'overview' && href === 'index.html');
+    item.classList.toggle('active', isActive);
+  });
+}
+
+if (metrics.length) {
+  updateMetrics('Q2');
+}
 setCurrentTime();
