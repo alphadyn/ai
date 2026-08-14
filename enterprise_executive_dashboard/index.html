@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Northstar Horizons | Enterprise Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-wrap">
+          <div class="brand-mark">N</div>
+          <div>
+            <p class="eyebrow">Enterprise</p>
+            <h1>Northstar</h1>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active">
+            <span class="nav-icon">◫</span>
+            Overview
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">◌</span>
+            Revenue
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">◎</span>
+            Operations
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">▣</span>
+            Customers
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">◍</span>
+            Risk
+          </button>
+          <button class="nav-item">
+            <span class="nav-icon">✦</span>
+            AI Copilot
+          </button>
+        </nav>
+
+        <div class="sidebar-card">
+          <p class="eyebrow">Board focus</p>
+          <h3>Capital efficiency</h3>
+          <div class="mini-bars">
+            <span style="height: 34%"></span>
+            <span style="height: 52%"></span>
+            <span style="height: 62%"></span>
+            <span style="height: 86%"></span>
+            <span style="height: 94%"></span>
+          </div>
+          <strong>+18.2%</strong>
+          <small>vs. prior quarter</small>
+        </div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Executive command center</p>
+            <h2>Global operating view</h2>
+          </div>
+
+          <div class="topbar-tools">
+            <div class="range-toggle" aria-label="Select reporting period">
+              <button class="range-btn" data-range="Q1">Q1</button>
+              <button class="range-btn active" data-range="Q2">Q2</button>
+              <button class="range-btn" data-range="Q3">Q3</button>
+              <button class="range-btn" data-range="YTD">YTD</button>
+            </div>
+
+            <button class="ghost-btn">Export briefing</button>
+            <div class="user-pill">
+              <div class="avatar">AR</div>
+              <div>
+                <strong>Amelia Ross</strong>
+                <small>CEO</small>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="hero-grid">
+          <div class="kpi-wrap">
+            <div class="kpi-card accent">
+              <div class="kpi-head">
+                <span>Revenue</span>
+                <span class="trend positive">+12.4%</span>
+              </div>
+              <div class="value-row">
+                <h3 class="metric" data-metric="revenue">$4.82B</h3>
+              </div>
+              <small>Annualized run-rate</small>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <span>Net margin</span>
+                <span class="trend positive">+2.1 pts</span>
+              </div>
+              <div class="value-row">
+                <h3 class="metric" data-metric="margin">29.8%</h3>
+              </div>
+              <small>Operating efficiency</small>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <span>Enterprise clients</span>
+                <span class="trend positive">+480</span>
+              </div>
+              <div class="value-row">
+                <h3 class="metric" data-metric="clients">18,940</h3>
+              </div>
+              <small>Active global accounts</small>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-head">
+                <span>Pipeline value</span>
+                <span class="trend neutral">+7.3%</span>
+              </div>
+              <div class="value-row">
+                <h3 class="metric" data-metric="pipeline">$9.4B</h3>
+              </div>
+              <small>Qualified opportunities</small>
+            </div>
+          </div>
+
+          <div class="ai-summary panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">AI executive brief</p>
+                <h3>Strategic recommendation</h3>
+              </div>
+              <span class="status-dot">Live</span>
+            </div>
+            <p class="summary-text">
+              Focus expansion in industrial AI and renewables. Revenue acceleration is strongest in the EMEA enterprise segment,
+              while margin resilience remains concentrated in software and services mix.
+            </p>
+            <ul class="summary-list">
+              <li>Reallocate 8% of media spend toward AI-enabled field solutions.</li>
+              <li>Reduce vendor concentration by diversifying critical supply partners.</li>
+              <li>Prioritize cross-sell conversion in top 25 strategic accounts.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Performance</p>
+                <h3>Quarterly growth trend</h3>
+              </div>
+              <div class="legend">
+                <span><i class="legend-square primary"></i> Revenue</span>
+                <span><i class="legend-square secondary"></i> EBITDA</span>
+              </div>
+            </div>
+
+            <div class="chart-area">
+              <div class="y-axis">
+                <span>120%</span>
+                <span>80%</span>
+                <span>40%</span>
+                <span>0%</span>
+              </div>
+              <div class="bars" id="growthBars"></div>
+            </div>
+          </div>
+
+          <div class="panel region-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Regions</p>
+                <h3>Market performance</h3>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Region</th>
+                  <th>Growth</th>
+                  <th>Bookings</th>
+                </tr>
+              </thead>
+              <tbody id="regionTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <div class="panel initiative-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Initiatives</p>
+                <h3>Priority bets</h3>
+              </div>
+            </div>
+
+            <div class="initiative-list" id="initiativeList"></div>
+          </div>
+
+          <div class="panel risk-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Risk pulse</p>
+                <h3>Operational watchlist</h3>
+              </div>
+            </div>
+
+            <div class="risk-list" id="riskList"></div>
+          </div>
+
+          <div class="panel activity-panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Activity</p>
+                <h3>Latest updates</h3>
+              </div>
+            </div>
+
+            <div class="activity-list" id="activityList"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
