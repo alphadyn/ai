@@ -94,13 +94,27 @@ h1 {
   gap: 6px;
 }
 
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
 .search-box input {
-  padding: 12px 14px;
+  padding: 12px 14px 12px 40px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
   font-size: 1rem;
+  width: 100%;
 }
 
 .search-box input:disabled {
