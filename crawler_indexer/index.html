@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directory Search</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Local Search</p>
+          <h1>Directory Search</h1>
+        </div>
+      </header>
+
+      <main class="app-card">
+        <section class="controls">
+          <label class="file-picker" id="dropZone" for="dirInput">
+            <span>Choose a directory to index</span>
+            <small>Only .txt, .md, .py, .json, .csv and .html files are read</small>
+            <input id="dirInput" type="file" webkitdirectory directory multiple />
+          </label>
+
+          <div class="status" id="status">No directory indexed yet.</div>
+
+          <label class="search-box" for="searchInput">
+            <span>Search indexed files</span>
+            <input id="searchInput" type="text" placeholder="Type a word or phrase…" disabled />
+          </label>
+        </section>
+
+        <section class="results" id="results" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -36,8 +36,18 @@ python3 indexer.py ./documents
 | `--same-domain` | off | Only follow links within the same domain as the input URL |
 | `--output` | `index.json` | Path for the output JSON file |
 
+## Browser-based directory search
+Open [index.html](index.html) in a browser (or serve the folder with `python3 -m http.server`) to search a local directory entirely client-side:
+
+1. Click "Choose a directory to index" and select a folder — the browser prompts for directory access.
+2. The page reads `.txt`, `.md`, `.py`, `.json`, `.csv` and `.html` files from that folder and builds a word-frequency index in memory.
+3. Type a word or phrase in the search box to see matching files ranked by term frequency, with a highlighted snippet for each result.
+
+No files are uploaded anywhere; indexing and searching happen entirely in the browser.
+
 ## Main file
 - `indexer.py` - the crawler and indexing logic
+- `index.html`, `app.js`, `styles.css` - the browser-based directory search UI
 
 ## Test the project
 Run the repository-wide test suite from the project root:
