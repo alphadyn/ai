@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rotating Photo Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="header">
+      <h1>Rotating Photo Gallery</h1>
+      <p class="subtitle">10 beautiful photos, auto-rotating in a carousel.</p>
+    </header>
+
+    <section class="carousel" id="carousel" aria-roledescription="carousel" aria-label="Photo gallery">
+      <div class="carousel-track" id="carousel-track"></div>
+
+      <button class="nav-btn prev-btn" id="prev-btn" aria-label="Previous photo">&#10094;</button>
+      <button class="nav-btn next-btn" id="next-btn" aria-label="Next photo">&#10095;</button>
+
+      <div class="carousel-overlay">
+        <span class="caption" id="caption"></span>
+        <button class="play-btn" id="play-btn" aria-label="Pause rotation">&#10073;&#10073;</button>
+      </div>
+    </section>
+
+    <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <nav class="thumbnails" id="thumbnails" aria-label="Photo thumbnails"></nav>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
