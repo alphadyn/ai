@@ -38,6 +38,14 @@ python3 -m http.server 8000
 
 Then browse to http://localhost:8000.
 
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Notes
 
 This is a front-end application with working in-browser business logic for core demo workflows. It supports derived operational metrics, appointment completion and cancellation, care-task updates, patient summary exports, role-based workflow permissions, audit history, and richer encounter processing while still using local browser storage.

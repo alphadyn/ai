@@ -28,6 +28,14 @@ No build tools or installation are required. An internet connection is required 
 4. Use the arrow buttons, thumbnails, or Left/Right keys to navigate manually.
 5. Click the pause button to stop auto-rotation.
 
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Notes
 
 Photos are served by [Picsum Photos](https://picsum.photos) using a randomly generated seed per image, per page load. Since the photos are fetched over the network, the app requires an active internet connection and will not work fully offline.

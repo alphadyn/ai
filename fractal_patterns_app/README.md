@@ -57,6 +57,14 @@ No build tools or installation are required.
 - Some fractals are computationally heavier at higher detail levels and may take longer to render.
 - Rendering behavior and speed can vary by browser and hardware.
 
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Tech Stack
 
 - HTML5

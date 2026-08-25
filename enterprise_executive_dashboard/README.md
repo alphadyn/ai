@@ -32,6 +32,14 @@ http://localhost:8000
 - `styles.css` – visual design and responsiveness
 - `app.js` – dynamic KPI, table, and chart rendering
 
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Use case
 
 This app is suitable as a starter platform for a billion-dollar company’s executive operations, business intelligence, strategy planning, and investor-facing reporting dashboards.

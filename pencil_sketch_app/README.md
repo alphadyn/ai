@@ -72,3 +72,11 @@ The black-and-white sketch is generated with this pipeline:
 5. Clamp output values to 0-255.
 
 Color mode applies the same pencil tone as a luminance mask, then applies an extra blur pass controlled by the blurriness slider.
+
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```

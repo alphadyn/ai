@@ -60,6 +60,14 @@ python3 generate_sketch.py input.jpg output.png edge
 - `generate_report.py` - HTML report generator
 - `generated_report.html` - Project overview
 
+## Test the project
+
+Run the repository-wide test suite from the project root:
+
+```bash
+./run_tests.sh
+```
+
 ## Requirements
 
 - Python 3.7+
