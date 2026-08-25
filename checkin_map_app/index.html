@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Check-In Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Location Journal</p>
+          <h1>Check-In Map</h1>
+        </div>
+      </header>
+
+      <main class="app-grid">
+        <section class="panel map-panel">
+          <div id="map"></div>
+          <form id="checkInForm" class="panel-actions">
+            <input
+              id="locationInput"
+              class="location-input"
+              type="text"
+              placeholder="Enter a known location, e.g. Paris, France"
+              autocomplete="off"
+              required
+            />
+            <button type="submit" id="checkInBtn" class="primary-btn">Check In</button>
+          </form>
+          <span id="checkInStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section class="panel">
+          <h2>Last 10 Check-Ins</h2>
+          <ol id="checkInList" class="checkin-list">
+            <li class="empty-state">No check-ins yet.</li>
+          </ol>
+        </section>
+
+        <section class="panel">
+          <h2>Upload a Photo</h2>
+          <p class="hint">Choose a JPEG photo that has embedded GPS data (most phone camera photos do) to plot where it was taken.</p>
+          <label class="file-picker" for="photoInput">
+            <span>Choose a photo</span>
+            <input id="photoInput" type="file" accept="image/jpeg,image/jpg" />
+          </label>
+          <div id="photoStatus" class="status-text" role="status"></div>
+          <ol id="photoList" class="checkin-list">
+            <li class="empty-state">No photos mapped yet.</li>
+          </ol>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/exif-js@2.3.0/exif.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
