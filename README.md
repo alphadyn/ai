@@ -20,7 +20,6 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [legal_docketing_app](legal_docketing_app/) - A fully functional legal docketing web app for tracking matters, deadlines, and tasks.
 - [photo_gallery_app](photo_gallery_app/) - A rotating photo gallery that fetches a fresh set of 10 random photos from the web on every page load.
 - [prime_numbers](prime_numbers/) - A small Python utility for finding and analyzing prime numbers.
-- [reddit_reuters_report](reddit_reuters_report/) - A browser app that fetches Reddit's front page live on every load and displays it in a Reuters.com-style layout.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) - A polished report of 20 occupations with the highest approximate median incomes.
 - [resume](resume/) - A polished HTML resume for an AI software engineer.
 - [secure_file_tool](secure_file_tool/) - A file encryption utility with command-line and GUI interfaces.
@@ -46,15 +45,6 @@ For the enterprise dashboard, run a local server from the app folder:
 ```bash
 cd enterprise_executive_dashboard
 python3 -m http.server 8000
-```
-
-Then open http://localhost:8000 in your browser.
-
-For the Reddit/Reuters-style app, run its bundled server, which proxies Reddit's API server-side to avoid browser CORS restrictions:
-
-```bash
-cd reddit_reuters_report
-python3 server.py
 ```
 
 Then open http://localhost:8000 in your browser.
