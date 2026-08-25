@@ -50,11 +50,11 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000 in your browser.
 
-For the Reddit/Reuters-style app, run a local server from the app folder (Reddit's API requires an http:// origin, not a file:// one):
+For the Reddit/Reuters-style app, run its bundled server, which proxies Reddit's API server-side to avoid browser CORS restrictions:
 
 ```bash
 cd reddit_reuters_report
-python3 -m http.server 8000
+python3 server.py
 ```
 
 Then open http://localhost:8000 in your browser.

@@ -1,5 +1,8 @@
-const REDDIT_FEED_URL = "https://www.reddit.com/.json?limit=100&raw_json=1";
 const POST_LIMIT = 100;
+// Same-origin endpoint served by server.py, which fetches Reddit server-side
+// so the browser never has to make a cross-origin request (which Reddit blocks).
+const FEED_URL = "/api/reddit-front-page";
+const FETCH_TIMEOUT_MS = 8000;
 
 const statusEl = document.getElementById("status");
 const heroSection = document.getElementById("heroSection");
@@ -113,26 +116,40 @@ function renderTopnav(posts) {
   topnav.innerHTML = subreddits.map((name) => `<span>r/${escapeHtml(name)}</span>`).join("");
 }
 
+async function fetchWithTimeout(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { cache: "no-store", signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchFrontPagePosts() {
+  // Cache-busting query param forces a fresh fetch on every page load.
+  const response = await fetchWithTimeout(`${FEED_URL}?_=${Date.now()}`);
+  if (!response.ok) {
+    throw new Error(`server responded with status ${response.status}`);
+  }
+  const payload = await response.json();
+  const posts = payload.data.children
+    .map((child) => child.data)
+    .filter((post) => !post.stickied)
+    .slice(0, POST_LIMIT);
+  if (posts.length === 0) {
+    throw new Error("no posts were returned");
+  }
+  return posts;
+}
+
 async function loadFrontPage() {
   setEditionDate();
   statusEl.textContent = "Fetching the latest stories…";
   statusEl.classList.remove("error");
 
   try {
-    // Cache-busting query param forces a fresh fetch on every page load.
-    const response = await fetch(`${REDDIT_FEED_URL}&_=${Date.now()}`, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Reddit responded with status ${response.status}`);
-    }
-    const payload = await response.json();
-    const posts = payload.data.children
-      .map((child) => child.data)
-      .filter((post) => !post.stickied)
-      .slice(0, POST_LIMIT);
-
-    if (posts.length === 0) {
-      throw new Error("No posts were returned.");
-    }
+    const posts = await fetchFrontPagePosts();
 
     renderTopnav(posts);
     renderHero(posts[0], posts.slice(1, 5));
@@ -141,7 +158,7 @@ async function loadFrontPage() {
 
     statusEl.textContent = `Showing ${posts.length} stories from Reddit's front page, updated ${new Date().toLocaleTimeString()}.`;
   } catch (error) {
-    statusEl.textContent = `Could not load Reddit's front page: ${error.message}. Try refreshing, or serve this folder over HTTP instead of opening it directly as a file.`;
+    statusEl.textContent = `Could not load Reddit's front page: ${error.message}. Make sure you started this app with "python3 server.py" and refresh to retry.`;
     statusEl.classList.add("error");
   }
 }
