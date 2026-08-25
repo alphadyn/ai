@@ -130,7 +130,8 @@ async function fetchFrontPagePosts() {
   // Cache-busting query param forces a fresh fetch on every page load.
   const response = await fetchWithTimeout(`${FEED_URL}?_=${Date.now()}`);
   if (!response.ok) {
-    throw new Error(`server responded with status ${response.status}`);
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error || `server responded with status ${response.status}`);
   }
   const payload = await response.json();
   const posts = payload.data.children

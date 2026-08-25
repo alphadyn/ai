@@ -24,8 +24,28 @@ python3 server.py
 Then open [http://localhost:8000](http://localhost:8000) in a browser. Refresh the page to pull a new
 set of articles.
 
+### If you see a "403 Blocked" error
+Reddit aggressively blocks anonymous, non-browser requests from many networks — especially cloud,
+hosting, and VPN IP ranges. If that happens, use Reddit's official OAuth API instead, which is rarely
+blocked:
+
+1. Create a free app at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) — choose type
+   "installed app" or "script" and note the client ID shown under the app name (and the secret, if
+   using a "script" app).
+2. Set the credentials as environment variables before starting the server:
+
+   ```bash
+   export REDDIT_CLIENT_ID="your-client-id"
+   export REDDIT_CLIENT_SECRET="your-client-secret"   # leave unset/empty for "installed app" apps
+   python3 server.py
+   ```
+
+`server.py` automatically uses OAuth when `REDDIT_CLIENT_ID` is set, and falls back to the direct
+request otherwise.
+
 ## Main files
 - `server.py` — serves the static files and proxies `/api/reddit-front-page` to Reddit server-side
+  (via OAuth when credentials are set, or a direct request otherwise)
 - `index.html` — page structure (masthead, hero, story grid, headline list)
 - `app.js` — fetches the front page JSON from the local server and renders it into the Reuters-style layout
 - `styles.css` — Reuters-inspired styling (serif headlines, orange wordmark, grid layout)
