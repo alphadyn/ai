@@ -25,6 +25,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [resume](resume/) - A polished HTML resume for an AI software engineer.
 - [secure_file_tool](secure_file_tool/) - A file encryption utility with command-line and GUI interfaces.
 - [sp500_quarterly_returns](sp500_quarterly_returns/) - A simple report highlighting strong S&P 500 quarterly performers.
+- [vcard_generator_app](vcard_generator_app/) - A browser app that turns a contact form (including an optional profile picture) into a downloadable vCard (.vcf) file and a matching downloadable QR code.
 
 ## How to use
 
@@ -45,6 +46,15 @@ For the enterprise dashboard, run a local server from the app folder:
 
 ```bash
 cd enterprise_executive_dashboard
+python3 -m http.server 8000
+```
+
+Then open http://localhost:8000 in your browser.
+
+For the contact card generator, run a local server from the app folder:
+
+```bash
+cd vcard_generator_app
 python3 -m http.server 8000
 ```
 

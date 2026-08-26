@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Card Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Digital Business Card</p>
+          <h1>Contact Card Generator</h1>
+          <p class="subtitle">
+            Fill in the details below to build a standard vCard (.vcf) file
+            and a matching QR code that others can scan to save your contact.
+          </p>
+        </div>
+      </header>
+
+      <main class="app-card">
+        <form id="contactForm" class="form-grid" novalidate>
+          <fieldset class="form-section">
+            <legend>Name</legend>
+            <div class="field-row">
+              <label class="field">
+                <span>First name</span>
+                <input type="text" id="firstName" name="firstName" autocomplete="given-name" />
+              </label>
+              <label class="field">
+                <span>Middle name</span>
+                <input type="text" id="middleName" name="middleName" autocomplete="additional-name" />
+              </label>
+              <label class="field">
+                <span>Last name</span>
+                <input type="text" id="lastName" name="lastName" autocomplete="family-name" />
+              </label>
+            </div>
+            <div class="field-row">
+              <div class="field photo-field">
+                <span>Profile picture</span>
+                <div class="photo-picker">
+                  <img id="photoPreview" class="photo-preview" alt="Profile picture preview" hidden />
+                  <div class="photo-picker-controls">
+                    <input type="file" id="photoInput" name="photo" accept="image/*" />
+                    <button type="button" id="removePhotoBtn" class="btn-secondary" hidden>Remove photo</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>Work</legend>
+            <div class="field-row">
+              <label class="field">
+                <span>Organization</span>
+                <input type="text" id="organization" name="organization" autocomplete="organization" />
+              </label>
+              <label class="field">
+                <span>Job title</span>
+                <input type="text" id="jobTitle" name="jobTitle" autocomplete="organization-title" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>Contact</legend>
+            <div class="field-row">
+              <label class="field">
+                <span>Mobile phone</span>
+                <input type="tel" id="phoneMobile" name="phoneMobile" autocomplete="tel" />
+              </label>
+              <label class="field">
+                <span>Work phone</span>
+                <input type="tel" id="phoneWork" name="phoneWork" autocomplete="tel" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field">
+                <span>Email</span>
+                <input type="email" id="email" name="email" autocomplete="email" />
+              </label>
+              <label class="field">
+                <span>Website</span>
+                <input type="url" id="website" name="website" placeholder="https://" autocomplete="url" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>Address</legend>
+            <div class="field-row">
+              <label class="field field-wide">
+                <span>Street</span>
+                <input type="text" id="street" name="street" autocomplete="street-address" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field">
+                <span>City</span>
+                <input type="text" id="city" name="city" autocomplete="address-level2" />
+              </label>
+              <label class="field">
+                <span>State / Region</span>
+                <input type="text" id="state" name="state" autocomplete="address-level1" />
+              </label>
+              <label class="field">
+                <span>Postal code</span>
+                <input type="text" id="postalCode" name="postalCode" autocomplete="postal-code" />
+              </label>
+              <label class="field">
+                <span>Country</span>
+                <input type="text" id="country" name="country" autocomplete="country-name" />
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-section">
+            <legend>Other details</legend>
+            <div class="field-row">
+              <label class="field">
+                <span>Birthday</span>
+                <input type="date" id="birthday" name="birthday" autocomplete="bday" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field field-wide">
+                <span>Notes</span>
+                <textarea id="notes" name="notes" rows="3"></textarea>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">Generate contact card</button>
+            <button type="reset" class="btn-secondary">Clear form</button>
+          </div>
+        </form>
+
+        <section class="result-panel" id="resultPanel" hidden>
+          <h2>Your contact card</h2>
+          <div class="result-grid">
+            <div class="qr-box">
+              <div id="qrCode" class="qr-code"></div>
+              <p id="qrNote" class="qr-note" hidden></p>
+              <button type="button" id="downloadQrBtn" class="btn-secondary">Download QR code</button>
+            </div>
+            <div class="vcf-box">
+              <p class="vcf-name" id="previewName">&nbsp;</p>
+              <pre id="vcfPreview" class="vcf-preview"></pre>
+              <button type="button" id="downloadVcfBtn" class="btn-primary">Download .vcf file</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
