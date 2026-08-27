@@ -30,8 +30,9 @@ Then open http://localhost:8000 in your browser.
 
 ## How to use
 1. **Inspect Point** (default mode): click anywhere on the globe. A marker appears and the side
-   panel shows the latitude, longitude, hemisphere, and country (if the point falls on land) for
-   that point, along with a link to open that country's Wikipedia article in a new tab.
+   panel shows the latitude, longitude, hemisphere, and country (with its flag, if the point
+   falls on land) for that point, along with a link to open that country's Wikipedia article in
+   a new tab.
 2. Switch to **Measure Distance** mode using the toggle at the top. Click a first point (green
    marker), then a second point (yellow marker). An arc is drawn between them and the panel shows
    the surface distance. Clicking again after two points are set starts a new measurement.
@@ -52,3 +53,5 @@ Then open http://localhost:8000 in your browser.
   and rendered as line segments just above the globe surface.
 - The same GeoJSON dataset is used to determine which country (if any) a clicked point falls
   within, via a point-in-polygon test; ocean/unclaimed points show no country or Wikipedia link.
+- Country flags are rendered as Unicode flag emoji from a built-in country-name-to-ISO-code
+  table, so no extra flag images need to be downloaded.
