@@ -46,3 +46,5 @@ Then open http://localhost:8000 in your browser.
   geocoding service is used.
 - Distance uses the standard great-circle formula (angular separation between two unit vectors
   multiplied by Earth's mean radius, 6371 km).
+- Country boundaries are loaded from a public GeoJSON dataset of national borders at page load
+  and rendered as line segments just above the globe surface.
