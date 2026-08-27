@@ -9,7 +9,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [car_sketch_project](car_sketch_project/) - Convert car photos to professional pencil sketch artwork using advanced computer vision techniques.
 - [checkin_map_app](checkin_map_app/) - A browser app for checking in known locations by name on an interactive map, keeping a history of the last 10 check-ins, and mapping GPS data from uploaded photos.
 - [crawler_indexer](crawler_indexer/) - A Python-based web crawler and indexer with domain-scoped crawling and duplicate-page filtering.
-- [earth_3d_explorer](earth_3d_explorer/) - An interactive 3D globe (Three.js) with country boundaries, point inspection, and great-circle distance measurement between any two clicked surface points.
+- [earth_3d_explorer](earth_3d_explorer/) - An interactive 3D globe (Three.js) with country boundaries, point inspection (with country name and Wikipedia link), and great-circle distance measurement between any two clicked surface points.
 - [enterprise_executive_dashboard](enterprise_executive_dashboard/) - A multi-page executive operations dashboard for a large-cap company with KPI tracking, revenue analytics, operations visibility, and AI strategy views.
 - [pencil_sketch_app](pencil_sketch_app/) - A browser app that lets users upload an image and generate black-and-white or color pencil sketches with adjustable accuracy, pencil stroke length, brightness, and RGB color filters.
 - [ehr_web_app](ehr_web_app/) - A polished single-page electronic health record web app with patient search, vitals, medications, appointments, and encounter documentation.

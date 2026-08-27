@@ -9,7 +9,8 @@ distance between any two points you click.
   earth image, drag-to-rotate and scroll/pinch-to-zoom via `OrbitControls`
 - **Country boundaries** overlaid on the globe surface, loaded from a public GeoJSON dataset
 - **Inspect Point mode**: click anywhere on the globe to drop a marker and see its latitude,
-  longitude, and hemisphere
+  longitude, hemisphere, and the country it falls within (with a link to that country's
+  Wikipedia article, opened in a new tab)
 - **Measure Distance mode**: click two points on the globe to drop markers, draw a great-circle
   arc between them, and see the surface distance in kilometers and miles
 - Distance is computed from the true angular separation between the two points on the sphere
@@ -29,7 +30,8 @@ Then open http://localhost:8000 in your browser.
 
 ## How to use
 1. **Inspect Point** (default mode): click anywhere on the globe. A marker appears and the side
-   panel shows the latitude, longitude, and hemisphere for that point.
+   panel shows the latitude, longitude, hemisphere, and country (if the point falls on land) for
+   that point, along with a link to open that country's Wikipedia article in a new tab.
 2. Switch to **Measure Distance** mode using the toggle at the top. Click a first point (green
    marker), then a second point (yellow marker). An arc is drawn between them and the panel shows
    the surface distance. Clicking again after two points are set starts a new measurement.
@@ -48,3 +50,5 @@ Then open http://localhost:8000 in your browser.
   multiplied by Earth's mean radius, 6371 km).
 - Country boundaries are loaded from a public GeoJSON dataset of national borders at page load
   and rendered as line segments just above the globe surface.
+- The same GeoJSON dataset is used to determine which country (if any) a clicked point falls
+  within, via a point-in-polygon test; ocean/unclaimed points show no country or Wikipedia link.

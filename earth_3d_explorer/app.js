@@ -14,6 +14,8 @@ const inspectDetails = document.getElementById("inspectDetails");
 const detailLat = document.getElementById("detailLat");
 const detailLon = document.getElementById("detailLon");
 const detailHemisphere = document.getElementById("detailHemisphere");
+const detailCountry = document.getElementById("detailCountry");
+const wikipediaLink = document.getElementById("wikipediaLink");
 const pointAEl = document.getElementById("pointA");
 const pointBEl = document.getElementById("pointB");
 const distanceValueEl = document.getElementById("distanceValue");
@@ -24,6 +26,7 @@ let measurePoints = []; // holds up to two { vector, lat, lon } entries
 const measureMarkers = [];
 let measureLine = null;
 let inspectMarker = null;
+let countryFeatures = []; // GeoJSON features used for both the border overlay and name lookup
 
 // --- Scene setup ---------------------------------------------------------
 const scene = new THREE.Scene();
@@ -110,6 +113,7 @@ async function loadCountryBorders() {
   const response = await fetch(COUNTRY_BORDERS_URL);
   if (!response.ok) throw new Error(`Failed to fetch country borders: ${response.status}`);
   const geojson = await response.json();
+  countryFeatures = geojson.features;
 
   const positions = [];
   for (const feature of geojson.features) {
@@ -137,6 +141,50 @@ async function loadCountryBorders() {
 loadCountryBorders().catch((error) => {
   console.warn("Country borders could not be loaded:", error);
 });
+
+// --- Country lookup (point-in-polygon over the loaded GeoJSON) ------------
+/** Even-odd ray-casting test for whether [lon, lat] is inside a GeoJSON linear ring. */
+function isPointInRing(lon, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const crosses = yi > lat !== yj > lat;
+    if (crosses && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/** A GeoJSON Polygon's coordinates are [outerRing, ...holeRings]. */
+function isPointInPolygonRings(lon, lat, rings) {
+  if (!isPointInRing(lon, lat, rings[0])) return false;
+  for (let i = 1; i < rings.length; i++) {
+    if (isPointInRing(lon, lat, rings[i])) return false; // inside a hole
+  }
+  return true;
+}
+
+/** Find the name of the country whose polygon contains the given lat/lon, if any. */
+function findCountryName(lat, lon) {
+  for (const feature of countryFeatures) {
+    const geometry = feature.geometry;
+    if (!geometry) continue;
+    if (geometry.type === "Polygon") {
+      if (isPointInPolygonRings(lon, lat, geometry.coordinates)) {
+        return feature.properties?.name ?? null;
+      }
+    } else if (geometry.type === "MultiPolygon") {
+      for (const polygon of geometry.coordinates) {
+        if (isPointInPolygonRings(lon, lat, polygon)) {
+          return feature.properties?.name ?? null;
+        }
+      }
+    }
+  }
+  return null;
+}
 
 function resizeRendererToDisplaySize() {
   const width = container.clientWidth;
@@ -286,6 +334,17 @@ function handleInspectClick(point) {
   detailLat.textContent = `${lat.toFixed(3)}\u00B0`;
   detailLon.textContent = `${lon.toFixed(3)}\u00B0`;
   detailHemisphere.textContent = hemisphereLabel(lat, lon);
+
+  const countryName = findCountryName(lat, lon);
+  detailCountry.textContent = countryName ?? "Ocean / unclaimed";
+  if (countryName) {
+    const title = encodeURIComponent(countryName.replace(/ /g, "_"));
+    wikipediaLink.href = `https://en.wikipedia.org/wiki/${title}`;
+    wikipediaLink.textContent = `View "${countryName}" on Wikipedia \u2197`;
+    wikipediaLink.classList.remove("hidden");
+  } else {
+    wikipediaLink.classList.add("hidden");
+  }
 }
 
 function handleMeasureClick(point) {
