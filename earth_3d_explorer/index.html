@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Earth Explorer</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Interactive Globe</p>
+          <h1>3D Earth Explorer</h1>
+        </div>
+        <div class="mode-toggle" role="group" aria-label="Interaction mode">
+          <button id="inspectModeBtn" class="mode-btn active" type="button">Inspect Point</button>
+          <button id="measureModeBtn" class="mode-btn" type="button">Measure Distance</button>
+        </div>
+      </header>
+
+      <main class="app-grid">
+        <section class="globe-panel">
+          <div id="globeContainer"></div>
+          <p class="hint">Drag to rotate &middot; scroll or pinch to zoom &middot; click the surface to interact</p>
+        </section>
+
+        <aside class="side-panel">
+          <div id="inspectPanel" class="panel">
+            <h2>Point Details</h2>
+            <p id="inspectEmpty" class="empty-state">Click anywhere on the globe to inspect that location.</p>
+            <dl id="inspectDetails" class="details-list hidden">
+              <dt>Latitude</dt>
+              <dd id="detailLat">&mdash;</dd>
+              <dt>Longitude</dt>
+              <dd id="detailLon">&mdash;</dd>
+              <dt>Hemisphere</dt>
+              <dd id="detailHemisphere">&mdash;</dd>
+            </dl>
+          </div>
+
+          <div id="measurePanel" class="panel hidden">
+            <h2>Measure Distance</h2>
+            <p class="hint">Click two points on the globe to measure the great-circle distance between them.</p>
+            <ol class="point-list">
+              <li>
+                <span class="point-label">Point A</span>
+                <span id="pointA" class="point-value">&mdash;</span>
+              </li>
+              <li>
+                <span class="point-label">Point B</span>
+                <span id="pointB" class="point-value">&mdash;</span>
+              </li>
+            </ol>
+            <div class="distance-result">
+              <span class="distance-label">Surface Distance</span>
+              <span id="distanceValue" class="distance-value">&mdash;</span>
+            </div>
+            <button id="resetMeasureBtn" class="secondary-btn" type="button">Reset Points</button>
+          </div>
+        </aside>
+      </main>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
