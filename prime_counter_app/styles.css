@@ -137,6 +137,22 @@ button:active {
   font-weight: 700;
 }
 
+.method-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(91, 140, 255, 0.25);
+  color: var(--accent);
+}
+
+.method-badge.estimated {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
 .log-section {
   margin-top: 2.5rem;
 }

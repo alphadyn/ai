@@ -9,17 +9,16 @@
 <body>
   <main class="app-shell">
     <h1>Prime Counter</h1>
-    <p class="subtitle">Enter a positive integer to count how many primes exist up to it.</p>
+    <p class="subtitle">Enter a positive integer (up to 10E20) to count how many primes exist up to it. Values too large to compute exactly within 5 seconds are estimated.</p>
 
     <form id="prime-form" class="input-row">
       <label for="limit-input">Upper bound (N)</label>
       <input
         id="limit-input"
-        type="number"
-        min="0"
-        step="1"
+        type="text"
         inputmode="numeric"
-        placeholder="e.g. 1000000"
+        autocomplete="off"
+        placeholder="e.g. 1000000 or 1e20"
         required
       />
       <button type="submit" id="compute-btn">Compute</button>
@@ -31,6 +30,7 @@
       <div class="result-item">
         <span class="result-label">Primes up to N</span>
         <span id="prime-count" class="result-value">0</span>
+        <span id="result-method" class="method-badge"></span>
       </div>
       <div class="result-item">
         <span class="result-label">Time taken</span>
@@ -50,6 +50,7 @@
               <th>#</th>
               <th>N</th>
               <th>Prime Count</th>
+              <th>Method</th>
               <th>Time</th>
               <th>When</th>
             </tr>
