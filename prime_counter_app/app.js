@@ -15,6 +15,8 @@ const logBody = document.getElementById("log-body");
 const logEmpty = document.getElementById("log-empty");
 const logCountEl = document.getElementById("log-count");
 const clearLogBtn = document.getElementById("clear-log-btn");
+const densityChart = document.getElementById("density-chart");
+const chartEmpty = document.getElementById("chart-empty");
 
 // Parses plain integers or scientific notation (e.g. "1e20") into an exact BigInt.
 function parseLimitInput(raw) {
@@ -129,6 +131,85 @@ function renderLog(log) {
       <td>${entry.when}</td>
     `;
     logBody.appendChild(row);
+  });
+
+  drawDensityChart(log);
+}
+
+// Scatter plot of N (log-scale x-axis) vs. prime density percentage (primeCount / N * 100).
+function drawDensityChart(log) {
+  const ctx = densityChart.getContext("2d");
+  const { width, height } = densityChart;
+  ctx.clearRect(0, 0, width, height);
+
+  const points = log
+    .map((entry) => {
+      const n = Number(BigInt(entry.limit));
+      return { n, ratio: n > 0 ? (entry.primeCount / n) * 100 : 0 };
+    })
+    .filter((p) => p.n > 0);
+
+  densityChart.hidden = points.length === 0;
+  chartEmpty.hidden = points.length > 0;
+  if (points.length === 0) return;
+
+  const margin = { top: 16, right: 20, bottom: 42, left: 64 };
+  const plotW = width - margin.left - margin.right;
+  const plotH = height - margin.top - margin.bottom;
+
+  const logNs = points.map((p) => Math.log10(p.n));
+  const minLogN = Math.min(...logNs);
+  const maxLogN = Math.max(...logNs);
+  const logSpan = maxLogN - minLogN || 1;
+  const maxRatio = Math.max(...points.map((p) => p.ratio), 0.001);
+
+  const xFor = (logN) => margin.left + ((logN - minLogN) / logSpan) * plotW;
+  const yFor = (ratio) => margin.top + plotH - (ratio / maxRatio) * plotH;
+
+  ctx.strokeStyle = "#2a2f4a";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(margin.left, margin.top);
+  ctx.lineTo(margin.left, margin.top + plotH);
+  ctx.lineTo(margin.left + plotW, margin.top + plotH);
+  ctx.stroke();
+
+  ctx.fillStyle = "#9aa0c3";
+  ctx.font = "11px sans-serif";
+
+  ctx.textAlign = "right";
+  const yTicks = 4;
+  for (let i = 0; i <= yTicks; i++) {
+    const ratioVal = (maxRatio / yTicks) * i;
+    const y = yFor(ratioVal);
+    ctx.strokeStyle = "#2a2f4a";
+    ctx.beginPath();
+    ctx.moveTo(margin.left - 4, y);
+    ctx.lineTo(margin.left, y);
+    ctx.stroke();
+    ctx.fillText(`${ratioVal.toFixed(ratioVal < 1 ? 3 : 1)}%`, margin.left - 8, y + 3);
+  }
+
+  ctx.textAlign = "center";
+  const xTicks = Math.min(5, points.length > 1 ? 5 : 1);
+  for (let i = 0; i <= xTicks; i++) {
+    const logVal = minLogN + (logSpan / xTicks) * i;
+    const x = xFor(logVal);
+    ctx.strokeStyle = "#2a2f4a";
+    ctx.beginPath();
+    ctx.moveTo(x, margin.top + plotH);
+    ctx.lineTo(x, margin.top + plotH + 4);
+    ctx.stroke();
+    ctx.fillText(`10^${logVal.toFixed(1)}`, x, margin.top + plotH + 16);
+  }
+
+  ctx.fillStyle = "#5b8cff";
+  points.forEach((p) => {
+    const x = xFor(Math.log10(p.n));
+    const y = yFor(p.ratio);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
   });
 }
 

@@ -43,6 +43,13 @@
         <h2>Recent Results <span id="log-count" class="log-count">(0)</span></h2>
         <button id="clear-log-btn" type="button" class="btn-secondary">Clear Log</button>
       </div>
+
+      <div class="chart-wrap">
+        <h3 class="chart-title">Prime Density (Prime Count / N) vs. N</h3>
+        <canvas id="density-chart" width="900" height="320" aria-label="Chart of prime density percentage versus N"></canvas>
+        <p id="chart-empty" class="log-empty">No results yet. Compute a value above to see it charted here.</p>
+      </div>
+
       <div class="table-wrap">
         <table id="log-table">
           <thead>

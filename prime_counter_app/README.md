@@ -16,11 +16,13 @@ keeps a log of the last 100 results.
   computation time
 - Persists the last 100 results (input, count, method, elapsed time,
   timestamp) in the browser's `localStorage` and renders them in a table
+- Plots a chart of N (log-scale x-axis) versus prime density
+  (`prime count / N` as a percentage, y-axis) across the logged results
 
 ## Files
 - `index.html` - page structure and layout
 - `styles.css` - styling
-- `app.js` - sieve/estimate algorithms, timing, and result log logic
+- `app.js` - sieve/estimate algorithms, timing, result log, and density chart logic
 
 ## Usage
 Open `index.html` in a browser (no build step or server required):
