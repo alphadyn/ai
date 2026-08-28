@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prime Counter</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <h1>Prime Counter</h1>
+    <p class="subtitle">Enter a positive integer to count how many primes exist up to it.</p>
+
+    <form id="prime-form" class="input-row">
+      <label for="limit-input">Upper bound (N)</label>
+      <input
+        id="limit-input"
+        type="number"
+        min="0"
+        step="1"
+        inputmode="numeric"
+        placeholder="e.g. 1000000"
+        required
+      />
+      <button type="submit" id="compute-btn">Compute</button>
+    </form>
+
+    <p id="error-msg" class="error-msg" role="alert"></p>
+
+    <section id="result-card" class="result-card" hidden>
+      <div class="result-item">
+        <span class="result-label">Primes up to N</span>
+        <span id="prime-count" class="result-value">0</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Time taken</span>
+        <span id="elapsed-time" class="result-value">0 ms</span>
+      </div>
+    </section>
+
+    <section class="log-section">
+      <div class="log-header">
+        <h2>Recent Results <span id="log-count" class="log-count">(0)</span></h2>
+        <button id="clear-log-btn" type="button" class="btn-secondary">Clear Log</button>
+      </div>
+      <div class="table-wrap">
+        <table id="log-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>N</th>
+              <th>Prime Count</th>
+              <th>Time</th>
+              <th>When</th>
+            </tr>
+          </thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+      <p id="log-empty" class="log-empty">No results yet. Compute a value above to see it logged here.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

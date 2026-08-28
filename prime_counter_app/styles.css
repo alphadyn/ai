@@ -1,0 +1,200 @@
+:root {
+  --bg: #0f1220;
+  --panel: #171b2e;
+  --accent: #5b8cff;
+  --accent-soft: rgba(91, 140, 255, 0.15);
+  --text: #e8eaf6;
+  --text-dim: #9aa0c3;
+  --error: #ff6b6b;
+  --border: #2a2f4a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1.25rem;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 720px;
+}
+
+h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.9rem;
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--text-dim);
+}
+
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.input-row label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+
+#limit-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.65rem 0.75rem;
+  background: #0d1022;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+#limit-input:focus {
+  outline: 2px solid var(--accent);
+}
+
+button {
+  cursor: pointer;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  border: none;
+  padding: 0.65rem 1.1rem;
+  transition: transform 0.05s ease, opacity 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#compute-btn {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.btn-secondary:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.error-msg {
+  min-height: 1.2rem;
+  color: var(--error);
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+}
+
+.result-card {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.result-item {
+  flex: 1;
+  min-width: 200px;
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+.result-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+}
+
+.result-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.log-section {
+  margin-top: 2.5rem;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.log-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.log-count {
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  color: var(--text-dim);
+  font-weight: 600;
+  background: var(--panel);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 1.25rem 0 0;
+  font-size: 0.9rem;
+}
