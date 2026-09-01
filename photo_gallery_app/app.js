@@ -25,11 +25,32 @@ const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
 const playBtn = document.getElementById("play-btn");
 const progressFill = document.getElementById("progress-fill");
+const carousel = document.getElementById("carousel");
 
 let current = 0;
 let playing = true;
 let timerId = null;
 let progressStart = null;
+let swipeStartX = 0;
+const SWIPE_THRESHOLD = 50;
+
+function handleSwipeStart(clientX) {
+  swipeStartX = clientX;
+}
+
+function handleSwipeEnd(clientX) {
+  const deltaX = clientX - swipeStartX;
+
+  if (Math.abs(deltaX) < SWIPE_THRESHOLD) {
+    return;
+  }
+
+  if (deltaX < 0) {
+    next();
+  } else {
+    prev();
+  }
+}
 
 function buildSlides() {
   PHOTOS.forEach((photo, index) => {
@@ -116,6 +137,47 @@ function togglePlay() {
 prevBtn.addEventListener("click", prev);
 nextBtn.addEventListener("click", next);
 playBtn.addEventListener("click", togglePlay);
+
+carousel.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+    handleSwipeStart(event.clientX);
+  },
+  { passive: true }
+);
+
+carousel.addEventListener(
+  "pointerup",
+  (event) => {
+    handleSwipeEnd(event.clientX);
+  },
+  { passive: true }
+);
+
+carousel.addEventListener(
+  "touchstart",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (touch) {
+      handleSwipeStart(touch.clientX);
+    }
+  },
+  { passive: true }
+);
+
+carousel.addEventListener(
+  "touchend",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (touch) {
+      handleSwipeEnd(touch.clientX);
+    }
+  },
+  { passive: true }
+);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") prev();

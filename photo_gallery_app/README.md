@@ -10,6 +10,7 @@ A browser-based web app that fetches 10 new random photos from the web on every 
 - Play / Pause toggle
 - Clickable thumbnail strip to jump to any photo
 - Keyboard navigation (Left / Right arrow keys)
+- Mobile swipe gestures to move between photos
 - Responsive layout for desktop and mobile
 
 ## Project Structure
@@ -26,7 +27,8 @@ No build tools or installation are required. An internet connection is required 
 2. Refresh the page to get a brand-new set of 10 photos.
 3. The gallery rotates automatically every 4 seconds.
 4. Use the arrow buttons, thumbnails, or Left/Right keys to navigate manually.
-5. Click the pause button to stop auto-rotation.
+5. On phones and tablets, swipe left or right on the image to move between photos.
+6. Click the pause button to stop auto-rotation.
 
 ## Test the project
 

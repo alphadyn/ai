@@ -20,7 +20,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [index_fund_report](index_fund_report/) - An index fund overview grouped by risk profile.
 - [largest_companies_report](largest_companies_report/) - A polished report of 100 of the world’s largest public companies with market-cap and website details.
 - [legal_docketing_app](legal_docketing_app/) - A fully functional legal docketing web app for tracking matters, deadlines, and tasks.
-- [photo_gallery_app](photo_gallery_app/) - A rotating photo gallery that fetches a fresh set of 10 random photos from the web on every page load.
+- [photo_gallery_app](photo_gallery_app/) - A rotating photo gallery that fetches a fresh set of 10 random photos from the web on every page load and supports swipe navigation on mobile devices.
 - [prime_counter_app](prime_counter_app/) - A browser app that counts primes up to a user-supplied number (up to 10E20, using an exact sieve or a time-budgeted estimate), reports computation time, logs the last 100 results, and charts prime density vs. N.
 - [prime_numbers](prime_numbers/) - A small Python utility for finding and analyzing prime numbers.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) - A polished report of 20 occupations with the highest approximate median incomes.
