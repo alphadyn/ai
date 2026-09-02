@@ -225,6 +225,7 @@ carousel.addEventListener(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    carousel.setPointerCapture(event.pointerId);
     handleSwipeStart(event.clientX, event.clientY);
   },
   { passive: true }
@@ -234,27 +235,8 @@ carousel.addEventListener(
   "pointerup",
   (event) => {
     handleSwipeEnd(event.clientX, event.clientY);
-  },
-  { passive: true }
-);
-
-carousel.addEventListener(
-  "touchstart",
-  (event) => {
-    const touch = event.changedTouches[0];
-    if (touch) {
-      handleSwipeStart(touch.clientX, touch.clientY);
-    }
-  },
-  { passive: true }
-);
-
-carousel.addEventListener(
-  "touchend",
-  (event) => {
-    const touch = event.changedTouches[0];
-    if (touch) {
-      handleSwipeEnd(touch.clientX, touch.clientY);
+    if (carousel.hasPointerCapture(event.pointerId)) {
+      carousel.releasePointerCapture(event.pointerId);
     }
   },
   { passive: true }
@@ -267,6 +249,7 @@ fullscreenModal.addEventListener(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    fullscreenModal.setPointerCapture(event.pointerId);
     handleFullscreenSwipeStart(event.clientX, event.clientY);
   },
   { passive: true }
@@ -276,27 +259,8 @@ fullscreenModal.addEventListener(
   "pointerup",
   (event) => {
     handleFullscreenSwipeEnd(event.clientX, event.clientY);
-  },
-  { passive: true }
-);
-
-fullscreenModal.addEventListener(
-  "touchstart",
-  (event) => {
-    const touch = event.changedTouches[0];
-    if (touch) {
-      handleFullscreenSwipeStart(touch.clientX, touch.clientY);
-    }
-  },
-  { passive: true }
-);
-
-fullscreenModal.addEventListener(
-  "touchend",
-  (event) => {
-    const touch = event.changedTouches[0];
-    if (touch) {
-      handleFullscreenSwipeEnd(touch.clientX, touch.clientY);
+    if (fullscreenModal.hasPointerCapture(event.pointerId)) {
+      fullscreenModal.releasePointerCapture(event.pointerId);
     }
   },
   { passive: true }
