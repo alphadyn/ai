@@ -24,9 +24,21 @@
 
       <div class="carousel-overlay">
         <span class="caption" id="caption"></span>
-        <button class="play-btn" id="play-btn" aria-label="Pause rotation">&#10073;&#10073;</button>
+        <div class="overlay-controls">
+          <button class="maximize-btn" id="maximize-btn" aria-label="Maximize photo">⛶</button>
+          <button class="play-btn" id="play-btn" aria-label="Pause rotation">&#10073;&#10073;</button>
+        </div>
       </div>
     </section>
+
+    <!-- Fullscreen modal for maximized photo -->
+    <div class="fullscreen-modal" id="fullscreen-modal">
+      <div class="fullscreen-content">
+        <img class="fullscreen-img" id="fullscreen-img" src="" alt="Maximized photo" />
+        <button class="close-modal-btn" id="close-modal-btn" aria-label="Close fullscreen">✕</button>
+        <div class="fullscreen-caption" id="fullscreen-caption"></div>
+      </div>
+    </div>
 
     <div class="progress-bar" id="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
 

@@ -26,22 +26,36 @@ const nextBtn = document.getElementById("next-btn");
 const playBtn = document.getElementById("play-btn");
 const progressFill = document.getElementById("progress-fill");
 const carousel = document.getElementById("carousel");
+const maximizeBtn = document.getElementById("maximize-btn");
+const fullscreenModal = document.getElementById("fullscreen-modal");
+const fullscreenImg = document.getElementById("fullscreen-img");
+const closeModalBtn = document.getElementById("close-modal-btn");
+const fullscreenCaption = document.getElementById("fullscreen-caption");
 
 let current = 0;
 let playing = true;
 let timerId = null;
 let progressStart = null;
 let swipeStartX = 0;
+let swipeStartY = 0;
+let wasPlayingBeforeMaximize = true;
 const SWIPE_THRESHOLD = 50;
 
-function handleSwipeStart(clientX) {
+function handleSwipeStart(clientX, clientY) {
   swipeStartX = clientX;
+  swipeStartY = clientY;
 }
 
-function handleSwipeEnd(clientX) {
+function handleSwipeEnd(clientX, clientY) {
   const deltaX = clientX - swipeStartX;
+  const deltaY = clientY - swipeStartY;
 
-  if (Math.abs(deltaX) < SWIPE_THRESHOLD) {
+  if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) {
+    return;
+  }
+
+  // If vertical swipe is more significant than horizontal, don't handle
+  if (Math.abs(deltaY) > Math.abs(deltaX)) {
     return;
   }
 
@@ -49,6 +63,35 @@ function handleSwipeEnd(clientX) {
     next();
   } else {
     prev();
+  }
+}
+
+function handleFullscreenSwipeStart(clientX, clientY) {
+  swipeStartX = clientX;
+  swipeStartY = clientY;
+}
+
+function handleFullscreenSwipeEnd(clientX, clientY) {
+  const deltaX = clientX - swipeStartX;
+  const deltaY = clientY - swipeStartY;
+
+  if (Math.abs(deltaX) < SWIPE_THRESHOLD && Math.abs(deltaY) < SWIPE_THRESHOLD) {
+    return;
+  }
+
+  // Vertical swipe (up or down) closes the modal
+  if (Math.abs(deltaY) > Math.abs(deltaX)) {
+    closeMaximized();
+    return;
+  }
+
+  // Horizontal swipe navigates through photos
+  if (deltaX < 0) {
+    next();
+    updateFullscreenImage();
+  } else {
+    prev();
+    updateFullscreenImage();
   }
 }
 
@@ -134,9 +177,47 @@ function togglePlay() {
   restartTimer();
 }
 
+function openMaximized() {
+  wasPlayingBeforeMaximize = playing;
+  if (playing) {
+    togglePlay();
+  }
+  fullscreenImg.src = PHOTOS[current].src;
+  fullscreenCaption.textContent = PHOTOS[current].caption;
+  fullscreenModal.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function updateFullscreenImage() {
+  fullscreenImg.src = PHOTOS[current].src;
+  fullscreenCaption.textContent = PHOTOS[current].caption;
+}
+
+function closeMaximized() {
+  fullscreenModal.classList.remove("active");
+  document.body.style.overflow = "auto";
+  if (wasPlayingBeforeMaximize && !playing) {
+    togglePlay();
+  }
+}
+
 prevBtn.addEventListener("click", prev);
 nextBtn.addEventListener("click", next);
 playBtn.addEventListener("click", togglePlay);
+maximizeBtn.addEventListener("click", openMaximized);
+closeModalBtn.addEventListener("click", closeMaximized);
+
+fullscreenModal.addEventListener("click", (event) => {
+  if (event.target === fullscreenModal) {
+    closeMaximized();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && fullscreenModal.classList.contains("active")) {
+    closeMaximized();
+  }
+});
 
 carousel.addEventListener(
   "pointerdown",
@@ -144,7 +225,7 @@ carousel.addEventListener(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
-    handleSwipeStart(event.clientX);
+    handleSwipeStart(event.clientX, event.clientY);
   },
   { passive: true }
 );
@@ -152,7 +233,7 @@ carousel.addEventListener(
 carousel.addEventListener(
   "pointerup",
   (event) => {
-    handleSwipeEnd(event.clientX);
+    handleSwipeEnd(event.clientX, event.clientY);
   },
   { passive: true }
 );
@@ -162,7 +243,7 @@ carousel.addEventListener(
   (event) => {
     const touch = event.changedTouches[0];
     if (touch) {
-      handleSwipeStart(touch.clientX);
+      handleSwipeStart(touch.clientX, touch.clientY);
     }
   },
   { passive: true }
@@ -173,7 +254,49 @@ carousel.addEventListener(
   (event) => {
     const touch = event.changedTouches[0];
     if (touch) {
-      handleSwipeEnd(touch.clientX);
+      handleSwipeEnd(touch.clientX, touch.clientY);
+    }
+  },
+  { passive: true }
+);
+
+// Fullscreen modal swipe handlers
+fullscreenModal.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+    handleFullscreenSwipeStart(event.clientX, event.clientY);
+  },
+  { passive: true }
+);
+
+fullscreenModal.addEventListener(
+  "pointerup",
+  (event) => {
+    handleFullscreenSwipeEnd(event.clientX, event.clientY);
+  },
+  { passive: true }
+);
+
+fullscreenModal.addEventListener(
+  "touchstart",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (touch) {
+      handleFullscreenSwipeStart(touch.clientX, touch.clientY);
+    }
+  },
+  { passive: true }
+);
+
+fullscreenModal.addEventListener(
+  "touchend",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (touch) {
+      handleFullscreenSwipeEnd(touch.clientX, touch.clientY);
     }
   },
   { passive: true }
