@@ -11,6 +11,9 @@ A browser-based web app that fetches 10 new random photos from the web on every 
 - Clickable thumbnail strip to jump to any photo
 - Keyboard navigation (Left / Right arrow keys)
 - Mobile swipe gestures to move between photos
+- **Maximize photo button** (⛶) to view full-screen images
+- **Full-screen navigation**: Swipe left/right to navigate, swipe up/down to exit
+- Carousel auto-rotation pauses when viewing maximized images
 - Responsive layout for desktop and mobile
 
 ## Project Structure
@@ -29,6 +32,13 @@ No build tools or installation are required. An internet connection is required 
 4. Use the arrow buttons, thumbnails, or Left/Right keys to navigate manually.
 5. On phones and tablets, swipe left or right on the image to move between photos.
 6. Click the pause button to stop auto-rotation.
+7. Click the maximize button (⛶) to view a photo full-screen.
+8. In full-screen mode:
+   - Swipe left to view the next photo
+   - Swipe right to view the previous photo
+   - Swipe up or down to exit full-screen mode
+   - Press ESC to exit full-screen mode
+   - Click outside the image to exit full-screen mode
 
 ## Test the project
 
