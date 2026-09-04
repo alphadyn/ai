@@ -170,6 +170,25 @@ body {
   padding: 0.6rem 0.75rem;
 }
 
+.checkin-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.checkin-preview {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.checkin-entry > div {
+  min-width: 0;
+}
+
 .checkin-list .empty-state {
   color: var(--muted);
   font-size: 0.85rem;

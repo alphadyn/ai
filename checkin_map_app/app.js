@@ -80,9 +80,12 @@ function renderCheckInList() {
   checkInListEl.innerHTML = checkIns
     .map(
       (checkIn) => `
-        <li>
-          <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
-          <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
+        <li class="checkin-entry">
+          ${checkIn.previewUrl ? `<img class="checkin-preview" src="${escapeHtml(checkIn.previewUrl)}" alt="${escapeHtml(checkIn.label)}" />` : ""}
+          <div>
+            <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
+            <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
+          </div>
         </li>`
     )
     .join("");
@@ -149,13 +152,35 @@ function convertDmsToDecimal(dms, ref) {
   return decimal;
 }
 
+function createPhotoPreview(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 96;
+        const scale = Math.min(1, maxSize / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", 0.78));
+      };
+      image.onerror = () => resolve("");
+      image.src = reader.result;
+    };
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
 function handlePhotoUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   setStatus(photoStatus, "Reading photo location data…");
 
-  EXIF.getData(file, function () {
+  EXIF.getData(file, async function () {
     const gpsLat = EXIF.getTag(this, "GPSLatitude");
     const gpsLatRef = EXIF.getTag(this, "GPSLatitudeRef");
     const gpsLon = EXIF.getTag(this, "GPSLongitude");
@@ -170,8 +195,9 @@ function handlePhotoUpload(event) {
     const lon = convertDmsToDecimal(gpsLon, gpsLonRef);
 
     const timestamp = new Date().toISOString();
+    const previewUrl = await createPhotoPreview(file);
     photoMarkers.push({ name: file.name, lat, lon });
-    addCheckIn({ lat, lon, label: file.name, timestamp, type: "photo" });
+    addCheckIn({ lat, lon, label: file.name, timestamp, type: "photo", previewUrl });
     renderPhotoList();
 
     L.marker([lat, lon], { icon: photoIcon() })
