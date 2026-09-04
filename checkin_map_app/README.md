@@ -7,8 +7,8 @@ your last 10 check-ins, and mapping the GPS location embedded in uploaded photos
 - **Check in** by typing a known place name (city, address, landmark); it's geocoded into coordinates
   and dropped as a pin on an interactive map — no browser location permission required
 - **Map display** built with [Leaflet](https://leafletjs.com/) and [CARTO](https://carto.com/basemaps) basemap tiles (built from OpenStreetMap data)
-- **Last 10 check-ins** are listed with place name, coordinates, and timestamp, and persisted in the
-  browser's local storage so they survive a page refresh
+- **Last 10 check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
+  persisted in the browser's local storage so they survive a page refresh
 - **Photo upload**: choose a JPEG photo with embedded GPS EXIF data and the app reads the coordinates
   and plots a separate marker for where the photo was taken
 - Clear status messages if a typed location can't be found or a photo has no embedded GPS data
@@ -30,7 +30,8 @@ Then open http://localhost:8000 in your browser.
    and click **Check In**. A marker appears on the map and the check-in is added to the top of the
    "Last 10 Check-Ins" list.
 2. Click **Choose a photo** and pick a JPEG photo taken with a phone or camera that recorded GPS data.
-   If the photo has location data, a marker appears on the map and the photo is added to the list below.
+  If the photo has location data, a marker appears on the map and the photo is added to both the
+  "Last 10 Check-Ins" history and the photo list below.
 
 ## Main files
 - `index.html` — page structure (map, check-in form, check-in list, photo upload)

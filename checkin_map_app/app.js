@@ -39,6 +39,14 @@ function saveCheckIns() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(checkIns));
 }
 
+function addCheckIn(checkIn) {
+  checkIns.unshift(checkIn);
+  checkIns = checkIns.slice(0, MAX_CHECKINS);
+  saveCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+}
+
 function setStatus(el, message, kind) {
   el.textContent = message;
   el.classList.remove("error", "success");
@@ -73,7 +81,7 @@ function renderCheckInList() {
     .map(
       (checkIn) => `
         <li>
-          <p class="checkin-title">${escapeHtml(checkIn.label)}</p>
+          <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
           <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
         </li>`
     )
@@ -122,12 +130,7 @@ async function handleCheckIn(event) {
   try {
     const { lat, lon, label } = await geocodeLocation(query);
 
-    checkIns.unshift({ lat, lon, label, timestamp: new Date().toISOString() });
-    checkIns = checkIns.slice(0, MAX_CHECKINS);
-    saveCheckIns();
-
-    renderCheckInList();
-    renderCheckInMarkers();
+    addCheckIn({ lat, lon, label, timestamp: new Date().toISOString(), type: "location" });
     map.setView([lat, lon], 12);
 
     setStatus(checkInStatus, "Checked in!", "success");
@@ -166,7 +169,9 @@ function handlePhotoUpload(event) {
     const lat = convertDmsToDecimal(gpsLat, gpsLatRef);
     const lon = convertDmsToDecimal(gpsLon, gpsLonRef);
 
+    const timestamp = new Date().toISOString();
     photoMarkers.push({ name: file.name, lat, lon });
+    addCheckIn({ lat, lon, label: file.name, timestamp, type: "photo" });
     renderPhotoList();
 
     L.marker([lat, lon], { icon: photoIcon() })
