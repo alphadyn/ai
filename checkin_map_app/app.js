@@ -79,8 +79,8 @@ function renderCheckInList() {
   }
   checkInListEl.innerHTML = checkIns
     .map(
-      (checkIn) => `
-        <li class="checkin-entry">
+      (checkIn, index) => `
+        <li class="checkin-entry" data-checkin-index="${index}" role="button" tabindex="0">
           ${checkIn.previewUrl ? `<img class="checkin-preview" src="${escapeHtml(checkIn.previewUrl)}" alt="${escapeHtml(checkIn.label)}" />` : ""}
           <div>
             <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
@@ -89,6 +89,20 @@ function renderCheckInList() {
         </li>`
     )
     .join("");
+}
+
+function centerMapOnCheckIn(index) {
+  const checkIn = checkIns[index];
+  if (checkIn) map.setView([checkIn.lat, checkIn.lon], 12);
+}
+
+function handleCheckInListInteraction(event) {
+  const entry = event.target.closest("[data-checkin-index]");
+  if (!entry) return;
+
+  if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") return;
+  if (event.type === "keydown") event.preventDefault();
+  centerMapOnCheckIn(Number(entry.dataset.checkinIndex));
 }
 
 function renderCheckInMarkers() {
@@ -221,6 +235,8 @@ function photoIcon() {
 }
 
 checkInForm.addEventListener("submit", handleCheckIn);
+checkInListEl.addEventListener("click", handleCheckInListInteraction);
+checkInListEl.addEventListener("keydown", handleCheckInListInteraction);
 photoInput.addEventListener("change", handlePhotoUpload);
 
 renderCheckInList();
