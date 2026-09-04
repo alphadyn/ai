@@ -14,7 +14,7 @@ const map = L.map("map").setView([20, 0], 2);
 // OpenStreetMap's own tile servers block requests from most referers/origins that
 // aren't a registered production site (see https://wiki.openstreetmap.org/wiki/Blocked_tiles).
 // CARTO's free basemap tiles are built from OSM data and don't apply that restriction.
-L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2w0f_1_82cba88eb21776b6335fa821", {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   subdomains: "abcd",
   maxZoom: 19,
