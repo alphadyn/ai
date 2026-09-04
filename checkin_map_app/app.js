@@ -21,7 +21,6 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=
 }).addTo(map);
 
 const checkInLayer = L.layerGroup().addTo(map);
-const photoLayer = L.layerGroup().addTo(map);
 
 let checkIns = loadCheckIns();
 let photoMarkers = [];
@@ -108,9 +107,9 @@ function handleCheckInListInteraction(event) {
 function renderCheckInMarkers() {
   checkInLayer.clearLayers();
   checkIns.forEach((checkIn) => {
-    L.marker([checkIn.lat, checkIn.lon])
+    L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
       .addTo(checkInLayer)
-      .bindPopup(`<strong>Check-in</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}`);
+      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}`);
   });
 }
 
@@ -214,17 +213,23 @@ function handlePhotoUpload(event) {
     addCheckIn({ lat, lon, label: file.name, timestamp, type: "photo", previewUrl });
     renderPhotoList();
 
-    L.marker([lat, lon], { icon: photoIcon() })
-      .addTo(photoLayer)
-      .bindPopup(`<strong>Photo</strong><br>${escapeHtml(file.name)}`)
-      .openPopup();
     map.setView([lat, lon], 12);
 
     setStatus(photoStatus, `Mapped "${file.name}" at ${lat.toFixed(4)}, ${lon.toFixed(4)}.`, "success");
   });
 }
 
-function photoIcon() {
+function photoIcon(previewUrl) {
+  if (previewUrl) {
+    return L.divIcon({
+      html: `<img src="${escapeHtml(previewUrl)}" alt="" />`,
+      className: "photo-map-icon",
+      iconSize: [42, 42],
+      iconAnchor: [21, 21],
+      popupAnchor: [0, -21],
+    });
+  }
+
   return L.icon({
     iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
     shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
