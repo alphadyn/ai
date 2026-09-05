@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Fetch a Reddit page and print its visible text."""
+"""Fetch a web page and print its visible text."""
 
 import argparse
 import re
 import sys
+import urllib.parse
 import urllib.request
 from html.parser import HTMLParser
 from typing import List, Optional, Tuple
@@ -47,12 +48,16 @@ def extract_visible_text(html: str) -> str:
     return parser.text()
 
 
-def fetch_reddit_text(url: str = "https://www.reddit.com/") -> str:
+def fetch_url_text(url: str) -> str:
+    parsed_url = urllib.parse.urlparse(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("URL must include an http:// or https:// scheme")
+
     request = urllib.request.Request(
         url,
         headers={
             "Accept": "text/html",
-            "User-Agent": "reddit-text-reader/1.0",
+            "User-Agent": "url-text-reader/1.0",
         },
     )
     with urllib.request.urlopen(request, timeout=15) as response:
@@ -62,17 +67,15 @@ def fetch_reddit_text(url: str = "https://www.reddit.com/") -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Display the visible text from a Reddit page")
+    parser = argparse.ArgumentParser(description="Display the visible text from a web page")
     parser.add_argument(
         "url",
-        nargs="?",
-        default="https://www.reddit.com/",
-        help="Reddit URL to fetch (default: https://www.reddit.com/)",
+        help="URL to fetch, such as https://example.com/",
     )
     args = parser.parse_args()
 
     try:
-        text = fetch_reddit_text(args.url)
+        text = fetch_url_text(args.url)
     except (OSError, ValueError) as error:
         print(f"Unable to fetch {args.url}: {error}", file=sys.stderr)
         return 1
