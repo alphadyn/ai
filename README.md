@@ -23,7 +23,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [photo_gallery_app](photo_gallery_app/) - A rotating photo gallery that fetches a fresh set of 10 random photos from the web on every page load, supports swipe navigation on mobile devices, and includes a full-screen maximize mode with directional swipe controls.
 - [prime_counter_app](prime_counter_app/) - A browser app that counts primes up to a user-supplied number (up to 10E20, using an exact sieve or a time-budgeted estimate), reports computation time, logs the last 100 results, and charts prime density vs. N.
 - [prime_numbers](prime_numbers/) - A small Python utility for finding and analyzing prime numbers.
-- [url_text_reader](url_text_reader/) - Fetches a web page and displays its visible text in the terminal.
+- [web_content_downloader](web_content_downloader/) - Downloads web content, displays its visible text, and can capture browser screenshots.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) - A polished report of 20 occupations with the highest approximate median incomes.
 - [resume](resume/) - A polished HTML resume for an AI software engineer.
 - [secure_file_tool](secure_file_tool/) - A file encryption utility with command-line and GUI interfaces.
@@ -80,8 +80,8 @@ Example:
 ```bash
 python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
 python3 prime_numbers/prime_finder.py
-python3 url_text_reader/read_url_text.py https://example.com/
-python3 -m unittest url_text_reader/test_read_url_text.py
+python3 web_content_downloader/web_content_downloader.py https://example.com/
+python3 -m unittest web_content_downloader/test_web_content_downloader.py
 ```
 
 ## Notes
