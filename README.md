@@ -24,6 +24,7 @@ This repository is a collection of standalone demos, prototypes, and utility pro
 - [prime_counter_app](prime_counter_app/) - A browser app that counts primes up to a user-supplied number (up to 10E20, using an exact sieve or a time-budgeted estimate), reports computation time, logs the last 100 results, and charts prime density vs. N.
 - [prime_numbers](prime_numbers/) - A small Python utility for finding and analyzing prime numbers.
 - [web_content_downloader](web_content_downloader/) - Downloads web content, displays its visible text, and can capture browser screenshots.
+- [wikipedia_crawler](wikipedia_crawler/) - Recursively follows English Wikipedia article links and records up to one million unique URLs.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) - A polished report of 20 occupations with the highest approximate median incomes.
 - [resume](resume/) - A polished HTML resume for an AI software engineer.
 - [secure_file_tool](secure_file_tool/) - A file encryption utility with command-line and GUI interfaces.
@@ -82,7 +83,31 @@ python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages
 python3 prime_numbers/prime_finder.py
 python3 web_content_downloader/web_content_downloader.py https://example.com/
 python3 -m unittest web_content_downloader/test_web_content_downloader.py
+python3 wikipedia_crawler/wikipedia_crawler.py --max-urls 10000 --output wikipedia_urls.jsonl
+python3 -m unittest wikipedia_crawler/test_wikipedia_crawler.py
 ```
+
+The Wikipedia crawler starts at English Wikipedia's Main Page, follows unique article links, and writes one successfully fetched URL per JSONL line as it runs. It accepts up to `--max-urls 1000000`, supports a custom `--start-url`, and lets you control request pacing with `--delay`:
+
+```bash
+python3 wikipedia_crawler/wikipedia_crawler.py \
+	--start-url https://en.wikipedia.org/wiki/Python_(programming_language) \
+	--max-urls 1000000 \
+	--delay 0.2 \
+	--output data/wikipedia_urls.jsonl
+```
+
+Because results are written immediately, the JSONL output remains usable if the crawl is interrupted.
+
+The web content downloader can open a visible Chromium browser for JavaScript-rendered pages, save a full-page screenshot, and write the rendered text to a file:
+
+```bash
+python3 -m pip install playwright
+python3 -m playwright install chromium
+python3 web_content_downloader/web_content_downloader.py https://reddit.com --browser
+```
+
+Browser mode creates `page_screenshot.png` and `page_content.txt` by default. Customize those paths with `--screenshot` and `--output`.
 
 ## Notes
 
