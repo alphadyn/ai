@@ -8,6 +8,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 
 - [business_site](business_site/) - Marketing landing page for an AI company.
 - [audio_equalizer_app](audio_equalizer_app/) - Browser-based media player with live frequency spectrum and waveform analysis.
+- [sp500_analysis_app](sp500_analysis_app/) - Refreshable S&P 500 watchlist with transparent Buy, Hold, and Sell screening signals.
 - [business_plan](business_plan/) - Presentation-style startup business plan.
 - [car_sketch_project](car_sketch_project/) - Generates stylized car sketches from uploaded images.
 - [checkin_map_app](checkin_map_app/) - Map-based location check-in app with a recent-history log.
@@ -52,6 +53,9 @@ The same pattern works for projects like:
 
 ```bash
 cd audio_equalizer_app
+python3 -m http.server 8000
+
+cd sp500_analysis_app
 python3 -m http.server 8000
 
 cd enterprise_executive_dashboard

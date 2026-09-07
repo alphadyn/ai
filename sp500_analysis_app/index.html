@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101319" />
+  <title>Market Lens | S&P 500 Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="./"><span class="brand-mark"><i></i><i></i><i></i></span> Market Lens</a>
+      <div class="top-meta"><span class="status-dot"></span><span id="market-status">Connecting to market data</span><span class="top-separator"></span><span>S&amp;P 500 watchlist</span></div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Systematic equity research / live refresh</p>
+        <h1>Signals over noise.</h1>
+        <p class="hero-copy">A transparent, rules-based scan of selected S&amp;P 500 leaders. Recommendations update from the latest available quote and chart data each time this page loads.</p>
+      </div>
+      <div class="hero-actions"><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh scan</button><p id="last-updated" class="updated-label">Waiting for first scan</p></div>
+    </section>
+
+    <section class="notice"><span class="notice-icon">i</span><span>Research tool only. A Buy, Sell, or Hold signal is a model output, not personalized investment advice. Verify data and consider your own risk tolerance.</span></section>
+
+    <section class="summary-grid" aria-label="Recommendation summary">
+      <article class="summary-card buy-card"><div class="summary-top"><span class="summary-label">Top buy signal</span><span class="signal-mark">↗</span></div><h2 id="buy-symbol">--</h2><p id="buy-name">Scanning universe...</p><strong id="buy-score">--</strong><span class="score-label">model score / 100</span></article>
+      <article class="summary-card hold-card"><div class="summary-top"><span class="summary-label">Top hold signal</span><span class="signal-mark">→</span></div><h2 id="hold-symbol">--</h2><p id="hold-name">Scanning universe...</p><strong id="hold-score">--</strong><span class="score-label">model score / 100</span></article>
+      <article class="summary-card sell-card"><div class="summary-top"><span class="summary-label">Top sell signal</span><span class="signal-mark">↘</span></div><h2 id="sell-symbol">--</h2><p id="sell-name">Scanning universe...</p><strong id="sell-score">--</strong><span class="score-label">model score / 100</span></article>
+    </section>
+
+    <section class="content-grid">
+      <div class="panel ranking-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Model output</p><h2>Ranked watchlist</h2></div><span id="scan-count" class="count-badge">0 / 0 loaded</span></div>
+        <div class="table-scroll"><table><thead><tr><th>Rank</th><th>Company</th><th>Signal</th><th>Last</th><th>1D</th><th>Score</th></tr></thead><tbody id="ranking-body"><tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr></tbody></table></div>
+        <p class="method-note">Score combines 1-year trend, recent momentum, distance from the 52-week range, and volume confirmation. It is a screening heuristic, not a forecast.</p>
+      </div>
+
+      <aside class="panel detail-panel">
+        <div class="panel-heading"><div><p class="eyebrow">Company file</p><h2 id="detail-title">Select a signal</h2></div><span id="detail-signal" class="signal-pill">--</span></div>
+        <p id="detail-description" class="detail-description">Select a company from the ranked watchlist to inspect the latest quote, business details, financial data, and model rationale.</p>
+        <div class="price-block"><span>Last price</span><strong id="detail-price">--</strong><span id="detail-change" class="change-neutral">--</span></div>
+        <div class="metric-grid"><div><span>Market cap</span><strong id="detail-market-cap">--</strong></div><div><span>52-week range</span><strong id="detail-range">--</strong></div><div><span>Volume</span><strong id="detail-volume">--</strong></div><div><span>P/E</span><strong id="detail-pe">--</strong></div></div>
+        <div class="rationale"><p class="eyebrow">Why this signal</p><ul id="rationale-list"><li>Awaiting selected company data.</li></ul></div>
+        <div class="financials"><div class="subheading"><span>Latest reported financials</span><span id="financial-period">--</span></div><div class="financial-grid"><div><span>Revenue</span><strong id="financial-revenue">--</strong></div><div><span>Net income</span><strong id="financial-income">--</strong></div><div><span>Operating margin</span><strong id="financial-margin">--</strong></div><div><span>Free cash flow</span><strong id="financial-cash">--</strong></div></div></div>
+        <div class="company-links"><a id="sec-link" href="https://www.sec.gov/edgar/searchedgar/companysearch" target="_blank" rel="noopener noreferrer">SEC filings ↗</a><a id="company-link" href="#" target="_blank" rel="noopener noreferrer">Company site ↗</a></div>
+      </aside>
+    </section>
+    <footer><span>Data: Nasdaq public market endpoints</span><span id="data-note">Quotes and financial periods may be delayed.</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
