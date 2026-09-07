@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101614" />
+  <title>Signal Room | Audio Equalizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Signal Room home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>Signal Room</span>
+      </a>
+      <div class="topbar-meta">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span>Local playback</span>
+        <span class="divider" aria-hidden="true"></span>
+        <span id="file-type-label">No file loaded</span>
+      </div>
+    </header>
+
+    <section class="hero-row" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Audio intelligence / 001</p>
+        <h1 id="page-title">See your sound.</h1>
+        <p class="intro">Drop in a track and watch its character move in real time.</p>
+      </div>
+      <button id="load-button" class="outline-button" type="button">
+        <span class="button-icon" aria-hidden="true">+</span>
+        Load media
+      </button>
+      <input id="file-input" type="file" accept="audio/*,video/*" hidden />
+    </section>
+
+    <section id="drop-zone" class="drop-zone" tabindex="0" aria-label="Drop an audio or video file here, or press Enter to browse">
+      <div class="drop-symbol" aria-hidden="true"><span class="drop-symbol-line"></span><span class="drop-symbol-arrow"></span></div>
+      <div>
+        <strong>Drop audio or video here</strong>
+        <span>MP3, WAV, M4A, OGG, MP4 and more</span>
+      </div>
+      <span class="drop-action">Browse files <span aria-hidden="true">↗</span></span>
+    </section>
+
+    <section class="workspace" aria-label="Audio analysis workspace">
+      <div class="track-heading">
+        <div class="track-title-wrap">
+          <div class="track-art" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div>
+            <p class="section-kicker">Now analyzing</p>
+            <h2 id="track-name">Waiting for a track</h2>
+            <p id="track-details" class="muted-copy">Choose a local file to begin</p>
+          </div>
+        </div>
+        <div class="readout-grid" aria-label="Live audio readings">
+          <div><span>Peak</span><strong id="peak-readout">-- dB</strong></div>
+          <div><span>RMS</span><strong id="rms-readout">-- dB</strong></div>
+          <div><span>Rate</span><strong id="rate-readout">-- kHz</strong></div>
+        </div>
+      </div>
+
+      <div class="visualizer-panel">
+        <div class="visualizer-head">
+          <div>
+            <span class="panel-label">Frequency spectrum</span>
+            <span class="panel-caption">Low to high / logarithmic view</span>
+          </div>
+          <span id="play-state" class="state-pill">Ready</span>
+        </div>
+        <canvas id="spectrum-canvas" aria-label="Live frequency spectrum visualization"></canvas>
+        <div class="frequency-labels" aria-hidden="true"><span>20 Hz</span><span>100 Hz</span><span>1 kHz</span><span>10 kHz</span><span>20 kHz</span></div>
+      </div>
+
+      <div class="visualizer-panel waveform-panel">
+        <div class="visualizer-head">
+          <div>
+            <span class="panel-label">Waveform</span>
+            <span class="panel-caption">Amplitude over time</span>
+          </div>
+          <span id="channel-label" class="panel-caption">Stereo</span>
+        </div>
+        <canvas id="waveform-canvas" aria-label="Live audio waveform visualization"></canvas>
+      </div>
+
+      <div class="player-panel">
+        <div class="time-row"><span id="current-time">00:00</span><span id="duration">00:00</span></div>
+        <div class="timeline-wrap">
+          <div id="buffer-bar" class="buffer-bar"></div>
+          <input id="timeline" type="range" min="0" max="100" value="0" step="0.01" aria-label="Seek through track" />
+        </div>
+        <div class="transport-row">
+          <div class="transport-left">
+            <button id="rewind-button" class="transport-button text-button" type="button" aria-label="Rewind to beginning">Rewind</button>
+            <button id="skip-back-button" class="transport-button" type="button" aria-label="Skip back 10 seconds">−10</button>
+            <button id="play-button" class="play-button" type="button" aria-label="Play" disabled><span id="play-icon" aria-hidden="true">▶</span><span id="play-label">Play</span></button>
+            <button id="skip-forward-button" class="transport-button" type="button" aria-label="Skip forward 10 seconds">+10</button>
+            <button id="stop-button" class="transport-button text-button" type="button" aria-label="Stop playback">Stop</button>
+          </div>
+          <div class="volume-control">
+            <span aria-hidden="true">Vol</span>
+            <input id="volume" type="range" min="0" max="1" value="0.85" step="0.01" aria-label="Volume" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer-note"><span class="footer-line"></span><span>Everything stays in your browser.</span><span class="footer-line"></span></footer>
+    <audio id="media" crossorigin="anonymous"></audio>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

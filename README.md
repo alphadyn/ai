@@ -7,6 +7,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 ### Web apps and interactive demos
 
 - [business_site](business_site/) - Marketing landing page for an AI company.
+- [audio_equalizer_app](audio_equalizer_app/) - Browser-based media player with live frequency spectrum and waveform analysis.
 - [business_plan](business_plan/) - Presentation-style startup business plan.
 - [car_sketch_project](car_sketch_project/) - Generates stylized car sketches from uploaded images.
 - [checkin_map_app](checkin_map_app/) - Map-based location check-in app with a recent-history log.
@@ -50,6 +51,9 @@ Then open http://localhost:8000 in a browser.
 The same pattern works for projects like:
 
 ```bash
+cd audio_equalizer_app
+python3 -m http.server 8000
+
 cd enterprise_executive_dashboard
 python3 -m http.server 8000
 
