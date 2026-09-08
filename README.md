@@ -20,7 +20,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Legal Docketing](legal_docketing_app/) - Legal matter and deadline tracking app.
 - [Pencil Sketch](pencil_sketch_app/) - Image-to-pencil-sketch converter with adjustable controls.
 - [Photo Gallery](photo_gallery_app/) - Responsive photo gallery with random image loading.
-- [Postboard](postboard_app/) - Personal post archive with SQLite persistence locally, browser-storage fallback on GitHub Pages, JSON import/export, attachments, search, editing, and deletion.
+- [Postboard](postboard_app/) - Personal post archive with SQLite-only persistence, JSON import/export, attachments, search, editing, and deletion.
 - [Prime Counter](prime_counter_app/) - Prime counting utility with timing and charting.
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
@@ -50,7 +50,7 @@ python3 -m http.server 8000
 
 Then open http://localhost:8000 in a browser.
 
-The same pattern works for projects like:
+The same pattern works for the following static web apps:
 
 ```bash
 cd audio_equalizer_app
@@ -67,9 +67,6 @@ python3 -m http.server 8000
 
 cd vcard_generator_app
 python3 -m http.server 8000
-
-cd postboard_app
-python3 server.py
 ```
 
 ### Postboard setup
@@ -88,9 +85,8 @@ Then open http://127.0.0.1:8000. The server uses Python's standard-library
 Posts remain there until deleted from the app. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
 
-GitHub Pages cannot run Python or SQLite. When the app is hosted there, it
-automatically uses browser storage instead; run `server.py` locally when SQLite
-persistence is required.
+GitHub Pages cannot run Python or SQLite, so Postboard must be run locally
+through `server.py` for posts to load and save.
 
 For Python code, run the script from the repo root or from its project folder as needed:
 

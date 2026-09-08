@@ -1,11 +1,9 @@
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
-const LOCAL_STORAGE_KEY = 'postboard-posts-fallback-v1';
 
 const state = {
   posts: [],
   search: '',
   pendingAttachment: null,
-  storageMode: 'sqlite',
 };
 
 const elements = {
@@ -27,28 +25,11 @@ const elements = {
 };
 
 async function loadPosts() {
-  let response;
-  try {
-    response = await fetch('/api/posts');
-  } catch (error) {
-    return loadLocalPosts();
-  }
+  const response = await fetch('/api/posts');
   if (!response.ok) {
-    if (response.status === 404 || response.status === 405) return loadLocalPosts();
     throw new Error(await getApiError(response, 'Could not load posts from the SQLite database.'));
   }
-  state.storageMode = 'sqlite';
   return response.json();
-}
-
-function loadLocalPosts() {
-  state.storageMode = 'browser';
-  try {
-    const saved = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
-    return Array.isArray(saved) ? saved : [];
-  } catch (error) {
-    return [];
-  }
 }
 
 async function getApiError(response, fallback) {
@@ -61,30 +42,14 @@ async function getApiError(response, fallback) {
 }
 
 async function savePosts() {
-  let response;
-  try {
-    response = await fetch('/api/posts', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.posts),
-    });
-  } catch (error) {
-    saveLocalPosts();
-    return;
-  }
+  const response = await fetch('/api/posts', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state.posts),
+  });
   if (!response.ok) {
-    if (response.status === 404 || response.status === 405) {
-      saveLocalPosts();
-      return;
-    }
     throw new Error(await getApiError(response, 'Could not save posts to the SQLite database.'));
   }
-  state.storageMode = 'sqlite';
-}
-
-function saveLocalPosts() {
-  state.storageMode = 'browser';
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state.posts));
 }
 
 function isPost(value) {
@@ -254,10 +219,10 @@ async function handleSubmit(event) {
     const editingId = elements.editingId.value;
     if (editingId) {
       state.posts = state.posts.map((item) => item.id === editingId ? { ...item, ...post, updatedAt: new Date().toISOString() } : item);
-      setStatus(state.storageMode === 'sqlite' ? 'Post updated in SQLite.' : 'Post updated in browser storage.', 'success');
+      setStatus('Post updated in SQLite.', 'success');
     } else {
       state.posts.unshift({ ...post, id: makeId(), createdAt: new Date().toISOString() });
-      setStatus(state.storageMode === 'sqlite' ? 'Post published to SQLite.' : 'Post published in browser storage.', 'success');
+      setStatus('Post published to SQLite.', 'success');
     }
     await savePosts();
     render();
@@ -306,7 +271,7 @@ async function init() {
     setDefaultDateTime();
     render();
   } catch (error) {
-    setStatus('Could not open the local posts database.', 'error');
+    setStatus('SQLite is unavailable. Start server.py and open http://127.0.0.1:8000.', 'error');
   }
 }
 
