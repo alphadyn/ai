@@ -86,7 +86,8 @@ Posts remain there until deleted from the app. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
 
 GitHub Pages cannot run Python or SQLite, so Postboard must be run locally
-through `server.py` for posts to load and save.
+through `server.py` for posts to load and save. A GitHub Pages deployment can
+display the interface, but it cannot persist posts to SQLite.
 
 For Python code, run the script from the repo root or from its project folder as needed:
 

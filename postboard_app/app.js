@@ -33,6 +33,9 @@ async function loadPosts() {
 }
 
 async function getApiError(response, fallback) {
+  if (response.status === 405 && window.location.hostname.endsWith('.github.io')) {
+    return 'GitHub Pages cannot run the SQLite server. Run server.py locally and open http://127.0.0.1:8000.';
+  }
   try {
     const body = await response.json();
     return body.error || `${fallback} (HTTP ${response.status}).`;
