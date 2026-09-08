@@ -25,6 +25,8 @@ const elements = {
   attachment: document.getElementById('attachment'),
   attachmentName: document.getElementById('attachmentName'),
   status: document.getElementById('formStatus'),
+  imageViewer: document.getElementById('imageViewer'),
+  imageViewerImage: document.getElementById('imageViewerImage'),
 };
 
 async function loadPosts() {
@@ -209,7 +211,7 @@ function readFile(file) {
 function attachmentMarkup(attachment) {
   if (!attachment) return '';
   const image = attachment.type.startsWith('image/');
-  return `<div class="attachment-preview">${image ? `<img src="${attachment.data}" alt="${escapeHtml(attachment.name)}" />` : '<span class="file-badge">FILE</span>'}<span>${escapeHtml(attachment.name)}</span></div>`;
+  return `<div class="attachment-preview">${image ? `<img class="image-attachment" data-action="open-image" src="${attachment.data}" alt="${escapeHtml(attachment.name)}" />` : '<span class="file-badge">FILE</span>'}<span>${escapeHtml(attachment.name)}</span></div>`;
 }
 
 function render() {
@@ -307,6 +309,10 @@ elements.attachment.addEventListener('change', (event) => {
   if (file) elements.attachmentName.textContent = `${file.name} (${Math.ceil(file.size / 1024)} KB)`;
 });
 elements.cancelEdit.addEventListener('click', resetComposer);
+elements.imageViewerImage.addEventListener('click', () => {
+  elements.imageViewer.classList.add('hidden');
+  elements.imageViewerImage.removeAttribute('src');
+});
 elements.deleteAll.addEventListener('click', async () => {
   if (state.posts.length && window.confirm('Delete every saved post? This cannot be undone.')) {
     state.posts = [];
@@ -321,6 +327,12 @@ elements.list.addEventListener('click', async (event) => {
   const card = button.closest('[data-post-id]');
   const post = state.posts.find((item) => item.id === card.dataset.postId);
   if (!post) return;
+  if (button.dataset.action === 'open-image' && post.attachment?.type.startsWith('image/')) {
+    elements.imageViewerImage.src = post.attachment.data;
+    elements.imageViewerImage.alt = post.attachment.name;
+    elements.imageViewer.classList.remove('hidden');
+    return;
+  }
   if (button.dataset.action === 'edit') beginEdit(post);
   if (button.dataset.action === 'delete' && window.confirm('Delete this post?')) {
     state.posts = state.posts.filter((item) => item.id !== post.id);
