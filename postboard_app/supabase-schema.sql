@@ -38,3 +38,5 @@ create policy "Postboard can delete posts"
   on public.posts for delete
   to anon
   using (true);
+
+notify pgrst, 'reload schema';

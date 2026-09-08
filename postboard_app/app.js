@@ -38,7 +38,7 @@ async function loadPosts() {
 async function getApiError(response, fallback) {
   try {
     const body = await response.json();
-    return body.error || `${fallback} (HTTP ${response.status}).`;
+    return body.message || body.error || `${fallback} (HTTP ${response.status}).`;
   } catch (error) {
     return `${fallback} (HTTP ${response.status}). Check your Supabase configuration.`;
   }
