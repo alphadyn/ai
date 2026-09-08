@@ -88,6 +88,10 @@ Then open http://127.0.0.1:8000. The server uses Python's standard-library
 Posts remain there until deleted from the app. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
 
+GitHub Pages cannot run Python or SQLite. When the app is hosted there, it
+automatically uses browser storage instead; run `server.py` locally when SQLite
+persistence is required.
+
 For Python code, run the script from the repo root or from its project folder as needed:
 
 ```bash
