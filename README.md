@@ -20,7 +20,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Legal Docketing](legal_docketing_app/) - Legal matter and deadline tracking app.
 - [Pencil Sketch](pencil_sketch_app/) - Image-to-pencil-sketch converter with adjustable controls.
 - [Photo Gallery](photo_gallery_app/) - Responsive photo gallery with random image loading.
-- [Postboard](postboard_app/) - Personal post archive with SQLite-only persistence, JSON import/export, attachments, search, editing, and deletion.
+- [Postboard](postboard_app/) - Personal post archive with Supabase persistence, JSON import/export, attachments, search, editing, and deletion.
 - [Prime Counter](prime_counter_app/) - Prime counting utility with timing and charting.
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
@@ -71,23 +71,18 @@ python3 -m http.server 8000
 
 ### Postboard setup
 
-Postboard must be opened through its SQLite-backed Python server. Do not open
-`postboard_app/index.html` directly or serve that folder with
-`python3 -m http.server`, because the `/api/posts` endpoint will be unavailable.
+Postboard uses Supabase as its hosted database and API, so it can be deployed
+as a static app on GitHub Pages. Configure the project once:
 
-```bash
-cd postboard_app
-python3 server.py
-```
+1. Create a Supabase project.
+2. Open the Supabase SQL Editor and run [supabase-schema.sql](postboard_app/supabase-schema.sql).
+3. Copy [supabase-config.js](postboard_app/supabase-config.js) and replace the project URL and anon key placeholders with values from **Project Settings > API**.
+4. Deploy `postboard_app/` to GitHub Pages or serve it locally with `python3 -m http.server 8000`.
 
-Then open http://127.0.0.1:8000. The server uses Python's standard-library
-`sqlite3` module and creates `postboard.db` in `postboard_app/` on first launch.
-Posts remain there until deleted from the app. Use **Export JSON** and
+The Supabase anon key is intended for browser use. The included policies allow
+public CRUD access for this demo; add Supabase Auth and user-scoped policies
+before using it for private or production data. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
-
-GitHub Pages cannot run Python or SQLite, so Postboard must be run locally
-through `server.py` for posts to load and save. A GitHub Pages deployment can
-display the interface, but it cannot persist posts to SQLite.
 
 For Python code, run the script from the repo root or from its project folder as needed:
 

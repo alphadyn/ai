@@ -1,4 +1,7 @@
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const SUPABASE_CONFIG = window.POSTBOARD_SUPABASE || {};
+const SUPABASE_URL = SUPABASE_CONFIG.url;
+const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
 
 const state = {
   posts: [],
@@ -25,33 +28,87 @@ const elements = {
 };
 
 async function loadPosts() {
-  const response = await fetch('/api/posts');
+  const response = await supabaseRequest('/rest/v1/posts?select=*&order=created_at.desc');
   if (!response.ok) {
-    throw new Error(await getApiError(response, 'Could not load posts from the SQLite database.'));
+    throw new Error(await getApiError(response, 'Could not load posts from Supabase.'));
   }
-  return response.json();
+  return (await response.json()).map(mapSupabasePost);
 }
 
 async function getApiError(response, fallback) {
-  if (response.status === 405 && window.location.hostname.endsWith('.github.io')) {
-    return 'GitHub Pages cannot run the SQLite server. Run server.py locally and open http://127.0.0.1:8000.';
-  }
   try {
     const body = await response.json();
     return body.error || `${fallback} (HTTP ${response.status}).`;
   } catch (error) {
-    return `${fallback} (HTTP ${response.status}). Start server.py and open http://127.0.0.1:8000.`;
+    return `${fallback} (HTTP ${response.status}). Check your Supabase configuration.`;
   }
 }
 
-async function savePosts() {
-  const response = await fetch('/api/posts', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(state.posts),
+function supabaseRequest(path, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('Supabase is not configured. Add your project URL and anon key to supabase-config.js.');
+  }
+  return fetch(`${SUPABASE_URL}${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
   });
-  if (!response.ok) {
-    throw new Error(await getApiError(response, 'Could not save posts to the SQLite database.'));
+}
+
+function mapSupabasePost(row) {
+  return {
+    id: row.id,
+    personName: row.person_name,
+    userName: row.user_name,
+    message: row.message,
+    date: row.post_date,
+    time: row.post_time,
+    location: row.location || '',
+    attachment: row.attachment,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapPostToSupabase(post) {
+  return {
+    id: post.id,
+    person_name: post.personName,
+    user_name: post.userName,
+    message: post.message,
+    post_date: post.date,
+    post_time: post.time,
+    location: post.location || '',
+    attachment: post.attachment || null,
+    created_at: post.createdAt,
+    updated_at: post.updatedAt || null,
+  };
+}
+
+async function savePosts() {
+  const existingResponse = await supabaseRequest('/rest/v1/posts?select=id');
+  if (!existingResponse.ok) {
+    throw new Error(await getApiError(existingResponse, 'Could not read existing posts from Supabase.'));
+  }
+  const existingPosts = await existingResponse.json();
+  const currentIds = new Set(state.posts.map((post) => post.id));
+  const removedIds = existingPosts.map((post) => post.id).filter((id) => !currentIds.has(id));
+
+  if (removedIds.length) {
+    const response = await supabaseRequest(`/rest/v1/posts?id=in.(${removedIds.join(',')})`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(await getApiError(response, 'Could not delete posts from Supabase.'));
+  }
+  if (state.posts.length) {
+    const response = await supabaseRequest('/rest/v1/posts?on_conflict=id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(state.posts.map(mapPostToSupabase)),
+    });
+    if (!response.ok) throw new Error(await getApiError(response, 'Could not save posts to Supabase.'));
   }
 }
 
@@ -222,10 +279,10 @@ async function handleSubmit(event) {
     const editingId = elements.editingId.value;
     if (editingId) {
       state.posts = state.posts.map((item) => item.id === editingId ? { ...item, ...post, updatedAt: new Date().toISOString() } : item);
-      setStatus('Post updated in SQLite.', 'success');
+      setStatus('Post updated in Supabase.', 'success');
     } else {
       state.posts.unshift({ ...post, id: makeId(), createdAt: new Date().toISOString() });
-      setStatus('Post published to SQLite.', 'success');
+      setStatus('Post published to Supabase.', 'success');
     }
     await savePosts();
     render();
@@ -274,7 +331,7 @@ async function init() {
     setDefaultDateTime();
     render();
   } catch (error) {
-    setStatus('SQLite is unavailable. Start server.py and open http://127.0.0.1:8000.', 'error');
+    setStatus(error.message || 'Supabase is unavailable. Check your configuration.', 'error');
   }
 }
 
