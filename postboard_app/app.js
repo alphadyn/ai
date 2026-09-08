@@ -1,8 +1,7 @@
-const STORAGE_KEY = 'postboard-posts-v1';
 const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 
 const state = {
-  posts: loadPosts(),
+  posts: [],
   search: '',
   pendingAttachment: null,
 };
@@ -25,17 +24,19 @@ const elements = {
   status: document.getElementById('formStatus'),
 };
 
-function loadPosts() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) ? saved : [];
-  } catch (error) {
-    return [];
-  }
+async function loadPosts() {
+  const response = await fetch('/api/posts');
+  if (!response.ok) throw new Error('Could not load posts from the SQLite database.');
+  return response.json();
 }
 
-function savePosts() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.posts));
+async function savePosts() {
+  const response = await fetch('/api/posts', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state.posts),
+  });
+  if (!response.ok) throw new Error('Could not save posts to the SQLite database.');
 }
 
 function isPost(value) {
@@ -66,7 +67,7 @@ async function importPosts(event) {
     }
     const replace = window.confirm('Replace current posts with this JSON archive? Choose Cancel to merge them.');
     state.posts = replace ? imported : [...imported, ...state.posts.filter((post) => !imported.some((item) => item.id === post.id))];
-    savePosts();
+    await savePosts();
     render();
     setStatus(`${imported.length} post${imported.length === 1 ? '' : 's'} imported.`, 'success');
   } catch (error) {
@@ -210,7 +211,7 @@ async function handleSubmit(event) {
       state.posts.unshift({ ...post, id: makeId(), createdAt: new Date().toISOString() });
       setStatus('Post published.', 'success');
     }
-    savePosts();
+    await savePosts();
     render();
     window.setTimeout(resetComposer, 700);
   } catch (error) {
@@ -229,15 +230,15 @@ elements.attachment.addEventListener('change', (event) => {
   if (file) elements.attachmentName.textContent = `${file.name} (${Math.ceil(file.size / 1024)} KB)`;
 });
 elements.cancelEdit.addEventListener('click', resetComposer);
-elements.deleteAll.addEventListener('click', () => {
+elements.deleteAll.addEventListener('click', async () => {
   if (state.posts.length && window.confirm('Delete every saved post? This cannot be undone.')) {
     state.posts = [];
-    savePosts();
+    await savePosts();
     resetComposer();
     render();
   }
 });
-elements.list.addEventListener('click', (event) => {
+elements.list.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const card = button.closest('[data-post-id]');
@@ -246,10 +247,19 @@ elements.list.addEventListener('click', (event) => {
   if (button.dataset.action === 'edit') beginEdit(post);
   if (button.dataset.action === 'delete' && window.confirm('Delete this post?')) {
     state.posts = state.posts.filter((item) => item.id !== post.id);
-    savePosts();
+    await savePosts();
     render();
   }
 });
 
-setDefaultDateTime();
-render();
+async function init() {
+  try {
+    state.posts = await loadPosts();
+    setDefaultDateTime();
+    render();
+  } catch (error) {
+    setStatus('Could not open the local posts database.', 'error');
+  }
+}
+
+init();
