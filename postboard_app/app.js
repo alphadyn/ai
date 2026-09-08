@@ -27,6 +27,9 @@ const elements = {
   status: document.getElementById('formStatus'),
   imageViewer: document.getElementById('imageViewer'),
   imageViewerImage: document.getElementById('imageViewerImage'),
+  message: document.getElementById('message'),
+  messageInput: document.getElementById('messageInput'),
+  formatButtons: [...document.querySelectorAll('.format-button')],
 };
 
 async function loadPosts() {
@@ -166,6 +169,56 @@ function escapeHtml(value) {
   return element.innerHTML;
 }
 
+function stripHtml(value = '') {
+  const element = document.createElement('div');
+  element.innerHTML = value || '';
+  return (element.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function sanitizeRichText(value = '') {
+  const container = document.createElement('div');
+  container.innerHTML = value || '';
+
+  const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'BR', 'P', 'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'BLOCKQUOTE', 'A', 'PRE', 'CODE', 'HR', 'SUB', 'SUP']);
+  const disallowedNodes = [...container.querySelectorAll('*')].filter((node) => !allowedTags.has(node.tagName));
+  disallowedNodes.forEach((node) => {
+    const fragment = document.createDocumentFragment();
+    while (node.firstChild) {
+      fragment.appendChild(node.firstChild);
+    }
+    node.replaceWith(fragment);
+  });
+
+  container.querySelectorAll('*').forEach((node) => {
+    [...node.attributes].forEach((attribute) => {
+      if (node.tagName === 'A' && attribute.name === 'href') return;
+      node.removeAttribute(attribute.name);
+    });
+    if (node.tagName === 'A') {
+      const href = node.getAttribute('href');
+      const cleaned = href && /^https?:\/\//i.test(href) ? href : '';
+      if (!cleaned) {
+        const fragment = document.createDocumentFragment();
+        while (node.firstChild) {
+          fragment.appendChild(node.firstChild);
+        }
+        node.replaceWith(fragment);
+      } else {
+        node.setAttribute('href', cleaned);
+      }
+    }
+  });
+  container.querySelectorAll('script, style, iframe, svg, math, object, embed, link').forEach((node) => node.remove());
+
+  return container.innerHTML.trim();
+}
+
+function setMessageFromEditor() {
+  const value = sanitizeRichText(elements.message.innerHTML || '');
+  elements.messageInput.value = value;
+  return value;
+}
+
 function formatDate(post) {
   const date = new Date(`${post.date}T${post.time || '00:00'}`);
   if (Number.isNaN(date.getTime())) return `${post.date} ${post.time || ''}`;
@@ -181,8 +234,16 @@ function setStatus(message, kind = '') {
   elements.status.className = `form-status ${kind}`;
 }
 
+function setBoldButtonState(isActive) {
+  const boldButton = elements.formatButtons.find((button) => button.dataset.command === 'bold');
+  boldButton?.setAttribute('aria-pressed', String(isActive));
+}
+
 function resetComposer() {
   elements.form.reset();
+  elements.message.innerHTML = '';
+  elements.messageInput.value = '';
+  setBoldButtonState(false);
   elements.editingId.value = '';
   elements.attachmentName.textContent = 'JPG, PNG, PDF, or any small file';
   elements.cancelEdit.classList.add('hidden');
@@ -216,7 +277,7 @@ function attachmentMarkup(attachment) {
 
 function render() {
   const query = state.search.toLowerCase();
-  const posts = state.posts.filter((post) => [post.message, post.personName, post.userName, post.location, post.attachment?.name].join(' ').toLowerCase().includes(query));
+  const posts = state.posts.filter((post) => [stripHtml(post.message), post.personName, post.userName, post.location, post.attachment?.name].join(' ').toLowerCase().includes(query));
   elements.count.textContent = `${state.posts.length} ${state.posts.length === 1 ? 'post' : 'posts'}`;
 
   if (posts.length === 0) {
@@ -233,7 +294,7 @@ function render() {
         <div class="author"><strong>${escapeHtml(post.personName)}</strong><span>${escapeHtml(post.userName)}</span></div>
         <time datetime="${escapeHtml(`${post.date}T${post.time}`)}">${escapeHtml(formatDate(post))}</time>
       </div>
-      <p class="post-message">${escapeHtml(post.message).replace(/\n/g, '<br />')}</p>
+      <div class="post-message">${sanitizeRichText(post.message || '')}</div>
       <div class="post-footer">
         <div class="post-details">${post.location ? `<span class="detail location">@ ${escapeHtml(post.location)}</span>` : ''}${attachmentMarkup(post.attachment)}</div>
         <div class="post-actions"><button class="icon-button" data-action="edit" type="button">Edit</button><button class="icon-button danger-text" data-action="delete" type="button">Delete</button></div>
@@ -245,7 +306,8 @@ function render() {
 function beginEdit(post) {
   document.getElementById('personName').value = post.personName;
   document.getElementById('userName').value = post.userName;
-  document.getElementById('message').value = post.message;
+  elements.message.innerHTML = post.message || '';
+  elements.messageInput.value = post.message || '';
   document.getElementById('postDate').value = post.date;
   document.getElementById('postTime').value = post.time;
   document.getElementById('location').value = post.location || '';
@@ -261,17 +323,18 @@ function beginEdit(post) {
 
 async function handleSubmit(event) {
   event.preventDefault();
+  const messageValue = setMessageFromEditor();
   const formData = new FormData(elements.form);
   const post = {
     personName: formData.get('personName').toString().trim(),
     userName: formData.get('userName').toString().trim(),
-    message: formData.get('message').toString().trim(),
+    message: messageValue,
     date: formData.get('postDate').toString(),
     time: formData.get('postTime').toString(),
     location: formData.get('location').toString().trim(),
   };
 
-  if (!post.personName || !post.userName || !post.message) return;
+  if (!post.personName || !post.userName || !stripHtml(post.message)) return;
   const file = elements.attachment.files[0];
   if (file && file.size > MAX_ATTACHMENT_BYTES) {
     setStatus('Please choose a file smaller than 4 MB.', 'error');
@@ -301,6 +364,46 @@ async function handleSubmit(event) {
 }
 
 elements.form.addEventListener('submit', handleSubmit);
+function resetDefaultMessageFormatting() {
+  if (!elements.message.textContent.trim()) {
+    setBoldButtonState(false);
+    if (document.queryCommandState?.('bold')) {
+      document.execCommand('bold');
+    }
+  }
+}
+elements.message.addEventListener('focus', resetDefaultMessageFormatting);
+elements.message.addEventListener('click', resetDefaultMessageFormatting);
+elements.message.addEventListener('input', () => {
+  setMessageFromEditor();
+});
+elements.formatButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    elements.message.focus();
+    const command = button.dataset.command;
+    const value = button.dataset.value || null;
+
+    if (command === 'createLink') {
+      if (typeof window.prompt !== 'function') {
+        setStatus('Link insertion is unavailable in this browser context.', 'error');
+        return;
+      }
+      const url = window.prompt('Enter a link URL', 'https://');
+      if (!url) return;
+      document.execCommand(command, false, url);
+    } else if (command === 'removeFormat') {
+      document.execCommand('removeFormat');
+      elements.message.innerHTML = sanitizeRichText(elements.message.innerHTML);
+    } else if (value) {
+      document.execCommand(command, false, value);
+    } else {
+      document.execCommand(command);
+    }
+
+    if (command === 'bold') setBoldButtonState(document.queryCommandState?.('bold') || false);
+    setMessageFromEditor();
+  });
+});
 elements.search.addEventListener('input', (event) => { state.search = event.target.value.trim(); render(); });
 elements.export.addEventListener('click', exportPosts);
 elements.import.addEventListener('change', importPosts);
@@ -342,6 +445,9 @@ elements.list.addEventListener('click', async (event) => {
 });
 
 async function init() {
+  elements.message.innerHTML = '';
+  elements.messageInput.value = '';
+  setBoldButtonState(false);
   try {
     state.posts = await loadPosts();
     setDefaultDateTime();

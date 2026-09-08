@@ -12,7 +12,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; color: var(--ink); background: radial-gradient(circle at 8% 0%, #fbf8ee 0, transparent 34%), var(--paper); font-family: Manrope, sans-serif; }
-button, input, textarea { font: inherit; }
+button, input, textarea, [contenteditable] { font: inherit; }
 button, label { cursor: pointer; }
 .app-shell { width: min(1180px, calc(100% - 48px)); margin: auto; }
 .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 28px 0; border-bottom: 1px solid var(--line); }
@@ -57,6 +57,14 @@ label > span:not(.upload-icon) { color: var(--muted); font: 11px 'DM Mono', mono
 input, textarea { width: 100%; border: 1px solid var(--line); padding: 12px 13px; color: var(--ink); background: #faf9f4; outline: 0; }
 textarea { resize: vertical; min-height: 120px; line-height: 1.5; }
 input:focus, textarea:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(231, 104, 76, .1); }
+.rich-text-editor { border: 1px solid var(--line); background: #faf9f4; }
+.formatting-bar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: #f3f1eb; }
+.format-button { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border: 1px solid var(--line); background: white; color: var(--ink); padding: 0 8px; border-radius: 8px; font-size: 11px; font-weight: 700; line-height: 1; }
+.format-button:hover { border-color: var(--coral); }
+.format-button[aria-pressed="true"] { border-color: var(--coral); color: var(--coral-dark); background: #fff7f3; }
+.message-editor { min-height: 120px; padding: 12px 13px; line-height: 1.5; outline: none; background: #faf9f4; white-space: pre-wrap; }
+.message-editor:focus { box-shadow: 0 0 0 3px rgba(231, 104, 76, .1); }
+.message-editor:empty::before { content: attr(data-placeholder); color: #a8a29a; }
 .upload-row { justify-content: space-between; gap: 14px; margin-top: 22px; }
 .upload-control { display: flex; align-items: center; grid-template-columns: auto 1fr; gap: 10px; }
 .upload-control input { display: none; }

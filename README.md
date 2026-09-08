@@ -20,7 +20,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Legal Docketing](legal_docketing_app/) - Legal matter and deadline tracking app.
 - [Pencil Sketch](pencil_sketch_app/) - Image-to-pencil-sketch converter with adjustable controls.
 - [Photo Gallery](photo_gallery_app/) - Responsive photo gallery with random image loading.
-- [Postboard](postboard_app/) - Personal post archive with Supabase persistence, JSON import/export, image and file attachments, image preview, search, editing, and deletion.
+- [Postboard](postboard_app/) - Personal post archive with Supabase persistence, rich-text message formatting, JSON import/export, image and file attachments, image preview, search, editing, and deletion.
 - [Prime Counter](prime_counter_app/) - Prime counting utility with timing and charting.
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
@@ -81,9 +81,11 @@ as a static app on GitHub Pages. Configure the project once:
 
 The Supabase anon key is intended for browser use. The included policies allow
 public CRUD access for this demo; add Supabase Auth and user-scoped policies
-before using it for private or production data. Click a posted image to view it
-full-screen, then click the expanded image to close it. Use **Export JSON** and
-**Import JSON** to back up or transfer an archive of posts.
+before using it for private or production data. The message composer supports
+basic rich text formatting such as bold, italic, underline, and bullet lists,
+which are saved as sanitized HTML and rendered in the archive. Click a posted
+image to view it full-screen, then click the expanded image to close it. Use
+**Export JSON** and **Import JSON** to back up or transfer an archive of posts.
 
 If the app reports `NetworkError`, `supabase-config.js` still has its
 `YOUR_PROJECT_REF` or `YOUR_SUPABASE_ANON_KEY` placeholder, or the configured

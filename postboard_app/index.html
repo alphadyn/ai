@@ -58,7 +58,28 @@
             </div>
             <label>
               <span>Message</span>
-              <textarea id="message" name="message" rows="5" placeholder="Write something worth keeping..." required></textarea>
+              <div class="rich-text-editor">
+                <div class="formatting-bar" aria-label="Text formatting options">
+                  <button type="button" class="format-button" data-command="bold" title="Bold text" aria-pressed="false">B</button>
+                  <button type="button" class="format-button" data-command="italic" title="Italic text">I</button>
+                  <button type="button" class="format-button" data-command="underline" title="Underline text">U</button>
+                  <button type="button" class="format-button" data-command="formatBlock" data-value="h2" title="Heading">H</button>
+                  <button type="button" class="format-button" data-command="formatBlock" data-value="blockquote" title="Quote block">❝</button>
+                  <button type="button" class="format-button" data-command="createLink" title="Insert link">🔗</button>
+                  <button type="button" class="format-button" data-command="strikeThrough" title="Strikethrough text">S</button>
+                  <button type="button" class="format-button" data-command="formatBlock" data-value="pre" title="Code block">&lt;/&gt;</button>
+                  <button type="button" class="format-button" data-command="insertHorizontalRule" title="Horizontal rule">—</button>
+                  <button type="button" class="format-button" data-command="removeFormat" title="Clear formatting">✕</button>
+                  <button type="button" class="format-button" data-command="insertUnorderedList" title="Bulleted list">•</button>
+                  <button type="button" class="format-button" data-command="insertOrderedList" title="Numbered list">1.</button>
+                  <button type="button" class="format-button" data-command="formatBlock" data-value="blockquote" title="Highlight block">HL</button>
+                  <button type="button" class="format-button" data-command="insertHTML" data-value="<blockquote></blockquote>" title="Indent block">⇢</button>
+                  <button type="button" class="format-button" data-command="subscript" title="Subscript text">x₂</button>
+                  <button type="button" class="format-button" data-command="superscript" title="Superscript text">x²</button>
+                </div>
+                <div id="message" class="message-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Write something worth keeping..."></div>
+                <input id="messageInput" type="hidden" name="message" />
+              </div>
             </label>
             <div class="form-grid form-grid-three">
               <label>
