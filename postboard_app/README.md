@@ -4,7 +4,8 @@ Postboard is a small personal activity log for saving short updates with metadat
 
 ## Features
 
-- Rich-text message composer with bold, italic, underline, and bullet list formatting
+- Rich-text message composer with headings, quotes, links, code, lists, highlighting, subscript, superscript, and other formatting controls
+- Bold formatting is unselected by default and is applied only when explicitly enabled
 - Person name, username, date, time, and optional location fields
 - Post editing and deletion in the timeline
 - Search across post text and metadata
@@ -34,7 +35,7 @@ The demo uses public CRUD policies so it can run as a static frontend without au
 
 ## Notes
 
-- The message editor sanitizes HTML before saving so only a safe subset of formatting is preserved.
+- The message editor sanitizes HTML before saving so only a safe subset of formatting is preserved. New messages start as plain text; use the toolbar to apply formatting.
 - Large attachments are limited to 4 MB per upload.
 - Images can be clicked to open in a full-size viewer.
 - Use the export button to create a JSON archive and the import button to restore it later.

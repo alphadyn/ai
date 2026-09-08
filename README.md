@@ -82,10 +82,12 @@ as a static app on GitHub Pages. Configure the project once:
 The Supabase anon key is intended for browser use. The included policies allow
 public CRUD access for this demo; add Supabase Auth and user-scoped policies
 before using it for private or production data. The message composer supports
-basic rich text formatting such as bold, italic, underline, and bullet lists,
-which are saved as sanitized HTML and rendered in the archive. Click a posted
-image to view it full-screen, then click the expanded image to close it. Use
-**Export JSON** and **Import JSON** to back up or transfer an archive of posts.
+rich text such as headings, quotes, links, code, lists, highlighting, subscript,
+superscript, bold, italic, and underline. New messages begin unformatted, with
+bold unselected until the user explicitly enables it. Formatting is saved as
+sanitized HTML and rendered in the archive. Click a posted image to view it
+full-screen, then click the expanded image to close it. Use **Export JSON** and
+**Import JSON** to back up or transfer an archive of posts.
 
 If the app reports `NetworkError`, `supabase-config.js` still has its
 `YOUR_PROJECT_REF` or `YOUR_SUPABASE_ANON_KEY` placeholder, or the configured
