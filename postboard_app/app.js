@@ -374,7 +374,6 @@ function resetDefaultMessageFormatting() {
   }
 }
 elements.message.addEventListener('focus', resetDefaultMessageFormatting);
-elements.message.addEventListener('click', resetDefaultMessageFormatting);
 elements.message.addEventListener('input', () => {
   setMessageFromEditor();
 });
