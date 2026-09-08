@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postboard | Personal activity log</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="index.html" aria-label="Postboard home">
+          <span class="brand-mark">P/</span>
+          <span>
+            <strong>postboard</strong>
+            <small>your moments, in one place</small>
+          </span>
+        </a>
+        <div class="topbar-actions">
+          <span id="postCount" class="count-label">0 posts</span>
+          <button id="exportBtn" class="button button-secondary button-small" type="button">Export JSON</button>
+          <label class="button button-secondary button-small file-button" for="importInput">Import JSON<input id="importInput" type="file" accept="application/json,.json" /></label>
+          <button id="deleteAllBtn" class="button button-danger button-small" type="button">Delete all</button>
+        </div>
+      </header>
+
+      <main class="main-grid">
+        <section class="intro">
+          <p class="eyebrow">Personal activity log</p>
+          <h1>Keep the<br /><em>whole story.</em></h1>
+          <p class="intro-copy">Capture a thought, a place, or a day worth remembering. Your posts stay on this device until you decide otherwise.</p>
+          <div class="storage-note"><span class="status-dot"></span><span>Saved locally as JSON</span></div>
+        </section>
+
+        <section class="composer-panel" aria-labelledby="composerTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" id="composerEyebrow">New entry</p>
+              <h2 id="composerTitle">What happened?</h2>
+            </div>
+            <button id="cancelEditBtn" class="text-button hidden" type="button">Cancel edit</button>
+          </div>
+
+          <form id="postForm">
+            <input id="editingPostId" type="hidden" />
+            <div class="form-grid">
+              <label>
+                <span>Name</span>
+                <input id="personName" name="personName" type="text" placeholder="Your name" required />
+              </label>
+              <label>
+                <span>Username</span>
+                <input id="userName" name="userName" type="text" placeholder="@handle" required />
+              </label>
+            </div>
+            <label>
+              <span>Message</span>
+              <textarea id="message" name="message" rows="5" placeholder="Write something worth keeping..." required></textarea>
+            </label>
+            <div class="form-grid form-grid-three">
+              <label>
+                <span>Date</span>
+                <input id="postDate" name="postDate" type="date" required />
+              </label>
+              <label>
+                <span>Time</span>
+                <input id="postTime" name="postTime" type="time" required />
+              </label>
+              <label>
+                <span>Location</span>
+                <input id="location" name="location" type="text" placeholder="City or place" />
+              </label>
+            </div>
+            <div class="upload-row">
+              <label class="upload-control" for="attachment">
+                <span class="upload-icon">+</span>
+                <span><strong>Add image or file</strong><small id="attachmentName">JPG, PNG, PDF, or any small file</small></span>
+                <input id="attachment" name="attachment" type="file" />
+              </label>
+              <button id="submitButton" class="button button-primary" type="submit">Publish post <span>-></span></button>
+            </div>
+            <p id="formStatus" class="form-status" role="status"></p>
+          </form>
+        </section>
+
+        <section class="feed-section" aria-labelledby="feedTitle">
+          <div class="feed-heading">
+            <div>
+              <p class="eyebrow">Archive</p>
+              <h2 id="feedTitle">Your posts</h2>
+            </div>
+            <label class="search-box">
+              <span aria-hidden="true">/</span>
+              <input id="searchInput" type="search" placeholder="Search posts" aria-label="Search posts" />
+            </label>
+          </div>
+          <div id="postList" class="post-list"></div>
+        </section>
+      </main>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
