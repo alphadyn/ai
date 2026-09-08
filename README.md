@@ -84,6 +84,10 @@ public CRUD access for this demo; add Supabase Auth and user-scoped policies
 before using it for private or production data. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
 
+If the app reports `NetworkError`, `supabase-config.js` still has its
+`YOUR_PROJECT_REF` or `YOUR_SUPABASE_ANON_KEY` placeholder, or the configured
+Supabase URL is unreachable.
+
 For Python code, run the script from the repo root or from its project folder as needed:
 
 ```bash

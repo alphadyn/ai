@@ -44,19 +44,23 @@ async function getApiError(response, fallback) {
   }
 }
 
-function supabaseRequest(path, options = {}) {
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+async function supabaseRequest(path, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('YOUR_PROJECT_REF') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
     throw new Error('Supabase is not configured. Add your project URL and anon key to supabase-config.js.');
   }
-  return fetch(`${SUPABASE_URL}${path}`, {
-    ...options,
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-    },
-  });
+  try {
+    return await fetch(`${SUPABASE_URL.replace(/\/$/, '')}${path}`, {
+      ...options,
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+    });
+  } catch (error) {
+    throw new Error('Could not reach Supabase. Verify the project URL in supabase-config.js and check the browser network connection.');
+  }
 }
 
 function mapSupabasePost(row) {
