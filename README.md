@@ -20,7 +20,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Legal Docketing](legal_docketing_app/) - Legal matter and deadline tracking app.
 - [Pencil Sketch](pencil_sketch_app/) - Image-to-pencil-sketch converter with adjustable controls.
 - [Photo Gallery](photo_gallery_app/) - Responsive photo gallery with random image loading.
-- [Postboard](postboard_app/) - Personal post archive with SQLite persistence, JSON import/export, attachments, search, editing, and deletion.
+- [Postboard](postboard_app/) - Personal post archive with SQLite persistence locally, browser-storage fallback on GitHub Pages, JSON import/export, attachments, search, editing, and deletion.
 - [Prime Counter](prime_counter_app/) - Prime counting utility with timing and charting.
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
