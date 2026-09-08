@@ -82,9 +82,17 @@ class PostboardHandler(SimpleHTTPRequestHandler):
         if urlparse(self.path).path != "/api/posts":
             self.send_error(404)
             return
-        posts = self.read_json()
+        try:
+            posts = self.read_json()
+        except (json.JSONDecodeError, ValueError):
+            self.send_json({"error": "Request body must be valid JSON."}, 400)
+            return
         if not isinstance(posts, list):
             self.send_json({"error": "Posts must be a JSON array."}, 400)
+            return
+        required_fields = {"id", "personName", "userName", "message", "date", "time"}
+        if any(not isinstance(post, dict) or not required_fields.issubset(post) for post in posts):
+            self.send_json({"error": "Each post must include id, personName, userName, message, date, and time."}, 400)
             return
         with connect_database() as database:
             database.execute("DELETE FROM posts")

@@ -25,18 +25,41 @@ const elements = {
 };
 
 async function loadPosts() {
-  const response = await fetch('/api/posts');
-  if (!response.ok) throw new Error('Could not load posts from the SQLite database.');
+  let response;
+  try {
+    response = await fetch('/api/posts');
+  } catch (error) {
+    throw new Error('Cannot reach the SQLite server. Start server.py and open http://127.0.0.1:8000.');
+  }
+  if (!response.ok) {
+    throw new Error(await getApiError(response, 'Could not load posts from the SQLite database.'));
+  }
   return response.json();
 }
 
+async function getApiError(response, fallback) {
+  try {
+    const body = await response.json();
+    return body.error || `${fallback} (HTTP ${response.status}).`;
+  } catch (error) {
+    return `${fallback} (HTTP ${response.status}). Start server.py and open http://127.0.0.1:8000.`;
+  }
+}
+
 async function savePosts() {
-  const response = await fetch('/api/posts', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(state.posts),
-  });
-  if (!response.ok) throw new Error('Could not save posts to the SQLite database.');
+  let response;
+  try {
+    response = await fetch('/api/posts', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state.posts),
+    });
+  } catch (error) {
+    throw new Error('Cannot reach the SQLite server. Start server.py and open http://127.0.0.1:8000.');
+  }
+  if (!response.ok) {
+    throw new Error(await getApiError(response, 'Could not save posts to the SQLite database.'));
+  }
 }
 
 function isPost(value) {
