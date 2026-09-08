@@ -366,10 +366,11 @@ async function handleSubmit(event) {
 elements.form.addEventListener('submit', handleSubmit);
 function resetDefaultMessageFormatting() {
   if (!elements.message.textContent.trim()) {
+    document.execCommand('removeFormat');
     ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript'].forEach((command) => {
-      if (document.queryCommandState?.(command)) document.execCommand(command);
+      const button = elements.formatButtons.find((item) => item.dataset.command === command);
+      button?.setAttribute('aria-pressed', 'false');
     });
-    setBoldButtonState(false);
   }
 }
 elements.message.addEventListener('focus', resetDefaultMessageFormatting);
