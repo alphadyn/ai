@@ -366,10 +366,10 @@ async function handleSubmit(event) {
 elements.form.addEventListener('submit', handleSubmit);
 function resetDefaultMessageFormatting() {
   if (!elements.message.textContent.trim()) {
+    ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript'].forEach((command) => {
+      if (document.queryCommandState?.(command)) document.execCommand(command);
+    });
     setBoldButtonState(false);
-    if (document.queryCommandState?.('bold')) {
-      document.execCommand('bold');
-    }
   }
 }
 elements.message.addEventListener('focus', resetDefaultMessageFormatting);
