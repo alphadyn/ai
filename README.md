@@ -72,10 +72,21 @@ cd postboard_app
 python3 server.py
 ```
 
-Postboard uses Python's standard-library `sqlite3` module. The server creates
-`postboard.db` in `postboard_app/` on first launch, and posts remain there until
-they are deleted from the app. Use the **Export JSON** and **Import JSON**
-controls to back up or transfer an archive of posts.
+### Postboard setup
+
+Postboard must be opened through its SQLite-backed Python server. Do not open
+`postboard_app/index.html` directly or serve that folder with
+`python3 -m http.server`, because the `/api/posts` endpoint will be unavailable.
+
+```bash
+cd postboard_app
+python3 server.py
+```
+
+Then open http://127.0.0.1:8000. The server uses Python's standard-library
+`sqlite3` module and creates `postboard.db` in `postboard_app/` on first launch.
+Posts remain there until deleted from the app. Use **Export JSON** and
+**Import JSON** to back up or transfer an archive of posts.
 
 For Python code, run the script from the repo root or from its project folder as needed:
 
