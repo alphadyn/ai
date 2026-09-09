@@ -234,11 +234,6 @@ function setStatus(message, kind = '') {
   elements.status.className = `form-status ${kind}`;
 }
 
-function setBoldButtonState(isActive) {
-  const boldButton = elements.formatButtons.find((button) => button.dataset.command === 'bold');
-  boldButton?.setAttribute('aria-pressed', String(isActive));
-}
-
 function clearFormatButtonStates() {
   elements.formatButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
 }
@@ -254,7 +249,6 @@ function resetComposer() {
   elements.form.reset();
   elements.message.innerHTML = '';
   elements.messageInput.value = '';
-  setBoldButtonState(false);
   elements.editingId.value = '';
   elements.attachmentName.textContent = 'JPG, PNG, PDF, or any small file';
   elements.cancelEdit.classList.add('hidden');
@@ -412,7 +406,6 @@ elements.formatButtons.forEach((button) => {
       document.execCommand(command);
     }
 
-    if (command === 'bold') setBoldButtonState(document.queryCommandState?.('bold') || false);
     setMessageFromEditor();
   });
 });
@@ -459,7 +452,6 @@ elements.list.addEventListener('click', async (event) => {
 async function init() {
   elements.message.innerHTML = '';
   elements.messageInput.value = '';
-  setBoldButtonState(false);
   try {
     state.posts = await loadPosts();
     setDefaultDateTime();

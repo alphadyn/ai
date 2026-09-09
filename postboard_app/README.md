@@ -5,7 +5,6 @@ Postboard is a small personal activity log for saving short updates with metadat
 ## Features
 
 - Rich-text message composer with headings, quotes, links, code, lists, highlighting, subscript, superscript, and other formatting controls
-- Bold formatting is unselected by default and is applied only when explicitly enabled
 - Person name, username, date, time, and optional location fields
 - Post editing and deletion in the timeline
 - Search across post text and metadata

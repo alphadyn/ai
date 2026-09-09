@@ -83,9 +83,8 @@ The Supabase anon key is intended for browser use. The included policies allow
 public CRUD access for this demo; add Supabase Auth and user-scoped policies
 before using it for private or production data. The message composer supports
 rich text such as headings, quotes, links, code, lists, highlighting, subscript,
-superscript, bold, italic, and underline. New messages begin unformatted, with
-bold unselected until the user explicitly enables it. Formatting is saved as
-sanitized HTML and rendered in the archive. Click a posted image to view it
+superscript, italic, and underline. New messages begin unformatted. Formatting
+is saved as sanitized HTML and rendered in the archive. Click a posted image to view it
 full-screen, then click the expanded image to close it. Use **Export JSON** and
 **Import JSON** to back up or transfer an archive of posts.
 
