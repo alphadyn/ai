@@ -381,6 +381,9 @@ elements.message.addEventListener('input', () => {
   setMessageFromEditor();
 });
 elements.formatButtons.forEach((button) => {
+  button.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+  });
   button.addEventListener('click', () => {
     elements.message.focus();
     const command = button.dataset.command;
@@ -397,6 +400,7 @@ elements.formatButtons.forEach((button) => {
     } else if (command === 'removeFormat') {
       document.execCommand('removeFormat');
       elements.message.innerHTML = sanitizeRichText(elements.message.innerHTML);
+      clearFormatButtonStates();
     } else if (value) {
       document.execCommand(command, false, value);
     } else {
