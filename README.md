@@ -18,6 +18,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Fractal Patterns](fractal_patterns_app/) - Interactive fractal visualizer.
 - [Game Videos](game_videos_site/) - Simple gaming video showcase page.
 - [iPhone 17 Pro Simulator](iphone_17_simulator/) - Offline interactive phone simulator with lock screen, widgets, Control Center, built-in apps, and functional simulated Safari.
+- [iPhone Duo Simulator](iphone_duo_app/) - Standalone iPhone Duo experience with a responsive handset, simulated apps, live clock, Dynamic Island, and desktop companion display with Mirror, Focus, and Share controls.
 - [Legal Docketing](legal_docketing_app/) - Legal matter and deadline tracking app.
 - [Pencil Sketch](pencil_sketch_app/) - Image-to-pencil-sketch converter with adjustable controls.
 - [Photo Gallery](photo_gallery_app/) - Responsive photo gallery with random image loading.
@@ -70,6 +71,9 @@ cd vcard_generator_app
 python3 -m http.server 8000
 
 cd iphone_17_simulator
+python3 -m http.server 8000
+
+cd iphone_duo_app
 python3 -m http.server 8000
 ```
 
