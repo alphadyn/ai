@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090b12" />
+    <title>iPhone 17 Pro Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <div class="stage-copy">
+        <p class="kicker">Pocket / 17 Pro</p>
+        <h1>Your new<br /><em>everyday.</em></h1>
+        <p class="stage-note">A small, tactile preview of the iPhone 17 Pro experience.</p>
+      </div>
+
+      <section class="device" aria-label="Interactive iPhone 17 Pro simulator">
+        <div class="device-button button-silent"></div>
+        <div class="device-button button-volume-up"></div>
+        <div class="device-button button-volume-down"></div>
+        <div class="device-button button-action"></div>
+        <div class="device-button button-power"></div>
+
+        <div class="phone-screen" id="phoneScreen">
+          <div class="wallpaper wallpaper-lock"></div>
+          <div class="wallpaper wallpaper-home"></div>
+
+          <header class="status-bar" id="statusBar">
+            <time id="statusTime">9:41</time>
+            <div class="status-right" aria-label="Phone status">
+              <span class="signal-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+              <span class="wifi-icon" aria-hidden="true"></span>
+              <span class="battery-icon" aria-label="Battery 84 percent"><i></i></span>
+            </div>
+          </header>
+
+          <button class="dynamic-island" id="dynamicIsland" type="button" aria-label="Open Now Playing">
+            <span class="island-camera"></span>
+            <span class="island-pulse"></span>
+          </button>
+
+          <section class="lock-screen" id="lockScreen">
+            <div class="lock-topline"><span class="lock-symbol">⌁</span><span>Wed, September 9</span></div>
+            <time class="lock-time" id="lockTime">9:41</time>
+            <div class="lock-bottom">
+              <button class="round-action" type="button" data-lock-action="flash" aria-label="Flashlight">✦</button>
+              <button class="round-action" type="button" data-lock-action="camera" aria-label="Camera">◉</button>
+            </div>
+            <button class="unlock-prompt" id="unlockPrompt" type="button">Swipe up to open <span>↑</span></button>
+          </section>
+
+          <section class="home-screen hidden" id="homeScreen">
+            <button class="home-date" data-widget="calendar" type="button" aria-label="Open Calendar"><span id="homeMonth">SEP</span><strong id="homeDate">09</strong><small id="homeDay">WED</small></button>
+            <button class="weather-widget" data-widget="weather" type="button" aria-label="Open Weather"><span class="weather-sun">☼</span><div><strong id="homeTemperature">72°</strong><small id="homeLocation">Bellevue, WA</small></div></button>
+            <div class="app-grid" id="appGrid">
+              <button class="app-icon app-messages" data-app="messages" type="button"><span>•••</span><small>Messages</small></button>
+              <button class="app-icon app-camera" data-app="camera" type="button"><span>◉</span><small>Camera</small></button>
+              <button class="app-icon app-photos" data-app="photos" type="button"><span>✤</span><small>Photos</small></button>
+              <button class="app-icon app-music" data-app="music" type="button"><span>♫</span><small>Music</small></button>
+              <button class="app-icon app-safari" data-app="safari" type="button"><span>◌</span><small>Safari</small></button>
+              <button class="app-icon app-settings" data-app="settings" type="button"><span>⚙</span><small>Settings</small></button>
+              <button class="app-icon app-notes" data-app="notes" type="button"><span>≡</span><small>Notes</small></button>
+              <button class="app-icon app-wallet" data-app="wallet" type="button"><span>▣</span><small>Wallet</small></button>
+            </div>
+            <div class="dock">
+              <button class="dock-icon app-phone" data-app="phone" type="button" aria-label="Phone">⌕</button>
+              <button class="dock-icon app-mail" data-app="mail" type="button" aria-label="Mail">✉</button>
+              <button class="dock-icon app-safari" data-app="safari" type="button" aria-label="Safari">◌</button>
+              <button class="dock-icon app-music" data-app="music" type="button" aria-label="Music">♫</button>
+            </div>
+          </section>
+
+          <section class="control-center hidden" id="controlCenter">
+            <div class="cc-heading"><span>Control Center</span><button type="button" class="cc-close" id="closeControlCenter">×</button></div>
+            <div class="cc-grid">
+              <button class="cc-tile connected active" data-toggle="connection" type="button"><span>⌁</span><small>Connected</small></button>
+              <button class="cc-tile active" data-toggle="airplane" type="button"><span>✈</span><small>Airplane</small></button>
+              <button class="cc-tile" data-toggle="focus" type="button"><span>◐</span><small>Focus</small></button>
+              <button class="cc-tile" data-toggle="bluetooth" type="button"><span>ᛒ</span><small>Bluetooth</small></button>
+            </div>
+            <div class="cc-slider"><span>☼</span><div><i style="width: 76%"></i></div></div>
+            <div class="cc-slider"><span>♬</span><div><i style="width: 40%"></i></div></div>
+            <div class="cc-row"><button type="button" data-quick-app="camera"><span>◉</span><small>Camera</small></button><button type="button" data-quick-app="calculator"><span>⌗</span><small>Calculator</small></button></div>
+          </section>
+
+          <section class="app-window hidden" id="appWindow">
+            <div id="appContent"></div>
+          </section>
+
+          <div class="toast" id="toast" role="status"></div>
+          <button class="home-indicator" id="homeIndicator" type="button" aria-label="Go to Home Screen"></button>
+        </div>
+      </section>
+
+      <aside class="spec-card">
+        <div><span class="spec-label">The latest</span><strong>A19 Pro</strong><small>All-day battery<br />Titanium finish</small></div>
+        <span class="spec-mark">17</span>
+      </aside>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
