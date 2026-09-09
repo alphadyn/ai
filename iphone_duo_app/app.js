@@ -33,11 +33,14 @@ function updateClock() {
   const time = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   const time24 = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   const day = now.toLocaleDateString([], { weekday: 'short' }).toUpperCase();
+  const hour = now.getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const welcomeTime = now.toLocaleDateString([], { weekday: 'long' }).toUpperCase() + `, ${time.toUpperCase()}`;
   document.querySelector('#statusTime').textContent = time;
   document.querySelector('#lockClock').textContent = time;
   document.querySelector('#companionTime').textContent = time24;
   document.querySelector('#welcomeTime').textContent = welcomeTime;
+  document.querySelector('#welcomeGreeting').innerHTML = `${greeting},<br /><i>Alphadyn.</i>`;
   document.querySelector('#homeDay').textContent = day;
   document.querySelector('#homeDate').textContent = String(now.getDate()).padStart(2, '0');
   document.querySelector('#homeMonth').textContent = now.toLocaleDateString([], { month: 'short' }).toUpperCase();
