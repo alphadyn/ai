@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#eee9df" />
+  <title>iPhone Duo | Two views. One rhythm.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="showcase">
+    <header class="masthead">
+      <a class="wordmark" href="#phone" aria-label="Duo home"><span class="wordmark-mark">+</span> DUO</a>
+      <div class="masthead-meta"><span>PRODUCT 01</span><span>09.09.26</span></div>
+    </header>
+
+    <section class="intro" aria-labelledby="pageTitle">
+      <p class="eyebrow">The latest iPhone, reimagined</p>
+      <h1 id="pageTitle">Two views.<br /><i>One rhythm.</i></h1>
+      <p class="intro-copy">A responsive simulation of iPhone Duo, the phone that keeps your focus close and your context one glance away.</p>
+      <div class="intro-line"><span></span><small>SCROLL TO EXPLORE</small></div>
+    </section>
+
+    <section class="product-stage" id="phone">
+      <div class="stage-label stage-label-left"><span>01</span><strong>HANDSET</strong><small>7.1&quot; seamless display</small></div>
+      <div class="phone-shell" aria-label="Interactive iPhone Duo handset">
+        <div class="side-button side-action"></div><div class="side-button side-volume-one"></div><div class="side-button side-volume-two"></div><div class="side-button side-lock"></div>
+        <div class="phone-screen" id="phoneScreen">
+          <div class="screen-glow"></div>
+          <header class="status-bar"><time id="statusTime">9:41</time><div class="status-icons"><span class="signal" aria-label="Full signal"><i></i><i></i><i></i><i></i></span><span class="wifi" aria-label="Wi-Fi connected"></span><span class="battery" aria-label="Battery 84 percent"><i></i></span></div></header>
+          <button class="island" id="island" type="button" aria-label="Open Duo live activity"><span class="island-camera"></span><span class="island-copy">Duo Live <b>Now playing</b></span><span class="island-bars"><i></i><i></i><i></i></span></button>
+
+          <section class="lock-view" id="lockView">
+            <p class="date-line"><span class="date-spark">✦</span><span id="lockDate">Wednesday, September 9</span></p>
+            <time class="lock-clock" id="lockClock">9:41</time>
+            <div class="lock-shortcuts"><button type="button" data-lock-action="flash" aria-label="Turn on flashlight">✦</button><button type="button" data-lock-action="camera" aria-label="Open camera">◉</button></div>
+            <button class="unlock-button" id="unlockButton" type="button">Swipe up to open <b>↑</b></button>
+          </section>
+
+          <section class="home-view hidden" id="homeView">
+            <div class="home-heading"><button class="date-widget" data-app="calendar" type="button"><small id="homeMonth">SEP</small><strong id="homeDate">09</strong><span id="homeDay">WED</span></button><button class="weather-widget" data-app="weather" type="button"><span>☼</span><strong id="homeTemp">72°</strong><small>Bellevue, WA</small></button></div>
+            <div class="welcome"><p id="welcomeTime">WEDNESDAY, 9:41 AM</p><h2>Good morning,<br /><i>Alphadyn.</i></h2></div>
+            <div class="app-grid" id="appGrid">
+              <button class="app-button app-messages" data-app="messages" type="button"><span>•••</span><small>Messages</small></button>
+              <button class="app-button app-camera" data-app="camera" type="button"><span>◉</span><small>Camera</small></button>
+              <button class="app-button app-photos" data-app="photos" type="button"><span>✤</span><small>Photos</small></button>
+              <button class="app-button app-music" data-app="music" type="button"><span>♫</span><small>Music</small></button>
+              <button class="app-button app-safari" data-app="safari" type="button"><span>◌</span><small>Safari</small></button>
+              <button class="app-button app-notes" data-app="notes" type="button"><span>≡</span><small>Notes</small></button>
+              <button class="app-button app-wallet" data-app="wallet" type="button"><span>▣</span><small>Wallet</small></button>
+              <button class="app-button app-settings" data-app="settings" type="button"><span>⚙</span><small>Settings</small></button>
+            </div>
+            <div class="dock"><button class="dock-button app-phone" data-app="phone" type="button" aria-label="Phone">⌕</button><button class="dock-button app-mail" data-app="mail" type="button" aria-label="Mail">✉</button><button class="dock-button app-safari" data-app="safari" type="button" aria-label="Safari">◌</button><button class="dock-button app-music" data-app="music" type="button" aria-label="Music">♫</button></div>
+          </section>
+
+          <section class="control-center hidden" id="controlCenter">
+            <div class="panel-title"><span>Control Center</span><button type="button" data-close-panel>×</button></div>
+            <div class="quick-grid"><button class="quick-tile active" data-toggle="connection" type="button"><span>⌁</span><small>Connected</small></button><button class="quick-tile active" data-toggle="airplane" type="button"><span>✈</span><small>Airplane</small></button><button class="quick-tile" data-toggle="focus" type="button"><span>◒</span><small>Focus</small></button><button class="quick-tile" data-toggle="bluetooth" type="button"><span>ᛒ</span><small>Bluetooth</small></button></div>
+            <div class="slider"><span>☼</span><div><i style="width:76%"></i></div></div><div class="slider"><span>♬</span><div><i style="width:42%"></i></div></div>
+            <div class="quick-actions"><button data-app="camera" type="button"><span>◉</span><small>Camera</small></button><button data-app="calculator" type="button"><span>⌗</span><small>Calculator</small></button></div>
+          </section>
+
+          <section class="app-window hidden" id="appWindow"><div id="appContent"></div></section>
+          <div class="toast" id="toast" role="status"></div>
+          <button class="home-indicator" id="homeIndicator" type="button" aria-label="Return to Home Screen"></button>
+        </div>
+      </div>
+      <div class="stage-label stage-label-right"><span>02</span><strong>COMPANION</strong><small>Always-on Duo display</small></div>
+    </section>
+
+    <aside class="companion-card" aria-label="Duo companion display">
+      <div class="companion-head"><span class="eyebrow">Duo Link / Connected</span><span class="online-dot"></span></div>
+      <div class="companion-screen" id="companionScreen"><div class="companion-top"><span>DUO DISPLAY</span><time id="companionTime">09:41</time></div><div class="companion-art"><span id="companionIcon">✦</span><strong id="companionTitle">Your second<br />point of view.</strong><small id="companionCopy">Unlock the handset to bring both views to life.</small></div><div class="companion-bottom"><span><i></i> In sync</span><b>84%</b></div></div>
+      <div class="companion-controls"><button type="button" data-companion="mirror"><span>◈</span><small>Mirror</small></button><button type="button" data-companion="focus"><span>◒</span><small>Focus</small></button><button type="button" data-companion="share"><span>↑</span><small>Share</small></button></div>
+      <div class="companion-specs"><span><b>A19 Duo</b><small>Neural engine</small></span><span><b>48 hrs</b><small>Battery life</small></span><span><b>4K</b><small>Spatial video</small></span></div>
+    </aside>
+
+    <footer class="footer"><span>DUO / A NEW KIND OF CLOSE</span><span>BUILT FOR THE MOMENTS BETWEEN</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
