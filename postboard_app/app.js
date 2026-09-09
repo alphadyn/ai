@@ -239,6 +239,10 @@ function setBoldButtonState(isActive) {
   boldButton?.setAttribute('aria-pressed', String(isActive));
 }
 
+function clearFormatButtonStates() {
+  elements.formatButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
+}
+
 function resetComposer() {
   elements.form.reset();
   elements.message.innerHTML = '';
@@ -367,13 +371,11 @@ elements.form.addEventListener('submit', handleSubmit);
 function resetDefaultMessageFormatting() {
   if (!elements.message.textContent.trim()) {
     document.execCommand('removeFormat');
-    ['bold', 'italic', 'underline', 'strikeThrough', 'subscript', 'superscript'].forEach((command) => {
-      const button = elements.formatButtons.find((item) => item.dataset.command === command);
-      button?.setAttribute('aria-pressed', 'false');
-    });
+    clearFormatButtonStates();
   }
 }
 elements.message.addEventListener('focus', resetDefaultMessageFormatting);
+elements.message.addEventListener('click', clearFormatButtonStates);
 elements.message.addEventListener('input', () => {
   setMessageFromEditor();
 });
