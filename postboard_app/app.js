@@ -243,6 +243,13 @@ function clearFormatButtonStates() {
   elements.formatButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'));
 }
 
+function clearAllMessageFormatting() {
+  const plainText = elements.message.innerText || elements.message.textContent || '';
+  elements.message.innerHTML = escapeHtml(plainText).replace(/\n/g, '<br>');
+  clearFormatButtonStates();
+  setMessageFromEditor();
+}
+
 function resetComposer() {
   elements.form.reset();
   elements.message.innerHTML = '';
@@ -398,9 +405,7 @@ elements.formatButtons.forEach((button) => {
       if (!url) return;
       document.execCommand(command, false, url);
     } else if (command === 'removeFormat') {
-      document.execCommand('removeFormat');
-      elements.message.innerHTML = sanitizeRichText(elements.message.innerHTML);
-      clearFormatButtonStates();
+      clearAllMessageFormatting();
     } else if (value) {
       document.execCommand(command, false, value);
     } else {
