@@ -242,9 +242,37 @@ button { font: inherit; }
 .outer-actions small { color: rgba(255,255,255,0.7); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
 .outer-open-button { align-self: center; margin-top: 18px; padding: 0; border: 0; background: transparent; color: rgba(255,255,255,0.82); cursor: pointer; font: 500 10px "DM Mono", monospace; letter-spacing: 0.13em; }
 .outer-open-button b { color: var(--orange); font-size: 16px; }
-.phone-shell.closed { width: calc(var(--phone-open-width) / 2); height: 500px; border-radius: 52px; box-shadow: 0 42px 80px rgba(0,0,0,0.68), inset 0 0 0 1px rgba(236,236,236,0.25); }
-.phone-shell.closed .phone-screen { border-radius: 46px; }
-.phone-shell.closed::before { content: ""; position: absolute; top: 10px; bottom: 10px; left: -13px; z-index: 0; width: calc(100% - 8px); border: 1px solid rgba(130,135,139,0.85); border-radius: 50px 38px 38px 50px; background: linear-gradient(90deg, #d0d1cf 0%, #8c9090 4%, #343a3c 12%, #171b1d 92%, #62676a 100%); box-shadow: -8px 20px 26px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.32); }
+.phone-shell.closed {
+  width: calc(var(--phone-open-width) / 2);
+  height: 500px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 52px;
+  border-bottom-right-radius: 52px;
+  box-shadow: 0 42px 80px rgba(0,0,0,0.68), inset 0 0 0 1px rgba(236,236,236,0.25);
+}
+.phone-shell.closed .phone-screen {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 46px;
+  border-bottom-right-radius: 46px;
+}
+.phone-shell.closed::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: -13px;
+  z-index: 0;
+  width: calc(100% - 8px);
+  border: 1px solid rgba(130,135,139,0.85);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 38px;
+  border-bottom-right-radius: 38px;
+  background: linear-gradient(90deg, #d0d1cf 0%, #8c9090 4%, #343a3c 12%, #171b1d 92%, #62676a 100%);
+  box-shadow: -8px 20px 26px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.32);
+}
 .phone-shell.closed .outer-view { padding: 60px 28px 24px; color: #fff; background: radial-gradient(circle at 30% 18%, rgba(117,181,255,0.28), transparent 18%), radial-gradient(circle at 70% 68%, rgba(255,106,61,0.18), transparent 24%), linear-gradient(150deg, #08121d 0%, #111a2e 36%, #1e1630 68%, #0a0d13 100%); }
 .phone-shell.closed .outer-view::before { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 32%, rgba(255,255,255,0.03)); pointer-events: none; }
 .phone-shell.closed .outer-content { position: relative; z-index: 1; justify-content: flex-start; }
