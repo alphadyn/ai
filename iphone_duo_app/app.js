@@ -8,8 +8,16 @@ const island = document.querySelector('#island');
 const companionTitle = document.querySelector('#companionTitle');
 const companionCopy = document.querySelector('#companionCopy');
 const companionIcon = document.querySelector('#companionIcon');
+const outerView = document.querySelector('#outerView');
+const phoneShell = document.querySelector('.phone-shell');
+const outerOpenButton = document.querySelector('#outerOpenButton');
+const closeDeviceButton = document.querySelector('#closeDeviceButton');
+const outerTime = document.querySelector('#outerTime');
+const outerMessage = document.querySelector('#outerMessage');
+const openModeButton = document.querySelector('#openModeButton');
+const closedModeButton = document.querySelector('#closedModeButton');
 const safariState = { history: ['duo.apple'], index: 0 };
-const duoState = { unlocked: false, mirrored: false, focused: false };
+const duoState = { unlocked: false, mirrored: false, focused: false, closed: false };
 let toastTimer;
 
 const views = {
@@ -39,6 +47,7 @@ function updateClock() {
   document.querySelector('#statusTime').textContent = time;
   document.querySelector('#lockClock').textContent = time;
   document.querySelector('#companionTime').textContent = time24;
+  outerTime.textContent = time;
   document.querySelector('#welcomeTime').textContent = welcomeTime;
   document.querySelector('#welcomeGreeting').innerHTML = `${greeting},<br /><i>Alphadyn.</i>`;
   document.querySelector('#homeDay').textContent = day;
@@ -48,7 +57,29 @@ function updateClock() {
 }
 function showToast(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1800); }
 function updateCompanion(title, copy, icon = '✦') { companionTitle.innerHTML = title; companionCopy.textContent = copy; companionIcon.textContent = icon; }
-function unlock() { duoState.unlocked = true; lockView.classList.add('hidden'); homeView.classList.remove('hidden'); updateCompanion('Both views,<br />now in sync.', 'Your phone and companion are ready for the day.'); }
+function setDeviceMode(closed) {
+  duoState.closed = closed;
+  phoneShell.classList.toggle('closed', closed);
+  outerView.classList.toggle('hidden', !closed);
+  openModeButton.classList.toggle('active', !closed);
+  closedModeButton.classList.toggle('active', closed);
+  openModeButton.setAttribute('aria-pressed', String(!closed));
+  closedModeButton.setAttribute('aria-pressed', String(closed));
+  if (closed) {
+    lockView.classList.add('hidden');
+    homeView.classList.add('hidden');
+    controlCenter.classList.add('hidden');
+    appWindow.classList.add('hidden');
+    outerMessage.textContent = duoState.unlocked ? 'Your essentials stay close on the outer display.' : 'Get things done here, then open Duo for the full workspace.';
+    showToast('Duo closed');
+  } else {
+    outerView.classList.add('hidden');
+    if (duoState.unlocked) homeView.classList.remove('hidden');
+    else lockView.classList.remove('hidden');
+    showToast('Duo open');
+  }
+}
+function unlock() { duoState.unlocked = true; homeView.dataset.active = 'true'; lockView.classList.add('hidden'); homeView.classList.remove('hidden'); updateCompanion('Both views,<br />now in sync.', 'Your phone and companion are ready for the day.'); }
 function goHome() { appWindow.classList.add('hidden'); controlCenter.classList.add('hidden'); homeView.classList.remove('hidden'); if (duoState.mirrored) updateCompanion('Home, mirrored.', 'Your home screen is visible on the Duo display.', '◈'); }
 function openApp(name) { if (!duoState.unlocked) return; appContent.innerHTML = views[name] || views.messages; appWindow.classList.remove('hidden'); controlCenter.classList.add('hidden'); homeView.classList.add('hidden'); if (name === 'calendar') renderCalendar(); if (name === 'safari') renderSafari(); if (duoState.mirrored) updateCompanion(`${name[0].toUpperCase()}${name.slice(1)}<br />mirrored.`, 'A live view is on your Duo display.', '◈'); }
 function openControlCenter() { if (!duoState.unlocked) return; appWindow.classList.add('hidden'); controlCenter.classList.remove('hidden'); }
@@ -62,6 +93,10 @@ function companionAction(action) { if (action === 'mirror') { duoState.mirrored 
 updateClock();
 setInterval(updateClock, 30000);
 document.querySelector('#unlockButton').addEventListener('click', unlock);
+document.addEventListener('duo-position-change', event => setDeviceMode(event.detail.closed));
+outerOpenButton.addEventListener('click', () => setDeviceMode(false));
+closeDeviceButton.addEventListener('click', () => setDeviceMode(true));
+closeDeviceButton.addEventListener('pointerup', () => setDeviceMode(true));
 document.querySelector('#lockView').addEventListener('dblclick', unlock);
 document.querySelector('#homeIndicator').addEventListener('click', goHome);
 document.querySelector('#island').addEventListener('click', () => island.classList.toggle('expanded'));
@@ -73,6 +108,7 @@ document.querySelector('.dock').addEventListener('click', event => { const butto
 document.querySelector('.quick-actions').addEventListener('click', event => { const button = event.target.closest('[data-app]'); if (button) openApp(button.dataset.app); });
 document.querySelector('#controlCenter').addEventListener('click', event => { const toggle = event.target.closest('[data-toggle]'); if (toggle) { toggle.classList.toggle('active'); showToast(`${toggle.dataset.toggle} ${toggle.classList.contains('active') ? 'on' : 'off'}`); } });
 document.querySelectorAll('[data-lock-action]').forEach(button => button.addEventListener('click', () => showToast(button.dataset.lockAction === 'flash' ? 'Flashlight on' : 'Camera ready')));
+document.querySelector('.outer-actions').addEventListener('click', event => { const button = event.target.closest('[data-outer-action]'); if (!button) return; const action = button.dataset.outerAction; if (action === 'companion') companionAction('mirror'); else if (action === 'music') { outerMessage.textContent = 'Now playing: Midnight Aperture.'; showToast('Music playing'); } else { outerMessage.textContent = 'Camera ready on the outer display.'; showToast('Camera ready'); } });
 document.querySelector('.companion-controls').addEventListener('click', event => { const button = event.target.closest('[data-companion]'); if (button) companionAction(button.dataset.companion); });
 appWindow.addEventListener('click', event => { if (event.target.closest('[data-close-app]')) goHome(); const action = event.target.closest('[data-safari]'); const link = event.target.closest('[data-safari-link]'); if (action) { const type = action.dataset.safari; if (type === 'back' && safariState.index > 0) { safariState.index -= 1; renderSafari(); } if (type === 'forward' && safariState.index < safariState.history.length - 1) { safariState.index += 1; renderSafari(); } if (type === 'reload') { renderSafari(); showToast('Page reloaded'); } if (type === 'share') showToast('Link copied'); if (type === 'tabs') showToast('1 tab open'); } if (link) navigateSafari(link.dataset.safariLink); });
 appWindow.addEventListener('submit', event => { if (!event.target.matches('[data-safari-form]')) return; event.preventDefault(); navigateSafari(event.target.querySelector('[aria-label="Address"]').value); });

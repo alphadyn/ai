@@ -25,13 +25,28 @@
     </section>
 
     <section class="product-stage" id="phone">
-      <div class="stage-label stage-label-left"><span>01</span><strong>HANDSET</strong><small>7.6&quot; inner display</small></div>
-      <div class="phone-shell" aria-label="Interactive iPhone Duo handset">
+      <div class="stage-label stage-label-left"><span>01</span><strong>INNER DISPLAY</strong><small>7.6&quot; Super Retina XDR</small></div>
+      <div class="device-mode-control" role="group" aria-label="Duo device position">
+        <span class="position-title">DEVICE POSITION</span>
+        <div class="position-segmented" role="group" aria-label="Open or close iPhone Duo">
+          <button class="position-option active" id="openModeButton" type="button" aria-pressed="true" onclick="window.applyDuoPosition(100)">OPEN</button>
+          <button class="position-option" id="closedModeButton" type="button" aria-pressed="false" onclick="window.applyDuoPosition(0)">CLOSED</button>
+        </div>
+      </div>
+      <div class="phone-shell" aria-label="Interactive iPhone Duo opened handset">
         <div class="side-button side-action"></div><div class="side-button side-volume-one"></div><div class="side-button side-volume-two"></div><div class="side-button side-lock"></div>
         <div class="phone-screen" id="phoneScreen">
           <div class="screen-glow"></div>
           <header class="status-bar"><time id="statusTime">9:41</time><div class="status-icons"><span class="signal" aria-label="Full signal"><i></i><i></i><i></i><i></i></span><span class="wifi" aria-label="Wi-Fi connected"></span><span class="battery" aria-label="Battery 84 percent"><i></i></span></div></header>
           <button class="island" id="island" type="button" aria-label="Open Duo live activity"><span class="island-camera"></span><span class="island-copy">Duo Live <b>Now playing</b></span><span class="island-bars"><i></i><i></i><i></i></span></button>
+          <button class="close-device-button" id="closeDeviceButton" onclick="window.applyDuoPosition(0)" type="button">CLOSE DUO <b>↘</b></button>
+
+          <section class="outer-view hidden" id="outerView" aria-label="iPhone Duo outer display">
+            <div class="outer-status"><time id="outerTime">9:41</time><span>5.4&quot; OUTER · 84%</span></div>
+            <div class="outer-content"><span class="outer-icon">✦</span><p>5.4&quot; SUPER RETINA XDR</p><strong>Everything<br /><i>at a glance.</i></strong><small id="outerMessage">Get things done on the outer display, then open Duo for the full workspace.</small></div>
+            <div class="outer-actions"><button type="button" data-outer-action="music">♫<small>Music</small></button><button type="button" data-outer-action="camera">◉<small>Camera</small></button><button type="button" data-outer-action="companion">◈<small>Mirror</small></button></div>
+            <button class="outer-open-button" id="outerOpenButton" onclick="window.applyDuoPosition(100)" type="button">OPEN DUO <b>↗</b></button>
+          </section>
 
           <section class="lock-view" id="lockView">
             <p class="date-line"><span class="date-spark">✦</span><span id="lockDate">Wednesday, September 9</span></p>
@@ -68,7 +83,7 @@
           <button class="home-indicator" id="homeIndicator" type="button" aria-label="Return to Home Screen"></button>
         </div>
       </div>
-      <div class="stage-label stage-label-right"><span>02</span><strong>COMPANION</strong><small>5.4&quot; outer display</small></div>
+      <div class="stage-label stage-label-right"><span>02</span><strong>OUTER DISPLAY</strong><small>5.4&quot; Super Retina XDR</small></div>
     </section>
 
     <aside class="companion-card" aria-label="Duo companion display">
@@ -80,6 +95,22 @@
 
     <footer class="footer"><span>DUO / FOLDABLE. POSABLE. DURABLE.</span><span>BUILT FOR THE MOMENTS BETWEEN</span></footer>
   </main>
+  <script>
+    window.applyDuoPosition = function(value) {
+      const closed = Number(value) < 50;
+      document.querySelector('.phone-shell').classList.toggle('closed', closed);
+      document.querySelector('#outerView').classList.toggle('hidden', !closed);
+      document.querySelector('#lockView').classList.toggle('hidden', closed);
+      document.querySelector('#homeView').classList.toggle('hidden', closed || !document.querySelector('#homeView').dataset.active);
+      document.querySelector('#controlCenter').classList.add('hidden');
+      document.querySelector('#appWindow').classList.add('hidden');
+      document.querySelector('#openModeButton').classList.toggle('active', !closed);
+      document.querySelector('#closedModeButton').classList.toggle('active', closed);
+      document.querySelector('#openModeButton').setAttribute('aria-pressed', String(!closed));
+      document.querySelector('#closedModeButton').setAttribute('aria-pressed', String(closed));
+      document.dispatchEvent(new CustomEvent('duo-position-change', { detail: { closed } }));
+    };
+  </script>
   <script src="app.js"></script>
 </body>
 </html>
