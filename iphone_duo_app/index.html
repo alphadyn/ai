@@ -42,10 +42,12 @@
           <button class="close-device-button" id="closeDeviceButton" onclick="window.applyDuoPosition(0)" type="button">CLOSE DUO <b>↘</b></button>
 
           <section class="outer-view hidden" id="outerView" aria-label="iPhone Duo outer display">
-            <div class="outer-status"><time id="outerTime">9:41</time><span>5.4&quot; OUTER · 84%</span></div>
-            <div class="outer-content"><span class="outer-icon">✦</span><p>5.4&quot; SUPER RETINA XDR</p><strong>Everything<br /><i>at a glance.</i></strong><small id="outerMessage">Get things done on the outer display, then open Duo for the full workspace.</small></div>
+            <div class="outer-content"><div class="outer-lock-top"><span id="outerDate">✦ Wednesday, September 9</span><span>◌</span></div><time class="outer-lock-time" id="outerTime">9:41</time><p>5.4&quot; SUPER RETINA XDR</p><small id="outerMessage">Get things done on the outer display, then open Duo for the full workspace.</small></div>
             <div class="outer-actions"><button type="button" data-outer-action="music">♫<small>Music</small></button><button type="button" data-outer-action="camera">◉<small>Camera</small></button><button type="button" data-outer-action="companion">◈<small>Mirror</small></button></div>
+            <div class="outer-home-screen" id="outerHomeScreen" aria-label="Folded phone home screen"><div class="outer-menu-header"><span>DUO</span><time id="outerMenuTime">9:41</time></div><div class="outer-menu-grid"><button type="button" data-outer-app="messages">•••<small>Messages</small></button><button type="button" data-outer-app="camera">◉<small>Camera</small></button><button type="button" data-outer-app="photos">✤<small>Photos</small></button><button type="button" data-outer-app="music">♫<small>Music</small></button></div></div>
+            <section class="outer-app-view" id="outerAppView" aria-label="Folded app view"><button class="outer-app-back" id="outerAppBack" type="button">‹ MENU</button><div class="outer-app-header"><span id="outerAppIcon">•••</span><div><strong id="outerAppTitle">Messages</strong><small id="outerAppStatus">Outer display</small></div><time id="outerAppClock">9:41</time></div><div id="outerAppBody"></div></section>
             <button class="outer-open-button" id="outerOpenButton" onclick="window.applyDuoPosition(100)" type="button">OPEN DUO <b>↗</b></button>
+            <button class="outer-home-indicator" id="outerHomeIndicator" type="button" aria-label="Return to Home Screen"></button>
           </section>
 
           <section class="lock-view" id="lockView">

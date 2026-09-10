@@ -12,6 +12,16 @@ const outerView = document.querySelector('#outerView');
 const phoneShell = document.querySelector('.phone-shell');
 const outerOpenButton = document.querySelector('#outerOpenButton');
 const closeDeviceButton = document.querySelector('#closeDeviceButton');
+const outerHomeIndicator = document.querySelector('#outerHomeIndicator');
+const outerHomeScreen = document.querySelector('#outerHomeScreen');
+const outerMenuTime = document.querySelector('#outerMenuTime');
+const outerAppView = document.querySelector('#outerAppView');
+const outerAppBack = document.querySelector('#outerAppBack');
+const outerAppIcon = document.querySelector('#outerAppIcon');
+const outerAppTitle = document.querySelector('#outerAppTitle');
+const outerAppStatus = document.querySelector('#outerAppStatus');
+const outerAppClock = document.querySelector('#outerAppClock');
+const outerAppBody = document.querySelector('#outerAppBody');
 const outerTime = document.querySelector('#outerTime');
 const outerMessage = document.querySelector('#outerMessage');
 const openModeButton = document.querySelector('#openModeButton');
@@ -48,12 +58,15 @@ function updateClock() {
   document.querySelector('#lockClock').textContent = time;
   document.querySelector('#companionTime').textContent = time24;
   outerTime.textContent = time;
+  outerMenuTime.textContent = time;
+  outerAppClock.textContent = time;
   document.querySelector('#welcomeTime').textContent = welcomeTime;
   document.querySelector('#welcomeGreeting').innerHTML = `${greeting},<br /><i>Alphadyn.</i>`;
   document.querySelector('#homeDay').textContent = day;
   document.querySelector('#homeDate').textContent = String(now.getDate()).padStart(2, '0');
   document.querySelector('#homeMonth').textContent = now.toLocaleDateString([], { month: 'short' }).toUpperCase();
   document.querySelector('#lockDate').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  document.querySelector('#outerDate').textContent = `✦ ${now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}`;
 }
 function showToast(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1800); }
 function updateCompanion(title, copy, icon = '✦') { companionTitle.innerHTML = title; companionCopy.textContent = copy; companionIcon.textContent = icon; }
@@ -61,6 +74,8 @@ function setDeviceMode(closed) {
   duoState.closed = closed;
   phoneShell.classList.toggle('closed', closed);
   outerView.classList.toggle('hidden', !closed);
+  outerView.classList.remove('menu');
+  outerAppView.classList.remove('active');
   openModeButton.classList.toggle('active', !closed);
   closedModeButton.classList.toggle('active', closed);
   openModeButton.setAttribute('aria-pressed', String(!closed));
@@ -91,7 +106,7 @@ function navigateSafari(value) { safariState.history = safariState.history.slice
 function companionAction(action) { if (action === 'mirror') { duoState.mirrored = !duoState.mirrored; updateCompanion(duoState.mirrored ? 'Mirror mode,<br />on.' : 'Both views,<br />now in sync.', duoState.mirrored ? 'Your active phone view is shared.' : 'Your phone and companion are ready for the day.', duoState.mirrored ? '◈' : '✦'); showToast(duoState.mirrored ? 'Duo mirror on' : 'Duo mirror off'); } if (action === 'focus') { duoState.focused = !duoState.focused; updateCompanion(duoState.focused ? 'Focus mode,<br />on.' : 'Both views,<br />now in sync.', duoState.focused ? 'Only the moments that matter are showing.' : 'Your phone and companion are ready for the day.', '◒'); showToast(duoState.focused ? 'Focus mode on' : 'Focus mode off'); } if (action === 'share') { updateCompanion('Ready to<br />share.', 'A link to this Duo session is ready.', '↑'); showToast('Duo link copied'); } }
 
 updateClock();
-setInterval(updateClock, 30000);
+setInterval(updateClock, 1000);
 document.querySelector('#unlockButton').addEventListener('click', unlock);
 document.addEventListener('duo-position-change', event => setDeviceMode(event.detail.closed));
 outerOpenButton.addEventListener('click', () => setDeviceMode(false));
@@ -99,6 +114,20 @@ closeDeviceButton.addEventListener('click', () => setDeviceMode(true));
 closeDeviceButton.addEventListener('pointerup', () => setDeviceMode(true));
 document.querySelector('#lockView').addEventListener('dblclick', unlock);
 document.querySelector('#homeIndicator').addEventListener('click', goHome);
+outerHomeIndicator.addEventListener('click', () => { if (duoState.closed) { outerView.classList.add('menu'); outerAppView.classList.remove('active'); } });
+function openOuterApp(name) {
+  const app = { messages: { icon: '•••', title: 'Messages', status: '3 unread', body: '<div class="outer-message-hero"><strong>Good morning.</strong><small>Your conversations, right where you left them.</small></div><div class="outer-message-list"><button class="outer-message-row"><b>A</b><span><strong>Alphadyn</strong><small>Welcome to Duo</small></span><em>›</em></button><button class="outer-message-row"><b>J</b><span><strong>Jordan Lee</strong><small>Shared a location with you</small></span><em>›</em></button><button class="outer-message-row"><b>M</b><span><strong>Mom</strong><small>Photo · Yesterday</small></span><em>›</em></button></div><p class="outer-app-hint">Tap a conversation to open it on the inner display.</p>' }, camera: { icon: '◉', title: 'Camera', status: 'PHOTO · 1×', body: '<div class="outer-camera-preview"><span>Center Stage</span><i></i></div><div class="outer-camera-controls"><button>0.5</button><button class="selected">1×</button><button>2</button></div><button class="outer-camera-shutter" id="outerCameraShutter" type="button" aria-label="Take photo"></button><p class="outer-app-hint" id="outerCameraStatus">Ready to capture</p>' }, photos: { icon: '✤', title: 'Photos', status: 'RECENTS · 248', body: '<div class="outer-photo-grid"><button></button><button></button><button></button><button></button><button></button><button></button></div><p class="outer-app-hint" id="outerPhotosStatus">Select a photo to preview.</p>' }, music: { icon: '♫', title: 'Music', status: 'NOW PLAYING', body: '<div class="outer-now-playing"><div class="outer-album-art">♫</div><strong>Midnight<br />Aperture</strong><small>Nova · New release</small><div class="outer-track"><i></i></div><div class="outer-player"><button>‹</button><button id="outerMusicPlay">▶</button><button>›</button></div></div>' } }[name];
+  if (!app) return;
+  outerAppIcon.textContent = app.icon; outerAppTitle.textContent = app.title; outerAppStatus.textContent = app.status; outerAppBody.innerHTML = app.body; outerAppView.className = `outer-app-view ${name}`; outerView.classList.add('menu'); outerAppView.classList.add('active');
+}
+outerAppBack.addEventListener('click', () => outerAppView.classList.remove('active'));
+outerHomeScreen.addEventListener('click', event => { const button = event.target.closest('[data-outer-app]'); if (button) openOuterApp(button.dataset.outerApp); });
+outerAppBody.addEventListener('click', event => {
+  if (event.target.closest('.outer-message-row')) showToast('Open conversation on inner display');
+  if (event.target.closest('#outerCameraShutter')) { document.querySelector('#outerCameraStatus').textContent = 'Photo saved to Photos'; showToast('Photo captured'); }
+  if (event.target.closest('.outer-photo-grid button')) document.querySelector('#outerPhotosStatus').textContent = 'Photo selected · swipe up to view';
+  const play = event.target.closest('#outerMusicPlay'); if (play) { play.textContent = play.textContent === '▶' ? 'Ⅱ' : '▶'; showToast(play.textContent === 'Ⅱ' ? 'Now playing' : 'Playback paused'); }
+});
 document.querySelector('#island').addEventListener('click', () => island.classList.toggle('expanded'));
 document.querySelector('.status-bar').addEventListener('click', openControlCenter);
 document.querySelector('[data-close-panel]').addEventListener('click', goHome);
