@@ -256,10 +256,16 @@ button { font: inherit; }
 .phone-shell.closed .outer-view.menu .outer-actions,
 .phone-shell.closed .outer-view.menu .outer-open-button { display: none; }
 .phone-shell.closed .outer-view.menu .outer-home-screen { position: relative; z-index: 2; display: block; padding-top: 5px; }
-.outer-menu-header { display: flex; justify-content: space-between; color: rgba(255,255,255,0.92); font-size: 14px; font-weight: 700; }
+.phone-shell.closed .outer-view.menu { background: linear-gradient(180deg, rgba(12,16,22,.98) 0%, rgba(18,24,31,.98) 100%); }
+.phone-shell.closed .outer-view.menu::before { display: none; }
+.outer-menu-header { display: flex; justify-content: space-between; color: #fff; font-size: 14px; font-weight: 700; }
 .outer-home-screen > p { margin: 30px 0 12px; color: rgba(255,255,255,0.82); font: 500 8px "DM Mono", monospace; letter-spacing: 0.16em; }
 .outer-menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.outer-menu-grid button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; aspect-ratio: 1; border: 1px solid rgba(255,255,255,0.3); border-radius: 18px; background: rgba(75,63,50,0.26); color: #fff; cursor: pointer; font-size: 25px; }
+.outer-menu-grid button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; aspect-ratio: 1; border: 0; border-radius: 16px; color: #fff; cursor: pointer; font-size: 25px; box-shadow: 0 10px 18px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.2); }
+.outer-menu-grid button[data-outer-app="messages"] { background: linear-gradient(135deg, #34d27a, #11a561); }
+.outer-menu-grid button[data-outer-app="camera"] { background: linear-gradient(135deg, #2a313d, #0f1118); }
+.outer-menu-grid button[data-outer-app="photos"] { background: linear-gradient(135deg, #ff7262, #f0c95d 40%, #5b8dfb 78%, #7ed3c7); }
+.outer-menu-grid button[data-outer-app="music"] { background: linear-gradient(135deg, #fe5f88, #cc3ee5); }
 .outer-menu-grid button small { color: rgba(255,255,255,0.88); font-size: 9px; }
 .outer-app-view { position: absolute; inset: 0; z-index: 4; display: none; padding: 22px 24px 24px; color: #fff; }
 .outer-app-view.active { display: block; }
