@@ -1362,6 +1362,39 @@ button { font: inherit; }
     height: min(500px, calc((100vw - 40px) * 0.633));
   }
 
+  .phone-shell.closed .outer-lock-time {
+    font-size: clamp(20px, calc(13vw - 20px), 44px);
+    white-space: nowrap;
+  }
+
+  /* Scale the closed lock screen's padding and action-row geometry with the
+     shrinking shell so text and buttons keep the same proportions instead of
+     colliding once the folded height drops below its desktop size. */
+  .phone-shell.closed .outer-view {
+    padding: clamp(24px, 7.6vw, 60px) clamp(14px, 3.5vw, 28px) clamp(12px, 3vw, 24px);
+  }
+
+  .phone-shell.closed .outer-content p {
+    margin-top: clamp(8px, 2.4vw, 18px);
+  }
+
+  .phone-shell.closed .outer-actions {
+    bottom: clamp(18px, 7.3vw, 58px);
+    right: clamp(12px, 2.8vw, 24px);
+    gap: clamp(6px, 1.5vw, 12px);
+  }
+
+  .phone-shell.closed .outer-actions button {
+    width: clamp(28px, 5.6vw, 44px);
+    height: clamp(28px, 5.6vw, 44px);
+    font-size: clamp(12px, 2.4vw, 17px);
+  }
+
+  .phone-shell.closed .outer-open-button {
+    top: clamp(8px, 2vw, 16px);
+    right: clamp(14px, 2.8vw, 22px);
+  }
+
   .stage-label {
     justify-items: center;
     text-align: center;
@@ -1423,6 +1456,8 @@ button { font: inherit; }
     border-top-right-radius: 34px;
     border-bottom-right-radius: 34px;
   }
+
+
 
   .status-bar {
     padding-left: 18px;
