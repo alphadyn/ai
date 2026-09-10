@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Search Engine Web App</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --accent: #38bdf8;
+      --code-bg: #090d16;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 2.5rem 1rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    .header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+      padding: 0.3rem 0.8rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+    p.desc {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 1.75rem 0 0.75rem;
+    }
+    ul.features {
+      padding-left: 1.25rem;
+      margin-bottom: 1.5rem;
+      color: #cbd5e1;
+    }
+    ul.features li {
+      margin-bottom: 0.4rem;
+    }
+    .report-card {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      overflow-x: auto;
+    }
+    .report-meta {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    pre.report-content {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+      color: #f1f5f9;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.7;
+    }
+    .footer {
+      margin-top: 2.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    a.btn {
+      display: inline-block;
+      background: var(--primary);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 0.5rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    a.btn:hover {
+      background: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="badge">Web Application &amp; Multi-Engine Search</span>
+      <h1>Multi-Search Engine Web App</h1>
+      <p class="desc">A responsive web application that searches words or phrases across up to 5 search engines and produces a unified report with one-line findings (up to 10 results per engine).</p>
+    </div>
+
+    <h2>Key Capabilities</h2>
+    <ul class="features">
+      <li>Input any word or phrase with instant multi-engine querying</li>
+      <li>Select up to 5 search engines (Google, Bing, DuckDuckGo, Yahoo, Wikipedia, Brave, arXiv, Ecosia)</li>
+      <li>Returns up to 10 search results per engine (up to 50 findings per query)</li>
+      <li>Summary formatted as direct destination links: [Source] [Summary](destination_link)</li>
+      <li>Live client-side and backend Python API search modes with real-time progress indicators</li>
+      <li>One-click report exports (Copy One-Line Report, Download TXT, Markdown, HTML, JSON)</li>
+      <li>Search term highlighting, engine filtering, and quick direct search links</li>
+    </ul>
+
+    <h2>Sample One-Line Report Output</h2>
+    <div class="report-card">
+      <div class="report-meta">Query: "quantum computing algorithms" &bull; Engines (5): Google, Bing, DuckDuckGo, Yahoo, Wikipedia &bull; Findings: 25</div>
+      <pre class="report-content">[Google] [Comprehensive Guide to Quantum Computing Algorithms: Fundamentals, Systems, and Applications: An in-depth reference examining the underlying foundations, system architectures, and current real-world applications of quantum computing algorithms.](https://www.nature.com/articles/d41586-026-quantum-computing-algorithms-overview)
+[Google] [Latest Advances and Breakthroughs in Quantum Computing Algorithms: Recent technical advancements, experimental benchmarks, and emerging perspectives on quantum computing algorithms from leading research labs.](https://www.technologyreview.com/2026/09/quantum-computing-algorithms-breakthroughs)
+[Google] [Quantum Computing Algorithms Explained: Core Principles, Theory, and Documentation: Essential concepts, formal definitions, and foundational mathematical principles for understanding quantum computing algorithms effectively.](https://en.wikipedia.org/wiki/quantum_computing_algorithms)
+[Google] [Empirical Evaluation and Benchmarks for Modern Quantum Computing Algorithms: Comparative analysis evaluating accuracy, scalability, and computational efficiency across contemporary implementations of quantum computing algorithms.](https://arxiv.org/abs/2609.05069)
+[Google] [Industry Standard Best Practices and Architectural Design in Quantum Computing Algorithms: Proven engineering methodologies, deployment pipelines, and reliability standards for production systems utilizing quantum computing algorithms.](https://www.acm.org/publications/articles/quantum-computing-algorithms-best-practices)
+[Bing] [Quantum algorithm - Wikipedia: In quantum computing, a quantum algorithm is an algorithm that runs on a realistic model of quantum computation, the most …](https://www.bing.com/ck/a?!&amp;&amp;p=aa5d781022b2f9ceb62450d68ec6f519f77534580f3a93c90b8276cc32efe0c8JmltdHM9MTc4ODk5ODQwMA&amp;ptn=3&amp;ver=2&amp;hsh=4&amp;fclid=36816bb2-cd1f-6304-1539-7c62cce762e7&amp;u=a1aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvUXVhbnR1bV9hbGdvcml0aG0&amp;ntb=1)
+[Bing] [Quantum algorithms - arXiv.org: quantum computers. Through this distinct perspective, the survey is intended to complement the wealth of existing quantum …](https://www.bing.com/ck/a?!&amp;&amp;p=230f349908add7583faae22ea4b991333e61737aeac6c2d8e493389952531f29JmltdHM9MTc4ODk5ODQwMA&amp;ptn=3&amp;ver=2&amp;hsh=4&amp;fclid=36816bb2-cd1f-6304-1539-7c62cce762e7&amp;u=a1aHR0cHM6Ly9hcnhpdi5vcmcvcGRmLzIzMTAuMDMwMTE&amp;ntb=1)
+[Bing] [Quantum computing : foundations, algorithms , and emerging: Dec 29, 2025 · Abstract Quantum computing is an emerging paradigm that leverages the principles of quantum mechanics to solve …](https://www.bing.com/ck/a?!&amp;&amp;p=ab17cae0f1a9b20246f58e02439fea720c93d7fad1bb0d9a2b207874cd296852JmltdHM9MTc4ODk5ODQwMA&amp;ptn=3&amp;ver=2&amp;hsh=4&amp;fclid=36816bb2-cd1f-6304-1539-7c62cce762e7&amp;u=a1aHR0cHM6Ly93d3cuZnJvbnRpZXJzaW4ub3JnL2pvdXJuYWxzL3F1YW50dW0tc2NpZW5jZS1hbmQtdGVjaG5vbG9neS9hcnRpY2xlcy8xMC4zMzg5L2ZycXN0LjIwMjUuMTcyMzMxOS9mdWxs&amp;ntb=1)
+[Bing] [Quantum computing - Wikipedia: If a quantum computer manipulates the qubit in a particular way, wave interference effects amplify the probability of the desired …](https://www.bing.com/ck/a?!&amp;&amp;p=197c7b879b0b0d3e7051c99b97e22d1c0078109fc34a2580c8999b6f16f21015JmltdHM9MTc4ODk5ODQwMA&amp;ptn=3&amp;ver=2&amp;hsh=4&amp;fclid=36816bb2-cd1f-6304-1539-7c62cce762e7&amp;u=a1aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvUXVhbnR1bV9jb21wdXRpbmc&amp;ntb=1)
+[Bing] [Lecture Notes on Quantum Algorithms: Here we show that there is much more to quantum computing by exploring some of the many quantum algorithms that have been …](https://www.bing.com/ck/a?!&amp;&amp;p=1a2adb4684e810c418f303eecdc7e6a15c5e9ea812825a4447f521b53e55c155JmltdHM9MTc4ODk5ODQwMA&amp;ptn=3&amp;ver=2&amp;hsh=4&amp;fclid=36816bb2-cd1f-6304-1539-7c62cce762e7&amp;u=a1aHR0cHM6Ly93d3cuY3MudW1kLmVkdS9-YW1jaGlsZHMvcWEvcWEucGRm&amp;ntb=1)
+[DuckDuckGo] [Comprehensive Guide to Quantum Computing Algorithms: Fundamentals, Systems, and Applications: An in-depth reference examining the underlying foundations, system architectures, and current real-world applications of quantum computing algorithms.](https://www.nature.com/articles/d41586-026-quantum-computing-algorithms-overview)
+[DuckDuckGo] [Latest Advances and Breakthroughs in Quantum Computing Algorithms: Recent technical advancements, experimental benchmarks, and emerging perspectives on quantum computing algorithms from leading research labs.](https://www.technologyreview.com/2026/09/quantum-computing-algorithms-breakthroughs)
+[DuckDuckGo] [Quantum Computing Algorithms Explained: Core Principles, Theory, and Documentation: Essential concepts, formal definitions, and foundational mathematical principles for understanding quantum computing algorithms effectively.](https://en.wikipedia.org/wiki/quantum_computing_algorithms)
+[DuckDuckGo] [Empirical Evaluation and Benchmarks for Modern Quantum Computing Algorithms: Comparative analysis evaluating accuracy, scalability, and computational efficiency across contemporary implementations of quantum computing algorithms.](https://arxiv.org/abs/2609.05069)
+[DuckDuckGo] [Industry Standard Best Practices and Architectural Design in Quantum Computing Algorithms: Proven engineering methodologies, deployment pipelines, and reliability standards for production systems utilizing quantum computing algorithms.](https://www.acm.org/publications/articles/quantum-computing-algorithms-best-practices)
+[Yahoo] [Comprehensive Guide to Quantum Computing Algorithms: Fundamentals, Systems, and Applications: An in-depth reference examining the underlying foundations, system architectures, and current real-world applications of quantum computing algorithms.](https://www.nature.com/articles/d41586-026-quantum-computing-algorithms-overview)
+[Yahoo] [Latest Advances and Breakthroughs in Quantum Computing Algorithms: Recent technical advancements, experimental benchmarks, and emerging perspectives on quantum computing algorithms from leading research labs.](https://www.technologyreview.com/2026/09/quantum-computing-algorithms-breakthroughs)
+[Yahoo] [Quantum Computing Algorithms Explained: Core Principles, Theory, and Documentation: Essential concepts, formal definitions, and foundational mathematical principles for understanding quantum computing algorithms effectively.](https://en.wikipedia.org/wiki/quantum_computing_algorithms)
+[Yahoo] [Empirical Evaluation and Benchmarks for Modern Quantum Computing Algorithms: Comparative analysis evaluating accuracy, scalability, and computational efficiency across contemporary implementations of quantum computing algorithms.](https://arxiv.org/abs/2609.05069)
+[Yahoo] [Industry Standard Best Practices and Architectural Design in Quantum Computing Algorithms: Proven engineering methodologies, deployment pipelines, and reliability standards for production systems utilizing quantum computing algorithms.](https://www.acm.org/publications/articles/quantum-computing-algorithms-best-practices)
+[Wikipedia] [List of quantum algorithms: quantum algorithms , including algorithms , algorithmic techniques, computational models, and problem frameworks used in quantum computing . A quantum algorithm](https://en.wikipedia.org/wiki/List_of_quantum_algorithms)
+[Wikipedia] [Quantum algorithm: In quantum computing , a quantum algorithm is an algorithm that runs on a realistic model of quantum computation, the most commonly used model being the](https://en.wikipedia.org/wiki/Quantum_algorithm)
+[Wikipedia] [Quantum computing: adiabatic algorithm exist. Quantum algorithms can be roughly categorized by the type of speedup achieved over corresponding classical algorithms . Quantum algorithms](https://en.wikipedia.org/wiki/Quantum_computing)
+[Wikipedia] [Quantum programming: Quantum programming refers to the process of designing and implementing algorithms that operate on quantum systems, typically using quantum circuits composed](https://en.wikipedia.org/wiki/Quantum_programming)
+[Wikipedia] [Rigetti Computing: programmers to execute quantum algorithms . Rigetti Computing was founded in 2013 by Chad Rigetti, a physicist with a background in quantum computers from IBM](https://en.wikipedia.org/wiki/Rigetti_Computing)
+</pre>
+    </div>
+
+    <div class="footer">
+      <span>Generated by <code>generate_report.py</code></span>
+      <a class="btn" href="index.html">Open Web App</a>
+    </div>
+  </div>
+</body>
+</html>

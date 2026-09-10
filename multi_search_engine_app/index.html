@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Engine Search Reporter</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body class="theme-dark">
+  <div class="app-wrapper">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <line x1="11" y1="8" x2="11" y2="14"></line>
+              <line x1="8" y1="11" x2="14" y2="11"></line>
+            </svg>
+          </div>
+          <div>
+            <div class="header-badge">Multi-Search Engine App</div>
+            <h1>MetaSearch Reporter</h1>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="themeToggleBtn" class="icon-button" title="Toggle Theme" aria-label="Toggle Theme">
+            <span class="theme-icon light-icon">&#9728;</span>
+            <span class="theme-icon dark-icon">&#9790;</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- Search Control Card -->
+      <section class="card search-card">
+        <form id="searchForm" class="search-form" onsubmit="event.preventDefault(); return false;">
+          <div class="search-input-wrapper">
+            <div class="search-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            <input
+              type="text"
+              id="queryInput"
+              class="search-input"
+              placeholder="Enter a word or phrase to search (e.g. quantum computing, neural networks)..."
+              autocomplete="off"
+              required
+              autofocus
+            />
+            <button type="button" id="clearInputBtn" class="clear-btn" title="Clear search input" aria-label="Clear input">&times;</button>
+            <button type="submit" id="searchBtn" class="btn btn-primary submit-btn">
+              <span class="btn-text">Search Engines</span>
+              <span class="btn-spinner hidden"></span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Query Suggestions -->
+        <div class="query-chips">
+          <span class="chips-label">Popular phrases:</span>
+          <button class="chip" data-query="artificial intelligence agents">AI Agents</button>
+          <button class="chip" data-query="quantum computing supremacy">Quantum Computing</button>
+          <button class="chip" data-query="renewable energy storage">Renewable Energy</button>
+          <button class="chip" data-query="CRISPR gene editing therapy">CRISPR Therapy</button>
+          <button class="chip" data-query="deep learning architectures">Deep Learning</button>
+          <button class="chip" data-query="autonomous vehicle safety">Autonomous Vehicles</button>
+        </div>
+
+        <!-- Engine Selectors -->
+        <div class="engine-selection-section">
+          <div class="engine-selection-header">
+            <div class="section-title-wrap">
+              <h2>Select Search Engines</h2>
+              <p class="section-subtitle">Choose up to 5 search engines to query simultaneously</p>
+            </div>
+            <div class="engine-counter-badge" id="engineCounter">5 / 5 Selected</div>
+          </div>
+
+          <div class="engine-grid" id="engineGrid">
+            <!-- Engines checkboxes generated dynamically & statically -->
+            <label class="engine-card active" data-engine="google">
+              <input type="checkbox" name="engine" value="google" checked />
+              <div class="engine-icon-badge engine-google">G</div>
+              <div class="engine-info">
+                <span class="engine-name">Google</span>
+                <span class="engine-desc">Global Web Index</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card active" data-engine="bing">
+              <input type="checkbox" name="engine" value="bing" checked />
+              <div class="engine-icon-badge engine-bing">b</div>
+              <div class="engine-info">
+                <span class="engine-name">Bing</span>
+                <span class="engine-desc">Microsoft Search</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card active" data-engine="duckduckgo">
+              <input type="checkbox" name="engine" value="duckduckgo" checked />
+              <div class="engine-icon-badge engine-duckduckgo">DDG</div>
+              <div class="engine-info">
+                <span class="engine-name">DuckDuckGo</span>
+                <span class="engine-desc">Privacy-Focused</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card active" data-engine="yahoo">
+              <input type="checkbox" name="engine" value="yahoo" checked />
+              <div class="engine-icon-badge engine-yahoo">Y!</div>
+              <div class="engine-info">
+                <span class="engine-name">Yahoo</span>
+                <span class="engine-desc">Yahoo Search Network</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card active" data-engine="wikipedia">
+              <input type="checkbox" name="engine" value="wikipedia" checked />
+              <div class="engine-icon-badge engine-wikipedia">W</div>
+              <div class="engine-info">
+                <span class="engine-name">Wikipedia</span>
+                <span class="engine-desc">Free Encyclopedia</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card" data-engine="brave">
+              <input type="checkbox" name="engine" value="brave" />
+              <div class="engine-icon-badge engine-brave">🦁</div>
+              <div class="engine-info">
+                <span class="engine-name">Brave</span>
+                <span class="engine-desc">Independent Index</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card" data-engine="arxiv">
+              <input type="checkbox" name="engine" value="arxiv" />
+              <div class="engine-icon-badge engine-arxiv">arX</div>
+              <div class="engine-info">
+                <span class="engine-name">arXiv</span>
+                <span class="engine-desc">Scientific Preprints</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+
+            <label class="engine-card" data-engine="ecosia">
+              <input type="checkbox" name="engine" value="ecosia" />
+              <div class="engine-icon-badge engine-ecosia">🌱</div>
+              <div class="engine-info">
+                <span class="engine-name">Ecosia</span>
+                <span class="engine-desc">Eco Search Engine</span>
+              </div>
+              <span class="checkbox-indicator"></span>
+            </label>
+          </div>
+
+          <div id="engineLimitWarning" class="alert-warning hidden">
+            <span>&#9888; Limit reached: You can select up to 5 search engines at a time. Deselect one before adding another.</span>
+          </div>
+
+          <!-- Search Options Row -->
+          <div class="options-row">
+            <div class="option-item">
+              <label for="maxResultsSelect" class="option-label">Results per engine:</label>
+              <select id="maxResultsSelect" class="select-control">
+                <option value="10" selected>10 results (Standard requirement)</option>
+                <option value="8">8 results</option>
+                <option value="5">5 results</option>
+                <option value="3">3 results</option>
+              </select>
+            </div>
+
+            <div class="engine-quick-actions">
+              <button type="button" id="selectDefault5Btn" class="btn btn-outline btn-sm">Reset to Default 5</button>
+              <button type="button" id="clearAllEnginesBtn" class="btn btn-outline btn-sm">Clear All</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Search Progress Status -->
+      <section id="progressSection" class="card progress-card hidden">
+        <div class="progress-header">
+          <div class="progress-title-wrap">
+            <div class="pulse-indicator"></div>
+            <h3>Searching Selected Engines...</h3>
+          </div>
+          <span id="overallProgressText" class="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progressBar" class="progress-bar-fill" style="width: 0%"></div>
+        </div>
+        <div class="engine-progress-chips" id="engineProgressList">
+          <!-- Live per-engine badges injected here -->
+        </div>
+      </section>
+
+      <!-- Results & Report Section -->
+      <section id="reportSection" class="card report-card-section hidden">
+        <!-- Report Header Bar -->
+        <div class="report-header">
+          <div class="report-title-area">
+            <div class="report-status-badge">&#10004; Search Report Generated</div>
+            <h2 id="reportQueryTitle">Report for "..."</h2>
+            <div class="report-meta-tags" id="reportMetaTags">
+              <span class="meta-tag" id="metaTotalFindings">0 Findings</span>
+              <span class="meta-tag" id="metaEnginesCount">5 Engines</span>
+              <span class="meta-tag" id="metaLimitCount">Max 10 / engine</span>
+              <span class="meta-tag" id="metaTimestamp">Timestamp</span>
+            </div>
+          </div>
+
+          <!-- Report Export Buttons -->
+          <div class="report-actions">
+            <button id="copyOneLineBtn" class="btn btn-primary btn-sm" title="Copy exact one-line text format">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              Copy One-Line Report
+            </button>
+            <button id="downloadTxtBtn" class="btn btn-outline btn-sm" title="Download formatted plain text file">
+              Download .TXT
+            </button>
+            <button id="downloadMdBtn" class="btn btn-outline btn-sm" title="Download Markdown report">
+              Download .MD
+            </button>
+            <button id="downloadJsonBtn" class="btn btn-outline btn-sm" title="Download JSON data">
+              JSON
+            </button>
+          </div>
+        </div>
+
+        <!-- View Mode Tabs -->
+        <div class="tabs-bar">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="interactive">
+              <span class="tab-icon">&#9776;</span>
+              Interactive List (<span id="tabCountInteractive">0</span>)
+            </button>
+            <button class="tab-btn" data-tab="oneline">
+              <span class="tab-icon">&#128196;</span>
+              Exact One-Line Text Report
+            </button>
+            <button class="tab-btn" data-tab="byengine">
+              <span class="tab-icon">&#9881;</span>
+              Grouped by Engine
+            </button>
+          </div>
+
+          <!-- Filter Search in Findings -->
+          <div class="tab-filter-box">
+            <input type="text" id="filterResultsInput" placeholder="Filter findings..." class="filter-input" />
+          </div>
+        </div>
+
+        <!-- Tab 1: Interactive Findings Stream -->
+        <div id="tabContentInteractive" class="tab-content active">
+          <div class="findings-list" id="findingsList">
+            <!-- Search item cards injected here -->
+          </div>
+        </div>
+
+        <!-- Tab 2: Raw One-Line Text Box -->
+        <div id="tabContentOneLine" class="tab-content">
+          <div class="raw-box-header">
+            <div class="raw-info">
+              <strong>Exact Linked Format:</strong> <code>[Source] [Summary](destination_link)</code>
+            </div>
+            <button id="copyRawBoxBtn" class="btn btn-outline btn-xs">Copy Raw Text</button>
+          </div>
+          <textarea id="rawOneLineOutput" class="raw-output-textarea" readonly rows="16" spellcheck="false"></textarea>
+        </div>
+
+        <!-- Tab 3: Grouped by Search Engine -->
+        <div id="tabContentByEngine" class="tab-content">
+          <div id="groupedEngineContainer" class="grouped-engine-container">
+            <!-- Injected per engine -->
+          </div>
+        </div>
+
+        <!-- Direct Engine Search Links -->
+        <div class="direct-search-links-box">
+          <span class="direct-links-title">Open query in live search engines:</span>
+          <div class="direct-links-group" id="directLinksGroup">
+            <!-- Links injected here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty State -->
+      <section id="emptyState" class="card empty-state-card">
+        <div class="empty-state-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <path d="M11 7v4l3 3"></path>
+          </svg>
+        </div>
+        <h3>Ready to Search Up to 5 Search Engines</h3>
+        <p>Type a word or phrase above, select up to 5 search engines, and click <strong>Search Engines</strong> to generate a structured report where each summary links directly to the search result destination (up to 10 results per engine).</p>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-container">
+        <p>MetaSearch Reporter &bull; Multi-Engine Query Aggregator &bull; Linked Findings Standard</p>
+        <p class="footer-sub">Outputs: <code>[Source] [Summary](destination_link)</code> (Up to 10 results per engine, max 5 engines)</p>
+      </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="toast hidden">Copied to clipboard!</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

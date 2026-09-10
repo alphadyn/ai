@@ -7,6 +7,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 ### Web apps and interactive demos
 
 - [Business Site](business_site/) - Marketing landing page for an AI company.
+- [Multi-Search Engine](multi_search_engine_app/) - Multi-engine search reporter querying up to 5 search engines and returning one-line findings (up to 10 results per engine).
 - [Audio Equalizer](audio_equalizer_app/) - Browser-based media player with live frequency spectrum and waveform analysis.
 - [S&P 500 Analysis](sp500_analysis_app/) - Refreshable S&P 500 watchlist with transparent Buy, Hold, and Sell screening signals.
 - [Business Plan](business_plan/) - Presentation-style startup business plan.
