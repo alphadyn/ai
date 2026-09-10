@@ -1404,16 +1404,25 @@ button { font: inherit; }
   }
 
   .phone-shell.closed {
-    width: 100vw;
+    width: 50vw;
     height: 63.3vw;
-    border-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 40px;
+    border-bottom-right-radius: 40px;
+    border-left: 0;
   }
 
   .phone-screen {
     border-radius: 40px;
   }
 
-  .phone-shell.closed .phone-screen { border-radius: 40px; }
+  .phone-shell.closed .phone-screen {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 34px;
+    border-bottom-right-radius: 34px;
+  }
 
   .status-bar {
     padding-left: 18px;
