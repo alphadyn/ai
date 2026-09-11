@@ -9,7 +9,7 @@
 
   // State
   const state = {
-    selectedEngines: ['google', 'bing', 'duckduckgo', 'yahoo', 'wikipedia'],
+    selectedEngines: ['duckduckgo', 'bing', 'wikipedia', 'hackernews', 'github'],
     maxResultsPerEngine: 10,
     currentQuery: '',
     resultsData: null,
@@ -20,11 +20,11 @@
   const MAX_ENGINES_ALLOWED = 5;
 
   const ENGINE_CONFIG = {
-    google: {
-      name: 'Google',
-      desc: 'Global Web Index',
-      directUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
-      badgeClass: 'Google',
+    duckduckgo: {
+      name: 'DuckDuckGo',
+      desc: 'Privacy Web Index',
+      directUrl: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+      badgeClass: 'DuckDuckGo',
     },
     bing: {
       name: 'Bing',
@@ -32,11 +32,35 @@
       directUrl: (q) => `https://www.bing.com/search?q=${encodeURIComponent(q)}`,
       badgeClass: 'Bing',
     },
-    duckduckgo: {
-      name: 'DuckDuckGo',
-      desc: 'Privacy-Focused',
-      directUrl: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
-      badgeClass: 'DuckDuckGo',
+    wikipedia: {
+      name: 'Wikipedia',
+      desc: 'Live Encyclopedia API',
+      directUrl: (q) => `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(q)}`,
+      badgeClass: 'Wikipedia',
+    },
+    hackernews: {
+      name: 'HackerNews',
+      desc: 'Live Web Discussions',
+      directUrl: (q) => `https://hn.algolia.com/?q=${encodeURIComponent(q)}`,
+      badgeClass: 'HackerNews',
+    },
+    github: {
+      name: 'GitHub',
+      desc: 'Live Repositories API',
+      directUrl: (q) => `https://github.com/search?q=${encodeURIComponent(q)}`,
+      badgeClass: 'GitHub',
+    },
+    openalex: {
+      name: 'OpenAlex',
+      desc: 'Scholarly Research API',
+      directUrl: (q) => `https://openalex.org/works?search=${encodeURIComponent(q)}`,
+      badgeClass: 'OpenAlex',
+    },
+    google: {
+      name: 'Google',
+      desc: 'Global Web Search',
+      directUrl: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+      badgeClass: 'Google',
     },
     yahoo: {
       name: 'Yahoo',
@@ -44,23 +68,17 @@
       directUrl: (q) => `https://search.yahoo.com/search?p=${encodeURIComponent(q)}`,
       badgeClass: 'Yahoo',
     },
-    wikipedia: {
-      name: 'Wikipedia',
-      desc: 'Free Encyclopedia',
-      directUrl: (q) => `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(q)}`,
-      badgeClass: 'Wikipedia',
+    arxiv: {
+      name: 'arXiv',
+      desc: 'Scientific Preprints',
+      directUrl: (q) => `https://arxiv.org/search/?query=${encodeURIComponent(q)}&searchtype=all`,
+      badgeClass: 'arXiv',
     },
     brave: {
       name: 'Brave',
       desc: 'Independent Index',
       directUrl: (q) => `https://search.brave.com/search?q=${encodeURIComponent(q)}`,
       badgeClass: 'Brave',
-    },
-    arxiv: {
-      name: 'arXiv',
-      desc: 'Scientific Preprints',
-      directUrl: (q) => `https://arxiv.org/search/?query=${encodeURIComponent(q)}&searchtype=all`,
-      badgeClass: 'arXiv',
     },
     ecosia: {
       name: 'Ecosia',
@@ -181,7 +199,7 @@
 
     // Quick engine actions
     selectDefault5Btn.addEventListener('click', () => {
-      state.selectedEngines = ['google', 'bing', 'duckduckgo', 'yahoo', 'wikipedia'];
+      state.selectedEngines = ['duckduckgo', 'bing', 'wikipedia', 'hackernews', 'github'];
       updateEngineCheckboxes();
     });
 
@@ -367,27 +385,37 @@
 
   // Try Python Server API
   async function tryBackendApiSearch(query, engines, maxResults) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const endpoints = [
+      `/api/search`,
+      `http://127.0.0.1:8000/api/search`,
+      `http://localhost:8000/api/search`,
+    ];
 
-      const params = new URLSearchParams({
-        q: query,
-        engines: engines.join(','),
-        max_results: maxResults.toString(),
-      });
+    const params = new URLSearchParams({
+      q: query,
+      engines: engines.join(','),
+      max_results: maxResults.toString(),
+    });
 
-      const response = await fetch(`/api/search?${params.toString()}`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const json = await response.json();
-        return json;
+    for (const ep of endpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const url = `${ep}?${params.toString()}`;
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          const json = await response.json();
+          if (json && json.all_results && json.all_results.length > 0) {
+            return json;
+          }
+        }
+      } catch (e) {
+        // Try next endpoint
       }
-    } catch (e) {
-      // Backend not running or static file host; fallback to client-side engine
     }
     return null;
   }
@@ -409,6 +437,12 @@
       let findings = [];
       if (engineKey === 'wikipedia') {
         findings = await fetchWikipediaClient(query, maxResults);
+      } else if (engineKey === 'hackernews') {
+        findings = await fetchHackerNewsClient(query, maxResults);
+      } else if (engineKey === 'github') {
+        findings = await fetchGitHubClient(query, maxResults);
+      } else if (engineKey === 'openalex') {
+        findings = await fetchOpenAlexClient(query, maxResults);
       } else if (engineKey === 'arxiv') {
         findings = await fetchArxivClient(query, maxResults);
       } else {
@@ -478,6 +512,133 @@
 
     if (findings.length === 0) {
       return generateClientFallbackResults('Wikipedia', query, maxResults);
+    }
+    return findings;
+  }
+
+  // Client fetch HackerNews Algolia live API (CORS enabled)
+  async function fetchHackerNewsClient(query, maxResults) {
+    const findings = [];
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const url = `https://hn.algolia.com/api/v1/search?query=${encodeURIComponent(query)}&hitsPerPage=${maxResults}`;
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        const data = await resp.json();
+        const hits = data.hits || [];
+        hits.forEach((h) => {
+          const title = h.title || h.story_title || 'Hacker News Finding';
+          const author = h.author || 'community';
+          const points = h.points || 0;
+          const comments = h.num_comments || 0;
+          const snippet = `Submitted by ${author} (${points} points, ${comments} comments). Discussion on ${query}.`;
+          const link = h.url || `https://news.ycombinator.com/item?id=${h.objectID}`;
+          const summary = `${title}: ${snippet}`;
+          const oneLine = `[HackerNews] [${summary}](${link})`;
+          findings.push({
+            engine: 'HackerNews',
+            title: title,
+            snippet: snippet,
+            summary: summary,
+            matching_text: summary,
+            link: link,
+            one_line: oneLine,
+          });
+        });
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    if (findings.length === 0) {
+      return generateClientFallbackResults('HackerNews', query, maxResults);
+    }
+    return findings;
+  }
+
+  // Client fetch GitHub public repositories API (CORS enabled)
+  async function fetchGitHubClient(query, maxResults) {
+    const findings = [];
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}&per_page=${maxResults}`;
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        const data = await resp.json();
+        const items = data.items || [];
+        items.forEach((item) => {
+          const title = item.full_name;
+          const desc = item.description || `Repository and source code related to ${query}`;
+          const stars = item.stargazers_count || 0;
+          const lang = item.language || 'Code';
+          const snippet = `${desc} (${lang}, ${stars} stars)`;
+          const link = item.html_url || `https://github.com/${item.full_name}`;
+          const summary = `${title}: ${snippet}`;
+          const oneLine = `[GitHub] [${summary}](${link})`;
+          findings.push({
+            engine: 'GitHub',
+            title: title,
+            snippet: snippet,
+            summary: summary,
+            matching_text: summary,
+            link: link,
+            one_line: oneLine,
+          });
+        });
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    if (findings.length === 0) {
+      return generateClientFallbackResults('GitHub', query, maxResults);
+    }
+    return findings;
+  }
+
+  // Client fetch OpenAlex Scholarly live API (CORS enabled)
+  async function fetchOpenAlexClient(query, maxResults) {
+    const findings = [];
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const url = `https://api.openalex.org/works?search=${encodeURIComponent(query)}&per-page=${maxResults}`;
+      const resp = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        const data = await resp.json();
+        const results = data.results || [];
+        results.forEach((item) => {
+          const title = item.title;
+          const pubYear = item.publication_year || '';
+          const cited = item.cited_by_count || 0;
+          const snippet = `Peer-reviewed research paper (${pubYear}, cited ${cited} times) on ${query}.`;
+          const link = item.doi || item.id || `https://openalex.org/works?search=${encodeURIComponent(query)}`;
+          if (title && link) {
+            const summary = `${title}: ${snippet}`;
+            const oneLine = `[OpenAlex] [${summary}](${link})`;
+            findings.push({
+              engine: 'OpenAlex',
+              title: title,
+              snippet: snippet,
+              summary: summary,
+              matching_text: summary,
+              link: link,
+              one_line: oneLine,
+            });
+          }
+        });
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    if (findings.length === 0) {
+      return generateClientFallbackResults('OpenAlex', query, maxResults);
     }
     return findings;
   }

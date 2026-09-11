@@ -382,8 +382,11 @@ body.theme-light .dark-icon { display: block; }
 .engine-google { background: #ea4335; color: #fff; }
 .engine-bing { background: #008373; color: #fff; }
 .engine-duckduckgo { background: #de5833; color: #fff; }
-.engine-yahoo { background: #6001d2; color: #fff; }
 .engine-wikipedia { background: #333333; color: #fff; }
+.engine-hackernews { background: #ff6600; color: #fff; }
+.engine-github { background: #24292e; color: #fff; }
+.engine-openalex { background: #5c35b5; color: #fff; }
+.engine-yahoo { background: #6001d2; color: #fff; }
 .engine-brave { background: #fb542b; color: #fff; }
 .engine-arxiv { background: #b31b1b; color: #fff; }
 .engine-ecosia { background: #008575; color: #fff; }
@@ -836,8 +839,11 @@ body.theme-light .finding-item:hover .finding-summary-text {
 .source-badge.Google { background: rgba(234, 67, 53, 0.15); color: #ea4335; border: 1px solid rgba(234, 67, 53, 0.3); }
 .source-badge.Bing { background: rgba(0, 131, 115, 0.15); color: #00a693; border: 1px solid rgba(0, 131, 115, 0.3); }
 .source-badge.DuckDuckGo { background: rgba(222, 88, 51, 0.15); color: #de5833; border: 1px solid rgba(222, 88, 51, 0.3); }
-.source-badge.Yahoo { background: rgba(96, 1, 210, 0.15); color: #9f7aea; border: 1px solid rgba(96, 1, 210, 0.3); }
 .source-badge.Wikipedia { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
+.source-badge.HackerNews { background: rgba(255, 102, 0, 0.15); color: #ff7700; border: 1px solid rgba(255, 102, 0, 0.3); }
+.source-badge.GitHub { background: rgba(255, 255, 255, 0.12); color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.25); }
+.source-badge.OpenAlex { background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3); }
+.source-badge.Yahoo { background: rgba(96, 1, 210, 0.15); color: #9f7aea; border: 1px solid rgba(96, 1, 210, 0.3); }
 .source-badge.Brave { background: rgba(251, 84, 43, 0.15); color: #fb542b; border: 1px solid rgba(251, 84, 43, 0.3); }
 .source-badge.arXiv { background: rgba(179, 27, 27, 0.15); color: #f87171; border: 1px solid rgba(179, 27, 27, 0.3); }
 .source-badge.Ecosia { background: rgba(0, 133, 117, 0.15); color: #10b981; border: 1px solid rgba(0, 133, 117, 0.3); }
