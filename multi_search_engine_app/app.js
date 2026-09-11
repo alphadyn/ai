@@ -445,17 +445,22 @@
         findings = await fetchOpenAlexClient(query, maxResults);
       } else if (engineKey === 'arxiv') {
         findings = await fetchArxivClient(query, maxResults);
+      } else if (['bing', 'duckduckgo', 'google', 'yahoo', 'brave', 'ecosia'].includes(engineKey)) {
+        findings = await fetchBingWebClient(engineKey, query, maxResults);
       } else {
         findings = generateClientFallbackResults(conf.name, query, maxResults);
       }
 
-      // Strict limit: up to maxResults per engine (up to 10)
-      findings = findings.slice(0, maxResults);
+      // Start from a clean result set and only keep valid received items.
+      findings = (findings || [])
+        .map((f) => normalizeResultItem(f))
+        .filter(Boolean)
+        .slice(0, maxResults);
 
       resultsByEngine[conf.name] = findings;
       findings.forEach((f) => {
         allResults.push(f);
-        oneLineReport.push(f.one_line);
+        oneLineReport.push(f.one_line || `[${f.engine}] [${f.summary || f.matching_text || f.title}](${f.link})`);
       });
 
       completed++;
@@ -474,6 +479,75 @@
       all_results: allResults,
       one_line_report: oneLineReport,
     };
+  }
+
+  async function fetchBingWebClient(engineKey, query, maxResults) {
+    const findings = [];
+    const engineName = ENGINE_CONFIG[engineKey]?.name || engineKey;
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=${maxResults}`;
+      const resp = await fetch(url, { signal: controller.signal, headers: { Accept: 'text/html,application/xhtml+xml' } });
+      clearTimeout(timeoutId);
+
+      if (!resp.ok) {
+        return [];
+      }
+
+      const html = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const blocks = doc.querySelectorAll('li.b_algo');
+
+      blocks.forEach((block) => {
+        const linkEl = block.querySelector('h2 a');
+        const titleEl = block.querySelector('h2');
+        const snippetEl = block.querySelector('p');
+        if (!linkEl) return;
+
+        const rawHref = linkEl.getAttribute('href') || '';
+        const link = decodeBingHref(rawHref) || rawHref;
+        const title = (titleEl ? titleEl.textContent : '') || linkEl.textContent || 'Bing result';
+        const snippet = snippetEl ? cleanHtmlSnippet(snippetEl.innerHTML) : `Live web result for ${query}`;
+
+        if (title && link && link.startsWith('http')) {
+          const summary = `${title}: ${snippet}`;
+          findings.push({
+            engine: engineName,
+            title: title.replace(/\s+/g, ' ').trim(),
+            snippet: snippet.replace(/\s+/g, ' ').trim(),
+            summary,
+            matching_text: summary,
+            link,
+            one_line: `[${engineName}] [${summary}](${link})`,
+          });
+        }
+      });
+    } catch (e) {
+      return [];
+    }
+
+    return findings.slice(0, maxResults);
+  }
+
+  function decodeBingHref(rawHref) {
+    if (!rawHref) return '';
+    try {
+      const url = new URL(rawHref, 'https://www.bing.com');
+      const uParam = url.searchParams.get('u');
+      if (uParam) {
+        const b64 = uParam.replace(/^a1/, '');
+        const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+        const decoded = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
+        const decodedUrl = decodeURIComponent(escape(decoded));
+        if (decodedUrl.startsWith('http')) return decodedUrl;
+      }
+      return rawHref.startsWith('http') ? rawHref : url.href;
+    } catch (e) {
+      return rawHref.startsWith('http') ? rawHref : '';
+    }
   }
 
   // Client fetch Wikipedia MediaWiki API (CORS enabled)
@@ -552,9 +626,6 @@
       // Fallback
     }
 
-    if (findings.length === 0) {
-      return generateClientFallbackResults('HackerNews', query, maxResults);
-    }
     return findings;
   }
 
@@ -594,9 +665,6 @@
       // Fallback
     }
 
-    if (findings.length === 0) {
-      return generateClientFallbackResults('GitHub', query, maxResults);
-    }
     return findings;
   }
 
@@ -637,9 +705,6 @@
       // Fallback
     }
 
-    if (findings.length === 0) {
-      return generateClientFallbackResults('OpenAlex', query, maxResults);
-    }
     return findings;
   }
 
@@ -683,9 +748,6 @@
       // Fallback
     }
 
-    if (findings.length === 0) {
-      return generateClientFallbackResults('arXiv', query, maxResults);
-    }
     return findings;
   }
 
@@ -697,85 +759,7 @@
 
   // Generate structured relevant destination article results for search engines
   function generateClientFallbackResults(engineName, query, maxResults) {
-    const cleanQ = query.trim();
-    const capQ = cleanQ.split(' ').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    const slugQ = encodeURIComponent(cleanQ.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
-    const wikiSlug = encodeURIComponent(cleanQ.replace(/\s+/g, '_'));
-
-    const templates = [
-      {
-        title: `Comprehensive Guide to ${capQ}: Fundamentals, Systems, and Applications`,
-        snippet: `An in-depth reference examining the underlying foundations, system architectures, and current real-world applications of ${cleanQ}.`,
-        url: `https://www.nature.com/articles/d41586-026-${slugQ}-overview`,
-      },
-      {
-        title: `Latest Advances and Breakthroughs in ${capQ}`,
-        snippet: `Recent technical advancements, experimental benchmarks, and emerging perspectives on ${cleanQ} from leading research labs.`,
-        url: `https://www.technologyreview.com/2026/09/${slugQ}-breakthroughs`,
-      },
-      {
-        title: `${capQ} Explained: Core Principles, Theory, and Documentation`,
-        snippet: `Essential concepts, formal definitions, and foundational mathematical principles for understanding ${cleanQ} effectively.`,
-        url: `https://en.wikipedia.org/wiki/${wikiSlug}`,
-      },
-      {
-        title: `Empirical Evaluation and Benchmarks for Modern ${capQ}`,
-        snippet: `Comparative analysis evaluating accuracy, scalability, and computational efficiency across contemporary implementations of ${cleanQ}.`,
-        url: `https://arxiv.org/abs/2609.0${Math.abs(hashString(cleanQ)) % 9000 + 1000}`,
-      },
-      {
-        title: `Industry Standard Best Practices and Architectural Design in ${capQ}`,
-        snippet: `Proven engineering methodologies, deployment pipelines, and reliability standards for production systems utilizing ${cleanQ}.`,
-        url: `https://www.acm.org/publications/articles/${slugQ}-best-practices`,
-      },
-      {
-        title: `Future Trends, Societal Impact, and Roadmap for ${capQ}`,
-        snippet: `Strategic roadmap forecasting the technical trajectory, regulatory landscape, and broader societal impact of ${cleanQ}.`,
-        url: `https://www.scientificamerican.com/article/${slugQ}-future-impact`,
-      },
-      {
-        title: `Case Studies and Production Deployments of ${capQ}`,
-        snippet: `Detailed field reports analyzing successful high-throughput deployments and practical lessons learned implementing ${cleanQ}.`,
-        url: `https://www.ieee.org/insights/${slugQ}-production-case-studies`,
-      },
-      {
-        title: `Open-Source Implementations, Frameworks, and Tooling for ${capQ}`,
-        snippet: `A curated repository of popular open-source software libraries, benchmarks, and developer tooling for ${cleanQ}.`,
-        url: `https://github.com/topics/${slugQ}`,
-      },
-      {
-        title: `Comparative Study: Paradigm Shifts in ${capQ}`,
-        snippet: `A side-by-side technical evaluation of conflicting paradigms, trade-offs, and algorithmic approaches to ${cleanQ}.`,
-        url: `https://www.sciencedirect.com/science/article/pii/${slugQ}-comparative-analysis`,
-      },
-      {
-        title: `Frequently Asked Questions and Knowledge Base for ${capQ}`,
-        snippet: `Structured technical Q&A resolving the top common misconceptions, edge cases, and optimization bottlenecks in ${cleanQ}.`,
-        url: `https://www.oreilly.com/library/view/${slugQ}-knowledge-base`,
-      },
-    ];
-
-    const results = [];
-    const count = Math.min(maxResults, templates.length);
-
-    for (let i = 0; i < count; i++) {
-      const item = templates[i];
-      const link = item.url;
-      const summary = `${item.title}: ${item.snippet}`;
-      const oneLine = `[${engineName}] [${summary}](${link})`;
-
-      results.push({
-        engine: engineName,
-        title: item.title,
-        snippet: item.snippet,
-        summary: summary,
-        matching_text: summary,
-        link: link,
-        one_line: oneLine,
-      });
-    }
-
-    return results;
+    return [];
   }
 
   function hashString(str) {
@@ -796,11 +780,13 @@
     engines.forEach((eKey) => {
       const conf = ENGINE_CONFIG[eKey] || { name: eKey, badgeClass: eKey };
       queriedNames.push(conf.name);
-      const findings = generateClientFallbackResults(conf.name, query, maxResults);
+      const findings = (generateClientFallbackResults(conf.name, query, maxResults) || [])
+        .map((f) => normalizeResultItem(f))
+        .filter(Boolean);
       resultsByEngine[conf.name] = findings;
       findings.forEach((f) => {
         allResults.push(f);
-        oneLineReport.push(f.one_line);
+        oneLineReport.push(f.one_line || `[${f.engine}] [${f.summary || f.matching_text || f.title}](${f.link})`);
       });
     });
 
@@ -819,6 +805,26 @@
   // -------------------------------------------------------------------------
   // Report Rendering
   // -------------------------------------------------------------------------
+
+  function normalizeResultItem(item) {
+    if (!item || typeof item !== 'object') return null;
+
+    const title = String(item.title || item.summary || item.matching_text || '').replace(/\s+/g, ' ').trim();
+    const snippet = String(item.snippet || item.summary || item.matching_text || '').replace(/\s+/g, ' ').trim();
+    const link = String(item.link || '').trim();
+
+    if (!link || !link.startsWith('http')) return null;
+    if (!title && !snippet) return null;
+
+    return {
+      ...item,
+      title: title || 'Search Result',
+      snippet: snippet || 'Relevant result',
+      summary: item.summary || item.matching_text || `${title || 'Result'}: ${snippet || 'Relevant result'}`,
+      matching_text: item.matching_text || item.summary || `${title || 'Result'}: ${snippet || 'Relevant result'}`,
+      link,
+    };
+  }
 
   function renderReport(data) {
     reportSection.classList.remove('hidden');
@@ -848,11 +854,18 @@
     reportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  function normalizeFilterTerm(rawTerm) {
+    if (rawTerm == null) return '';
+    const cleaned = String(rawTerm).replace(/[\*]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return cleaned;
+  }
+
   function renderInteractiveFindings(filterTerm = '') {
     if (!state.resultsData) return;
 
+    const normalizedTerm = normalizeFilterTerm(filterTerm);
     findingsList.innerHTML = '';
-    const term = filterTerm.toLowerCase();
+    const term = normalizedTerm.toLowerCase();
 
     const filtered = state.resultsData.all_results.filter((item) => {
       if (!term) return true;
@@ -861,9 +874,10 @@
     });
 
     if (filtered.length === 0) {
+      const emptyMessage = term ? `No search findings matching "<strong>${escapeHtml(normalizedTerm)}</strong>".` : 'No search findings available for this query.';
       findingsList.innerHTML = `
         <div class="empty-filter-state" style="padding: 2rem; text-align: center; color: var(--text-dim);">
-          No search findings matching "<strong>${escapeHtml(filterTerm)}</strong>".
+          ${emptyMessage}
         </div>
       `;
       return;

@@ -354,77 +354,8 @@ ENGINE_HANDLERS: Dict[str, Callable[[str, int], List[SearchResult]]] = {
 
 
 def generate_fallback_results(engine_name: str, query: str, max_results: int = 10) -> List[SearchResult]:
-    """
-    Generates intelligent, query-relevant destination article results when external
-    search APIs are rate-limited, blocked by CAPTCHA, or offline.
-    Each result points to an authoritative destination article URL.
-    """
-    clean_q = query.strip()
-    capitalized_q = " ".join(w.capitalize() for w in clean_q.split())
-    slug_q = urllib.parse.quote(re.sub(r"[^a-zA-Z0-9]+", "-", clean_q.lower()).strip("-"))
-
-    destination_templates = [
-        (
-            f"Comprehensive Guide to {capitalized_q}: Fundamentals, Systems, and Applications",
-            f"An in-depth reference examining the underlying foundations, system architectures, and current real-world applications of {clean_q}.",
-            f"https://www.nature.com/articles/d41586-026-{slug_q}-overview",
-        ),
-        (
-            f"Latest Advances and Breakthroughs in {capitalized_q}",
-            f"Recent technical advancements, experimental benchmarks, and emerging perspectives on {clean_q} from leading research labs.",
-            f"https://www.technologyreview.com/2026/09/{slug_q}-breakthroughs",
-        ),
-        (
-            f"{capitalized_q} Explained: Core Principles, Theory, and Documentation",
-            f"Essential concepts, formal definitions, and foundational mathematical principles for understanding {clean_q} effectively.",
-            f"https://en.wikipedia.org/wiki/{urllib.parse.quote(clean_q.replace(' ', '_'))}",
-        ),
-        (
-            f"Empirical Evaluation and Benchmarks for Modern {capitalized_q}",
-            f"Comparative analysis evaluating accuracy, scalability, and computational efficiency across contemporary implementations of {clean_q}.",
-            f"https://arxiv.org/abs/2609.0{abs(hash(clean_q)) % 9000 + 1000}",
-        ),
-        (
-            f"Industry Standard Best Practices and Architectural Design in {capitalized_q}",
-            f"Proven engineering methodologies, deployment pipelines, and reliability standards for production systems utilizing {clean_q}.",
-            f"https://www.acm.org/publications/articles/{slug_q}-best-practices",
-        ),
-        (
-            f"Future Trends, Societal Impact, and Roadmap for {capitalized_q}",
-            f"Strategic roadmap forecasting the technical trajectory, regulatory landscape, and broader societal impact of {clean_q}.",
-            f"https://www.scientificamerican.com/article/{slug_q}-future-impact",
-        ),
-        (
-            f"Case Studies and Production Deployments of {capitalized_q}",
-            f"Detailed field reports analyzing successful high-throughput deployments and practical lessons learned implementing {clean_q}.",
-            f"https://www.ieee.org/insights/{slug_q}-production-case-studies",
-        ),
-        (
-            f"Open-Source Implementations, Frameworks, and Tooling for {capitalized_q}",
-            f"A curated repository of popular open-source software libraries, benchmarks, and developer tooling for {clean_q}.",
-            f"https://github.com/topics/{slug_q}",
-        ),
-        (
-            f"Comparative Study: Paradigm Shifts in {capitalized_q}",
-            f"A side-by-side technical evaluation of conflicting paradigms, trade-offs, and algorithmic approaches to {clean_q}.",
-            f"https://www.sciencedirect.com/science/article/pii/{slug_q}-comparative-analysis",
-        ),
-        (
-            f"Frequently Asked Questions and Knowledge Base for {capitalized_q}",
-            f"Structured technical Q&A resolving the top common misconceptions, edge cases, and optimization bottlenecks in {clean_q}.",
-            f"https://www.oreilly.com/library/view/{slug_q}-knowledge-base",
-        ),
-    ]
-
-    results: List[SearchResult] = []
-    for title, snippet, dest_url in destination_templates[:max_results]:
-        results.append(SearchResult(
-            engine=engine_name,
-            title=title,
-            snippet=snippet,
-            link=dest_url,
-        ))
-    return results[:max_results]
+    """Return no synthetic results. Real search results only."""
+    return []
 
 
 # ---------------------------------------------------------------------------
@@ -438,8 +369,23 @@ class MultiSearchAggregator:
         self.engines = [e.lower() for e in selected if e.lower() in AVAILABLE_ENGINES][:5]
         if not self.engines:
             self.engines = DEFAULT_ENGINES[:5]
-        # Enforce up to 10 results per search engine
-        self.max_results_per_engine = max(1, min(10, max_results_per_engine))
+        # Allow zero up to ten results per search engine; empty results are valid outcomes.
+        self.max_results_per_engine = max(0, min(10, max_results_per_engine))
+
+    @staticmethod
+    def _is_valid_result(result: Any) -> bool:
+        if not isinstance(result, SearchResult):
+            return False
+
+        title = re.sub(r"\s+", " ", (result.title or "")).strip()
+        snippet = re.sub(r"\s+", " ", (result.snippet or "")).strip()
+        link = (result.link or "").strip()
+
+        if not link or not link.startswith("http"):
+            return False
+        if not title and not snippet:
+            return False
+        return True
 
     def search(self, query: str) -> Dict[str, Any]:
         """
@@ -464,23 +410,24 @@ class MultiSearchAggregator:
 
         for engine_key in self.engines:
             display_name = AVAILABLE_ENGINES.get(engine_key, engine_key.capitalize())
-            handler = ENGINE_HANDLERS.get(engine_key, search_bing)
+            handler = ENGINE_HANDLERS.get(engine_key)
+            if handler is None:
+                handler = search_bing
             try:
                 engine_results = handler(query, self.max_results_per_engine)
             except Exception:
-                try:
-                    engine_results = search_bing(query, self.max_results_per_engine)
-                except Exception:
-                    engine_results = []
+                engine_results = []
 
-            # Ensure engine label matches display name
+            # Start from a clean result set and only keep valid received items.
             formatted_results = []
-            for r in engine_results[:self.max_results_per_engine]:
+            for r in engine_results[: self.max_results_per_engine]:
+                if not self._is_valid_result(r):
+                    continue
                 formatted_results.append(SearchResult(
                     engine=display_name,
-                    title=r.title,
-                    snippet=r.snippet,
-                    link=r.link,
+                    title=re.sub(r"\s+", " ", (r.title or "")).strip() or "Search result",
+                    snippet=re.sub(r"\s+", " ", (r.snippet or "")).strip(),
+                    link=(r.link or "").strip(),
                 ))
 
             engine_dicts = []

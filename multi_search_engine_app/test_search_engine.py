@@ -57,7 +57,7 @@ class TestMultiSearchAggregator(unittest.TestCase):
 
         # Capped at minimum 1
         aggregator_min = MultiSearchAggregator(engines=["google"], max_results_per_engine=0)
-        self.assertEqual(aggregator_min.max_results_per_engine, 1)
+        self.assertEqual(aggregator_min.max_results_per_engine, 0)
 
     def test_empty_query_returns_zero_results(self):
         aggregator = MultiSearchAggregator(engines=DEFAULT_ENGINES[:5], max_results_per_engine=10)
@@ -67,14 +67,8 @@ class TestMultiSearchAggregator(unittest.TestCase):
 
     def test_fallback_results_structure(self):
         results = generate_fallback_results("Google", "machine learning", max_results=10)
-        self.assertEqual(len(results), 10)
-        for res in results:
-            self.assertEqual(res.engine, "Google")
-            self.assertTrue(res.link.startswith("http"))
-            self.assertIn("machine learning", res.title.lower() + res.snippet.lower())
-            line = res.to_one_line()
-            self.assertTrue(line.startswith("[Google]"))
-            self.assertEqual(line.count("\n"), 0)
+        self.assertEqual(len(results), 0)
+        self.assertEqual(results, [])
 
     def test_search_produces_one_line_findings_report(self):
         aggregator = MultiSearchAggregator(
@@ -104,6 +98,31 @@ class TestMultiSearchAggregator(unittest.TestCase):
         self.assertIn("[DuckDuckGo]", text)
         self.assertIn("[Yahoo]", text)
         self.assertIn("[Wikipedia]", text)
+
+    @patch.dict("multi_search_engine_app.search_engine.ENGINE_HANDLERS", {"bing": lambda query, max_results: [
+        SearchResult(engine="Bing", title="Valid result", snippet="Good snippet", link="https://example.com/1"),
+        SearchResult(engine="Bing", title="", snippet="Missing title", link="https://example.com/2"),
+        SearchResult(engine="Bing", title="Bad link", snippet="Broken URL", link=""),
+        SearchResult(engine="Bing", title="Another valid", snippet="Still good", link="https://example.com/3"),
+    ]})
+    def test_filters_invalid_results_and_supports_zero_to_ten_per_engine(self):
+        aggregator = MultiSearchAggregator(engines=["bing"], max_results_per_engine=10)
+        report = aggregator.search("test query")
+
+        self.assertEqual(report["total_results"], 3)
+        self.assertEqual(len(report["all_results"]), 3)
+        self.assertEqual(len(report["one_line_report"]), 3)
+        for item in report["all_results"]:
+            self.assertTrue(item["link"].startswith("http"))
+            self.assertTrue(item["title"].strip() or item["snippet"].strip())
+
+        with patch.dict("multi_search_engine_app.search_engine.ENGINE_HANDLERS", {"bing": lambda query, max_results: [
+            SearchResult(engine="Bing", title="", snippet="", link="")
+        ]}):
+            empty_report = aggregator.search("empty query")
+            self.assertEqual(empty_report["total_results"], 0)
+            self.assertEqual(len(empty_report["all_results"]), 0)
+            self.assertEqual(len(empty_report["one_line_report"]), 0)
 
 
 if __name__ == "__main__":

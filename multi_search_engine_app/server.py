@@ -79,7 +79,7 @@ class MultiSearchHTTPRequestHandler(SimpleHTTPRequestHandler):
         # Parse max_results
         try:
             max_results = int(qs.get("max_results", ["10"])[0])
-            max_results = max(1, min(10, max_results))
+            max_results = max(0, min(10, max_results))
         except ValueError:
             max_results = 10
 
