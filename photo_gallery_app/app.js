@@ -24,7 +24,6 @@ const caption = document.getElementById("caption");
 const prevBtn = document.getElementById("prev-btn");
 const nextBtn = document.getElementById("next-btn");
 const playBtn = document.getElementById("play-btn");
-const progressFill = document.getElementById("progress-fill");
 const carousel = document.getElementById("carousel");
 const maximizeBtn = document.getElementById("maximize-btn");
 const fullscreenModal = document.getElementById("fullscreen-modal");
@@ -35,11 +34,15 @@ const fullscreenCaption = document.getElementById("fullscreen-caption");
 let current = 0;
 let playing = true;
 let timerId = null;
-let progressStart = null;
 let swipeStartX = 0;
 let swipeStartY = 0;
 let wasPlayingBeforeMaximize = true;
+let isButtonGesture = false;
 const SWIPE_THRESHOLD = 50;
+
+function isButtonInteraction(target) {
+  return target instanceof Element && target.closest("button");
+}
 
 function handleSwipeStart(clientX, clientY) {
   swipeStartX = clientX;
@@ -148,26 +151,16 @@ function prev() {
 function restartTimer() {
   clearInterval(timerId);
   timerId = null;
-  progressStart = null;
   if (playing) {
     startTimer();
-  } else {
-    progressFill.style.width = "0%";
   }
 }
 
 function startTimer() {
-  progressStart = performance.now();
   timerId = setInterval(() => {
-    const elapsed = performance.now() - progressStart;
-    const pct = Math.min(100, (elapsed / ROTATE_INTERVAL_MS) * 100);
-    progressFill.style.width = pct + "%";
-    if (elapsed >= ROTATE_INTERVAL_MS) {
-      current = (current + 1) % PHOTOS.length;
-      render();
-      progressStart = performance.now();
-    }
-  }, 50);
+    current = (current + 1) % PHOTOS.length;
+    render();
+  }, ROTATE_INTERVAL_MS);
 }
 
 function togglePlay() {
@@ -225,6 +218,11 @@ carousel.addEventListener(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    if (isButtonInteraction(event.target)) {
+      isButtonGesture = true;
+      return;
+    }
+    isButtonGesture = false;
     carousel.setPointerCapture(event.pointerId);
     handleSwipeStart(event.clientX, event.clientY);
   },
@@ -234,6 +232,10 @@ carousel.addEventListener(
 carousel.addEventListener(
   "pointerup",
   (event) => {
+    if (isButtonGesture) {
+      isButtonGesture = false;
+      return;
+    }
     handleSwipeEnd(event.clientX, event.clientY);
     if (carousel.hasPointerCapture(event.pointerId)) {
       carousel.releasePointerCapture(event.pointerId);
@@ -249,6 +251,11 @@ fullscreenModal.addEventListener(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
+    if (isButtonInteraction(event.target)) {
+      isButtonGesture = true;
+      return;
+    }
+    isButtonGesture = false;
     fullscreenModal.setPointerCapture(event.pointerId);
     handleFullscreenSwipeStart(event.clientX, event.clientY);
   },
@@ -258,6 +265,10 @@ fullscreenModal.addEventListener(
 fullscreenModal.addEventListener(
   "pointerup",
   (event) => {
+    if (isButtonGesture) {
+      isButtonGesture = false;
+      return;
+    }
     handleFullscreenSwipeEnd(event.clientX, event.clientY);
     if (fullscreenModal.hasPointerCapture(event.pointerId)) {
       fullscreenModal.releasePointerCapture(event.pointerId);
