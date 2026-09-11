@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus CMS — Modern Content & Media Management System</title>
+  <meta name="description" content="A powerful, modern content management system for uploading, previewing, playing, organizing, searching, editing, and managing any file type.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Main Application Wrapper -->
+  <div class="app-layout" id="appLayout">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button class="icon-btn mobile-menu-btn" id="toggleSidebarBtn" aria-label="Toggle Sidebar" title="Toggle Sidebar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+        <div class="brand-container">
+          <div class="brand-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">Nexus CMS</span>
+            <span class="brand-badge">v2.5 Pro</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Omnisearch Bar -->
+      <div class="header-search">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="globalSearchInput" placeholder="Search by name, filename, tags, author, category, metadata..." autocomplete="off">
+          <span class="search-shortcut" title="Press / to focus">/</span>
+          <button class="clear-search-btn" id="clearSearchBtn" aria-label="Clear Search" title="Clear Search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Header Actions -->
+      <div class="header-right">
+        <!-- View Toggle Controls -->
+        <div class="view-mode-group">
+          <button class="view-mode-btn active" data-view="grid" id="viewGridBtn" title="Grid View" aria-label="Grid View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </button>
+          <button class="view-mode-btn" data-view="list" id="viewListBtn" title="List View" aria-label="List View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+          </button>
+          <button class="view-mode-btn" data-view="compact" id="viewCompactBtn" title="Compact View" aria-label="Compact View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="4" x2="21" y2="4"></line><line x1="3" y1="10" x2="21" y2="10"></line><line x1="3" y1="16" x2="21" y2="16"></line><line x1="3" y1="22" x2="21" y2="22"></line></svg>
+          </button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button class="icon-btn" id="themeToggleBtn" aria-label="Toggle Theme" title="Toggle Dark/Light Mode">
+          <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+
+        <!-- Shortcuts Help -->
+        <button class="icon-btn" id="shortcutsHelpBtn" aria-label="Keyboard Shortcuts" title="Keyboard Shortcuts (?)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        </button>
+
+        <!-- Primary Upload Trigger Button -->
+        <button class="btn btn-primary" id="openUploadModalBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Upload File</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Area -->
+    <div class="workspace-body">
+
+      <!-- Left Sidebar Navigation & Filter Hub -->
+      <aside class="sidebar" id="appSidebar">
+        <!-- Storage Stats Widget -->
+        <div class="storage-card">
+          <div class="storage-card-header">
+            <div class="storage-info">
+              <span class="storage-title">System Storage</span>
+              <span class="storage-value" id="storageSummaryText">0 B / 500 MB</span>
+            </div>
+            <span class="storage-pct" id="storagePctText">0%</span>
+          </div>
+          <div class="storage-bar">
+            <div class="storage-progress" id="storageProgressBar" style="width: 0%"></div>
+          </div>
+          <div class="storage-footer">
+            <span id="totalItemsCountBadge">0 files indexed</span>
+            <button class="link-btn" id="clearAllEntriesBtn" title="Delete all files">Clear All</button>
+          </div>
+        </div>
+
+        <!-- Quick Type Navigation -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Media Categories</div>
+          <nav class="nav-list" id="typeNavList">
+            <button class="nav-item active" data-type-filter="all">
+              <span class="nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </span>
+              <span class="nav-label">All Content</span>
+              <span class="nav-count" id="countAll">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="image">
+              <span class="nav-icon type-image">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              </span>
+              <span class="nav-label">Images</span>
+              <span class="nav-count" id="countImage">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="video">
+              <span class="nav-icon type-video">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              </span>
+              <span class="nav-label">Videos</span>
+              <span class="nav-count" id="countVideo">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="audio">
+              <span class="nav-icon type-audio">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              </span>
+              <span class="nav-label">Audio & Music</span>
+              <span class="nav-count" id="countAudio">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="document">
+              <span class="nav-icon type-doc">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              </span>
+              <span class="nav-label">Documents & PDF</span>
+              <span class="nav-count" id="countDoc">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="code">
+              <span class="nav-icon type-code">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+              </span>
+              <span class="nav-label">Code & Scripts</span>
+              <span class="nav-count" id="countCode">0</span>
+            </button>
+            <button class="nav-item" data-type-filter="starred">
+              <span class="nav-icon type-star">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              </span>
+              <span class="nav-label">Favorites & Starred</span>
+              <span class="nav-count" id="countStarred">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Filter By Status / Priority -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Status Filter</div>
+          <div class="chip-filter-group" id="statusFilterGroup">
+            <button class="status-chip active" data-status="all">All</button>
+            <button class="status-chip" data-status="published">Published</button>
+            <button class="status-chip" data-status="draft">Draft</button>
+            <button class="status-chip" data-status="review">In Review</button>
+            <button class="status-chip" data-status="archived">Archived</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Tag Cloud & Filter -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span class="sidebar-section-title">Tags</span>
+            <button class="tiny-btn" id="resetTagFilterBtn" style="display: none;">Reset</button>
+          </div>
+          <div class="tag-cloud" id="tagCloudContainer">
+            <!-- Dynamically populated tags -->
+            <span class="empty-tags-text">No tags available</span>
+          </div>
+        </div>
+
+        <!-- Custom Date & Size Filters -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Date & Size Range</div>
+          <div class="filter-controls-group">
+            <div class="filter-row">
+              <label for="filterDatePreset">Date</label>
+              <select id="filterDatePreset" class="form-select-sm">
+                <option value="all">Any time</option>
+                <option value="today">Today</option>
+                <option value="week">Past 7 days</option>
+                <option value="month">Past 30 days</option>
+                <option value="year">Past year</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <label for="filterSizePreset">Size</label>
+              <select id="filterSizePreset" class="form-select-sm">
+                <option value="all">Any size</option>
+                <option value="small">&lt; 1 MB</option>
+                <option value="medium">1 MB – 10 MB</option>
+                <option value="large">&gt; 10 MB</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Management & Backups -->
+        <div class="sidebar-section sidebar-footer-section">
+          <div class="sidebar-section-title">Database & Tools</div>
+          <div class="sidebar-tools-grid">
+            <button class="btn btn-outline btn-sm" id="exportDataBtn" title="Export database to JSON file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Export</span>
+            </button>
+            <label class="btn btn-outline btn-sm" for="importDataFileInput" title="Import database from JSON file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+              <span>Import</span>
+              <input type="file" id="importDataFileInput" accept=".json" style="display: none;">
+            </label>
+            <button class="btn btn-outline btn-sm" id="loadSampleDataBtn" title="Load sample media dataset">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              <span>Samples</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Center Content Explorer Area -->
+      <main class="main-content">
+
+        <!-- Top Controls Bar: Breadcrumbs, Sort, Multi-select action bar -->
+        <div class="content-toolbar">
+          <div class="toolbar-left">
+            <div class="selection-control">
+              <label class="checkbox-wrapper" title="Select / Deselect all visible items">
+                <input type="checkbox" id="selectAllCheckbox">
+                <span class="custom-checkbox"></span>
+              </label>
+            </div>
+            <div class="active-filter-indicator">
+              <span class="filter-main-title" id="currentViewHeading">All Content</span>
+              <span class="items-count-badge" id="resultsCountBadge">0 items</span>
+            </div>
+          </div>
+
+          <!-- Sort Selector Controls -->
+          <div class="toolbar-right">
+            <div class="sort-control-wrapper">
+              <span class="sort-label">Order by:</span>
+              <select id="sortBySelect" class="form-select">
+                <option value="date-desc">Date & Time (Newest first)</option>
+                <option value="date-asc">Date & Time (Oldest first)</option>
+                <option value="name-asc">Name (A → Z)</option>
+                <option value="name-desc">Name (Z → A)</option>
+                <option value="filename-asc">Filename (A → Z)</option>
+                <option value="filename-desc">Filename (Z → A)</option>
+                <option value="size-desc">Size (Largest first)</option>
+                <option value="size-asc">Size (Smallest first)</option>
+                <option value="type-asc">Type & Category (A → Z)</option>
+                <option value="rating-desc">Rating (Highest first)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Multi-Selection Batch Actions Bar -->
+        <div class="batch-action-bar" id="batchActionBar" style="display: none;">
+          <div class="batch-bar-left">
+            <span class="batch-count-text" id="batchSelectionCount">0 selected</span>
+            <button class="batch-action-btn" id="batchSelectAllBtn">Select All</button>
+            <button class="batch-action-btn" id="batchClearSelectBtn">Deselect</button>
+          </div>
+          <div class="batch-bar-right">
+            <button class="btn btn-sm btn-batch" id="batchFavoriteBtn" title="Toggle Starred for selected">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <span>Star / Unstar</span>
+            </button>
+            <button class="btn btn-sm btn-batch" id="batchTagBtn" title="Add tags to selected">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span>Tag Selected</span>
+            </button>
+            <button class="btn btn-sm btn-batch" id="batchDownloadBtn" title="Download selected files">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Download</span>
+            </button>
+            <button class="btn btn-sm btn-danger" id="batchDeleteBtn" title="Delete selected items">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Delete Selected</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Active Filter Tags Ribbon -->
+        <div class="active-filter-ribbon" id="activeFilterRibbon" style="display: none;">
+          <span class="ribbon-label">Active Filters:</span>
+          <div class="ribbon-chips" id="activeFilterChips"></div>
+          <button class="clear-all-filters-btn" id="clearAllFiltersBtn">Clear All</button>
+        </div>
+
+        <!-- Global Drag & Drop Overlay Cue -->
+        <div class="drag-drop-curtain" id="dragDropCurtain">
+          <div class="curtain-box">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p class="curtain-title">Drop your files here to upload</p>
+            <p class="curtain-sub">Images, Videos, Audio, PDFs, Documents, Code & any files</p>
+          </div>
+        </div>
+
+        <!-- Content Grid & List Container -->
+        <div class="items-view-container grid-view" id="itemsViewContainer">
+          <!-- Dynamic Items Rendered Here -->
+        </div>
+
+        <!-- Empty State View -->
+        <div class="empty-state-card" id="emptyStateContainer" style="display: none;">
+          <div class="empty-icon-wrapper">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
+          <h3 class="empty-title" id="emptyStateTitle">No Content Found</h3>
+          <p class="empty-description" id="emptyStateDesc">Upload your files or try adjusting your search and filter parameters.</p>
+          <div class="empty-actions">
+            <button class="btn btn-primary" id="emptyUploadBtn">Upload Files</button>
+            <button class="btn btn-outline" id="emptyLoadSampleBtn">Load Sample Media</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= MODALS & POPUPS ================= -->
+
+  <!-- 1. UPLOAD MODAL -->
+  <div class="modal-backdrop" id="uploadModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <h3>Upload Content & Configure Properties</h3>
+        </div>
+        <button class="icon-btn close-modal-btn" data-close="uploadModal" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- File Drop Area -->
+        <div class="upload-dropzone" id="uploadDropzone">
+          <input type="file" id="filePickerInput" multiple style="display: none;">
+          <div class="dropzone-content" id="dropzonePrompt">
+            <div class="dropzone-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <p class="dropzone-main-text"><strong>Choose files</strong> or drag & drop them here</p>
+            <p class="dropzone-sub-text">Supports Images, Audio, Video, PDF, Docs, Code, Text & All formats (up to 500MB)</p>
+          </div>
+          <!-- Selected File Preview Card -->
+          <div class="selected-file-preview" id="selectedFilePreview" style="display: none;">
+            <div class="preview-thumbnail" id="uploadPreviewThumb"></div>
+            <div class="preview-meta">
+              <span class="preview-filename" id="uploadOriginalFilename">filename.ext</span>
+              <span class="preview-size-type" id="uploadOriginalMeta">0 KB • application/octet-stream</span>
+            </div>
+            <button class="btn btn-sm btn-outline" id="uploadChangeFileBtn" type="button">Change File</button>
+          </div>
+        </div>
+
+        <!-- Metadata Configuration Form -->
+        <form class="metadata-form" id="uploadMetadataForm" onsubmit="return false;">
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label for="uploadTitleInput">Display Title / Name <span class="required">*</span></label>
+              <input type="text" id="uploadTitleInput" class="form-input" placeholder="e.g. Q3 Strategic Marketing Presentation" required>
+            </div>
+            <div class="form-group">
+              <label for="uploadFilenameInput">Filename <span class="required">*</span></label>
+              <input type="text" id="uploadFilenameInput" class="form-input" placeholder="e.g. q3_marketing_report.pdf" required>
+            </div>
+          </div>
+
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label for="uploadCategoryInput">Category</label>
+              <select id="uploadCategoryInput" class="form-select">
+                <option value="General">General</option>
+                <option value="Documents">Documents</option>
+                <option value="Design & Media">Design & Media</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Engineering & Code">Engineering & Code</option>
+                <option value="Finance & Reports">Finance & Reports</option>
+                <option value="Audio & Music">Audio & Music</option>
+                <option value="Video Production">Video Production</option>
+                <option value="Research & Papers">Research & Papers</option>
+                <option value="Personal">Personal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="uploadDateTimeInput">Date & Time</label>
+              <div class="datetime-input-group">
+                <input type="datetime-local" id="uploadDateTimeInput" class="form-input">
+                <button type="button" class="btn btn-sm btn-outline" id="uploadSetNowBtn" title="Set to current date & time">Now</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="uploadStatusInput">Status</label>
+              <select id="uploadStatusInput" class="form-select">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="review">In Review</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label for="uploadAuthorInput">Author / Creator</label>
+              <input type="text" id="uploadAuthorInput" class="form-input" placeholder="e.g. Alex Morgan">
+            </div>
+            <div class="form-group">
+              <label for="uploadRatingInput">Rating / Priority</label>
+              <div class="star-rating-input" id="uploadStarRating">
+                <button type="button" class="star-btn" data-star="1">★</button>
+                <button type="button" class="star-btn" data-star="2">★</button>
+                <button type="button" class="star-btn" data-star="3">★</button>
+                <button type="button" class="star-btn" data-star="4">★</button>
+                <button type="button" class="star-btn" data-star="5">★</button>
+                <input type="hidden" id="uploadRatingValue" value="0">
+                <span class="star-label" id="uploadStarLabel">Unrated</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Tags Input -->
+          <div class="form-group">
+            <label>Tags (Press Enter or comma to add)</label>
+            <div class="tags-input-wrapper" id="uploadTagsWrapper">
+              <div class="tags-pill-list" id="uploadTagsList"></div>
+              <input type="text" id="uploadTagInputField" placeholder="Add a tag..." class="tag-field-input">
+            </div>
+            <div class="suggested-tags-row">
+              <span class="sugg-label">Quick tags:</span>
+              <button type="button" class="sugg-tag-btn" data-tag="featured">+ featured</button>
+              <button type="button" class="sugg-tag-btn" data-tag="q3-2026">+ q3-2026</button>
+              <button type="button" class="sugg-tag-btn" data-tag="confidential">+ confidential</button>
+              <button type="button" class="sugg-tag-btn" data-tag="release">+ release</button>
+              <button type="button" class="sugg-tag-btn" data-tag="design">+ design</button>
+            </div>
+          </div>
+
+          <!-- Description / Notes -->
+          <div class="form-group">
+            <label for="uploadDescriptionInput">Description / Notes</label>
+            <textarea id="uploadDescriptionInput" rows="3" class="form-textarea" placeholder="Provide notes, summary, or details about this file..."></textarea>
+          </div>
+
+          <!-- Custom Properties (Key-Value pairs) -->
+          <div class="form-group">
+            <div class="custom-props-header">
+              <label>Custom Metadata Properties</label>
+              <button type="button" class="btn btn-sm btn-outline" id="uploadAddPropBtn">+ Add Property</button>
+            </div>
+            <div class="custom-props-list" id="uploadCustomPropsList">
+              <!-- Dynamic key-value pairs -->
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="uploadModal">Cancel</button>
+        <button class="btn btn-primary" id="saveUploadBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Save to CMS</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. EDIT PROPERTIES MODAL -->
+  <div class="modal-backdrop" id="editModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          <h3>Edit Content Properties</h3>
+        </div>
+        <button class="icon-btn close-modal-btn" data-close="editModal" aria-label="Close modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form class="metadata-form" id="editMetadataForm" onsubmit="return false;">
+          <input type="hidden" id="editItemId">
+
+          <div class="file-summary-strip" id="editFileSummaryStrip">
+            <div class="strip-thumb" id="editItemThumb"></div>
+            <div class="strip-details">
+              <span class="strip-type-badge" id="editItemTypeBadge">PDF</span>
+              <span class="strip-size-meta" id="editItemSizeMeta">2.4 MB • application/pdf</span>
+            </div>
+            <label class="btn btn-sm btn-outline replace-file-btn" title="Replace underlying file content">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+              <span>Replace File</span>
+              <input type="file" id="replaceFileInput" style="display: none;">
+            </label>
+          </div>
+
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label for="editTitleInput">Display Title / Name <span class="required">*</span></label>
+              <input type="text" id="editTitleInput" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="editFilenameInput">Filename <span class="required">*</span></label>
+              <input type="text" id="editFilenameInput" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row form-row-3">
+            <div class="form-group">
+              <label for="editCategoryInput">Category</label>
+              <select id="editCategoryInput" class="form-select">
+                <option value="General">General</option>
+                <option value="Documents">Documents</option>
+                <option value="Design & Media">Design & Media</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Engineering & Code">Engineering & Code</option>
+                <option value="Finance & Reports">Finance & Reports</option>
+                <option value="Audio & Music">Audio & Music</option>
+                <option value="Video Production">Video Production</option>
+                <option value="Research & Papers">Research & Papers</option>
+                <option value="Personal">Personal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="editDateTimeInput">Date & Time</label>
+              <div class="datetime-input-group">
+                <input type="datetime-local" id="editDateTimeInput" class="form-input">
+                <button type="button" class="btn btn-sm btn-outline" id="editSetNowBtn">Now</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="editStatusInput">Status</label>
+              <select id="editStatusInput" class="form-select">
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="review">In Review</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row form-row-2">
+            <div class="form-group">
+              <label for="editAuthorInput">Author / Creator</label>
+              <input type="text" id="editAuthorInput" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="editRatingInput">Rating / Priority</label>
+              <div class="star-rating-input" id="editStarRating">
+                <button type="button" class="star-btn" data-star="1">★</button>
+                <button type="button" class="star-btn" data-star="2">★</button>
+                <button type="button" class="star-btn" data-star="3">★</button>
+                <button type="button" class="star-btn" data-star="4">★</button>
+                <button type="button" class="star-btn" data-star="5">★</button>
+                <input type="hidden" id="editRatingValue" value="0">
+                <span class="star-label" id="editStarLabel">Unrated</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Tags Input -->
+          <div class="form-group">
+            <label>Tags</label>
+            <div class="tags-input-wrapper" id="editTagsWrapper">
+              <div class="tags-pill-list" id="editTagsList"></div>
+              <input type="text" id="editTagInputField" placeholder="Add a tag..." class="tag-field-input">
+            </div>
+          </div>
+
+          <!-- Description / Notes -->
+          <div class="form-group">
+            <label for="editDescriptionInput">Description / Notes</label>
+            <textarea id="editDescriptionInput" rows="3" class="form-textarea"></textarea>
+          </div>
+
+          <!-- Custom Properties (Key-Value pairs) -->
+          <div class="form-group">
+            <div class="custom-props-header">
+              <label>Custom Metadata Properties</label>
+              <button type="button" class="btn btn-sm btn-outline" id="editAddPropBtn">+ Add Property</button>
+            </div>
+            <div class="custom-props-list" id="editCustomPropsList">
+              <!-- Dynamic key-value pairs -->
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-delete-single" id="editDeleteBtn">Delete File</button>
+        <div class="footer-actions-right">
+          <button class="btn btn-outline" data-close="editModal">Cancel</button>
+          <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. FULLSCREEN / NORMAL MEDIA VIEWER & PLAYER MODAL -->
+  <div class="viewer-modal-backdrop" id="mediaViewerModal" aria-hidden="true">
+    <div class="viewer-container" id="mediaViewerContainer">
+      <!-- Viewer Top Header Bar -->
+      <div class="viewer-header">
+        <div class="viewer-header-info">
+          <span class="viewer-type-badge" id="viewerTypeBadge">VIDEO</span>
+          <h2 class="viewer-title" id="viewerTitle">Media Title</h2>
+          <span class="viewer-meta" id="viewerMeta">filename.mp4 • 12.4 MB</span>
+        </div>
+        <div class="viewer-header-actions">
+          <button class="icon-btn viewer-act-btn" id="viewerPrevBtn" title="Previous File (Left Arrow)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <button class="icon-btn viewer-act-btn" id="viewerNextBtn" title="Next File (Right Arrow)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+          <div class="viewer-divider"></div>
+          <button class="icon-btn viewer-act-btn" id="viewerDownloadBtn" title="Download File">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </button>
+          <button class="icon-btn viewer-act-btn" id="viewerEditPropsBtn" title="Edit Properties">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </button>
+          <button class="icon-btn viewer-act-btn" id="viewerToggleSidebarBtn" title="Toggle Metadata Details">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          </button>
+          <button class="icon-btn viewer-act-btn" id="viewerFullscreenBtn" title="Toggle Fullscreen Mode (F)">
+            <svg class="enter-fs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+            <svg class="exit-fs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
+          </button>
+          <button class="icon-btn viewer-close-btn" id="viewerCloseBtn" title="Close (Esc)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Viewer Main Content Canvas & Player Workspace -->
+      <div class="viewer-stage-wrapper">
+        <div class="viewer-stage" id="viewerStage">
+          <!-- Dynamically inserted player (Video, Audio, Image, Code, Document, PDF, Binary) -->
+        </div>
+
+        <!-- Collapsible Details Side Panel in Viewer -->
+        <aside class="viewer-sidebar" id="viewerSidebar">
+          <div class="viewer-sidebar-header">
+            <h3>Content Details</h3>
+          </div>
+          <div class="viewer-sidebar-content" id="viewerSidebarContent">
+            <!-- Dynamic Metadata List -->
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. BATCH TAG MODAL -->
+  <div class="modal-backdrop" id="batchTagModal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          <h3>Add Tags to Selected Files</h3>
+        </div>
+        <button class="icon-btn close-modal-btn" data-close="batchTagModal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="batch-modal-desc" id="batchTagModalCountDesc">Applying tags to 0 selected items:</p>
+        <div class="form-group">
+          <label>Tags to Add (Press Enter or comma)</label>
+          <div class="tags-input-wrapper" id="batchTagsWrapper">
+            <div class="tags-pill-list" id="batchTagsList"></div>
+            <input type="text" id="batchTagInputField" placeholder="Type tag and press Enter..." class="tag-field-input">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="batchTagModal">Cancel</button>
+        <button class="btn btn-primary" id="saveBatchTagsBtn">Apply Tags</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. DELETE CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="deleteConfirmModal" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header modal-header-danger">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <h3 id="deleteModalTitle">Confirm Deletion</h3>
+        </div>
+        <button class="icon-btn close-modal-btn" data-close="deleteConfirmModal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="delete-warning-text" id="deleteModalMessage">Are you sure you want to permanently delete this item? This action cannot be undone.</p>
+        <div class="delete-items-list-preview" id="deleteItemsListPreview" style="display: none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="deleteConfirmModal">Cancel</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Yes, Delete Permanently</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. KEYBOARD SHORTCUTS MODAL -->
+  <div class="modal-backdrop" id="shortcutsModal" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M10 16h4"></path></svg>
+          <h3>Keyboard Shortcuts</h3>
+        </div>
+        <button class="icon-btn close-modal-btn" data-close="shortcutsModal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="shortcuts-grid">
+          <div class="shortcut-row"><span class="shortcut-key">/</span><span class="shortcut-desc">Focus Search Bar</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">U</span><span class="shortcut-desc">Open Upload Modal</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">Esc</span><span class="shortcut-desc">Close Modal or Exit Fullscreen</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">F</span><span class="shortcut-desc">Toggle Fullscreen in Viewer</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">← / →</span><span class="shortcut-desc">Previous / Next Item in Viewer</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">Space</span><span class="shortcut-desc">Play / Pause Audio or Video</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">Cmd / Ctrl + A</span><span class="shortcut-desc">Select All Items</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">Del / Backspace</span><span class="shortcut-desc">Delete Selected Items</span></div>
+          <div class="shortcut-row"><span class="shortcut-key">?</span><span class="shortcut-desc">Open this Shortcuts Dialog</span></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" data-close="shortcutsModal">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. TOAST NOTIFICATION STACK -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
