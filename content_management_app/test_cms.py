@@ -156,8 +156,8 @@ def test_js_syntax_validation():
 
     # Verify key architectural functions and methods in app.js
     required_keywords = [
-        "NexusCMS_DB",
-        "indexedDB",
+        "cms_database.db",
+        "checkHealth",
         "getFilteredAndSortedItems",
         "renderApp",
         "renderViewerStageMedia",
@@ -184,7 +184,7 @@ def test_js_syntax_validation():
     js_stub = """
     const window = {
       addEventListener: function() {},
-      location: { href: '' },
+      location: { href: 'http://localhost:8000', origin: 'http://localhost:8000', protocol: 'http:' },
       localStorage: { getItem: function() { return null; }, setItem: function() {} }
     };
     const document = {
@@ -196,7 +196,7 @@ def test_js_syntax_validation():
     };
     const localStorage = window.localStorage;
     const navigator = { clipboard: { writeText: function() { return Promise.resolve(); } } };
-    const indexedDB = { open: function() { return {}; } };
+    const fetch = function() { return Promise.resolve({ ok: true, json: function() { return Promise.resolve([]); } }); };
     """
     try:
         res = subprocess.run(

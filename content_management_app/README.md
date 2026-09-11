@@ -67,13 +67,11 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Clear All Database**: Full database wipe with sample reset capability.
 - **Undo Stack**: Toast notification with instant "Undo" button to restore accidentally deleted files.
 
-### 7. Dual Database Persistence & Data Portability
-- **SQLite Database Server (`server.py` & `database.py`)**: File-backed relational database persistence in `cms_database.db` with indexes, WAL mode, transactions, and REST endpoints (`GET /api/items`, `POST /api/items`, `PUT /api/items/:id`, `DELETE /api/items/:id`, `POST /api/items/batch`, `POST /api/items/clear`).
-- **IndexedDB & LocalStorage**: Automatic browser-side caching and full offline persistence when accessing directly via `file:///` or static hosts.
-- **Save to Database Control**: Dedicated "Save DB" tool button and live database connection status badge in the UI.
-- **Export Database**: Download entire CMS library and metadata bundle as a single JSON backup.
-- **Import Database**: Restore and merge backups.
-- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo.
+### 7. Persistent SQLite Database Storage & Data Portability
+- **Exclusive Persistent Database Storage (`cms_database.db`)**: All data storage, edits, metadata, tags, and media assets are saved exclusively to the SQLite database file via ACID-compliant transactions with WAL mode, indexing, and REST endpoints (`GET /api/items`, `POST /api/items`, `PUT /api/items/:id`, `DELETE /api/items/:id`, `POST /api/items/batch`, `POST /api/items/clear`). Browser local storage and IndexedDB have been completely removed.
+- **Database Status Indicator**: Live status badge in the UI displaying current SQLite database connectivity and record counts.
+- **Export & Import Backup Tools**: One-click JSON backup export and import to transfer or restore data from the SQLite database.
+- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in `cms_database.db`.
 
 ---
 
@@ -95,18 +93,10 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 
 ## Quick Start & Running
 
-### Option A: Run with SQLite Database Backend Server (Recommended)
+Start the SQLite Database Server:
 
 ```bash
 cd content_management_app
 python3 server.py --port 8000
 ```
-Open `http://localhost:8000` in your web browser. All uploaded files, property modifications, and tags will automatically persist directly into `cms_database.db`.
-
-### Option B: Open directly in any browser (Local IndexedDB Mode)
-
-Open `content_management_app/index.html` directly or run:
-```bash
-cd content_management_app
-python3 -m http.server 8000
-```
+Open `http://localhost:8000` in your web browser. All uploaded files, property updates, tags, and deletions persist directly into `cms_database.db`.

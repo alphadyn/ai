@@ -1,345 +1,146 @@
 /**
  * Nexus CMS — Modern Content & Media Management System
- * Full-featured client-side CMS with IndexedDB persistence, rich media players,
- * metadata editing, tags, multi-criteria search, sorting, and batch actions.
+ * Full-featured content management system with SQLite Database persistence,
+ * rich media players, metadata editing, tags, multi-criteria search, sorting, and batch actions.
  */
 
 (function () {
   'use strict';
 
   // ==========================================================================
-  // 1. Unified SQLite & IndexedDB Database Storage Engine
+  // 1. Persistent SQLite Database Client (No LocalStorage / IndexedDB Storage)
   // ==========================================================================
-  const DB_NAME = 'NexusCMS_DB';
-  const DB_VERSION = 1;
-  const STORE_NAME = 'media_items';
+  const API_BASE = (function () {
+    if (typeof window !== 'undefined' && window.location) {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return window.location.origin;
+      }
+    }
+    return 'http://localhost:8000';
+  })();
 
   const db = {
-    _db: null,
-    isServerAvailable: false,
+    isConnected: false,
+    dbName: 'cms_database.db',
 
-    async checkServer() {
-      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
-        this.isServerAvailable = false;
-        return false;
-      }
+    async checkHealth() {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000);
-        const res = await fetch('/api/health', { signal: controller.signal });
+        const timeoutId = setTimeout(() => controller.abort(), 1200);
+        const res = await fetch(`${API_BASE}/api/health`, { signal: controller.signal });
         clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
-          this.isServerAvailable = data.status === 'ok';
-          return this.isServerAvailable;
+          this.isConnected = data.status === 'ok';
+          this.dbName = data.database || 'cms_database.db';
+          return this.isConnected;
         }
       } catch (err) {
-        this.isServerAvailable = false;
+        this.isConnected = false;
       }
       return false;
     },
 
     async init() {
-      await this.checkServer();
-
-      if (this._db) return this._db;
-      return new Promise((resolve) => {
-        if (!('indexedDB' in window)) {
-          resolve(null);
-          return;
-        }
-        try {
-          const request = indexedDB.open(DB_NAME, DB_VERSION);
-          request.onupgradeneeded = (e) => {
-            const dbInstance = e.target.result;
-            if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-              const store = dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id' });
-              store.createIndex('type', 'type', { unique: false });
-              store.createIndex('category', 'category', { unique: false });
-              store.createIndex('date', 'date', { unique: false });
-              store.createIndex('name', 'name', { unique: false });
-              store.createIndex('starred', 'starred', { unique: false });
-            }
-          };
-          request.onsuccess = (e) => {
-            this._db = e.target.result;
-            resolve(this._db);
-          };
-          request.onerror = (e) => {
-            console.warn('IndexedDB unavailable, using memory/API:', e);
-            resolve(null);
-          };
-        } catch (err) {
-          resolve(null);
-        }
-      });
+      return await this.checkHealth();
     },
 
     async getAll() {
-      // 1. Try SQLite Backend API if available
-      if (this.isServerAvailable) {
-        try {
-          const res = await fetch('/api/items');
-          if (res.ok) {
-            const serverItems = await res.json();
-            if (Array.isArray(serverItems) && serverItems.length > 0) {
-              // Cache to IndexedDB in background
-              this._cacheToIndexedDB(serverItems);
-              return serverItems;
-            }
-          }
-        } catch (err) {
-          console.warn('SQLite API fetch failed, fallback to local DB:', err);
+      await this.checkHealth();
+      if (!this.isConnected) {
+        return [];
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/items`);
+        if (res.ok) {
+          const items = await res.json();
+          return Array.isArray(items) ? items : [];
         }
+      } catch (err) {
+        console.error('Failed to fetch from SQLite Database:', err);
       }
-
-      // 2. Query IndexedDB
-      const instance = await this.init();
-      if (instance) {
-        return new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readonly');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.getAll();
-            req.onsuccess = () => resolve(req.result || []);
-            req.onerror = () => resolve(this._getLocalStorageBackup());
-          } catch (err) {
-            resolve(this._getLocalStorageBackup());
-          }
-        });
-      }
-
-      return this._getLocalStorageBackup();
+      return [];
     },
 
     async getById(id) {
-      if (this.isServerAvailable) {
-        try {
-          const res = await fetch(`/api/items/${encodeURIComponent(id)}`);
-          if (res.ok) return await res.json();
-        } catch (err) {}
-      }
-
-      const instance = await this.init();
-      if (instance) {
-        return new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readonly');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.get(id);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null);
-          } catch (err) {
-            resolve(null);
-          }
-        });
+      try {
+        const res = await fetch(`${API_BASE}/api/items/${encodeURIComponent(id)}`);
+        if (res.ok) return await res.json();
+      } catch (err) {
+        console.error('Failed to get item from SQLite Database:', err);
       }
       return null;
     },
 
     async put(item) {
-      // 1. Persist to SQLite Database via REST API
-      if (this.isServerAvailable) {
-        try {
-          await fetch('/api/items', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-          });
-        } catch (err) {
-          console.warn('SQLite API save failed:', err);
-        }
-      }
-
-      // 2. Persist to IndexedDB
-      const instance = await this.init();
-      if (instance) {
-        await new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.put(item);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => resolve(null);
-          } catch (err) {
-            resolve(null);
-          }
+      try {
+        const res = await fetch(`${API_BASE}/api/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
         });
+        if (res.ok) return await res.json();
+      } catch (err) {
+        console.error('Failed to save item to SQLite Database:', err);
+        throw err;
       }
-
-      // 3. Update localStorage backup
-      this._saveItemToLocalStorage(item);
       return item;
     },
 
     async putMany(items) {
-      // 1. Persist batch to SQLite Backend
-      if (this.isServerAvailable) {
-        try {
-          await fetch('/api/items/batch', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(items)
-          });
-        } catch (err) {
-          console.warn('SQLite API batch save failed:', err);
-        }
-      }
-
-      // 2. Persist to IndexedDB
-      const instance = await this.init();
-      if (instance) {
-        await new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            items.forEach((item) => store.put(item));
-            tx.oncomplete = () => resolve(true);
-            tx.onerror = () => resolve(false);
-          } catch (err) {
-            resolve(false);
-          }
-        });
-      }
-
-      // 3. Update localStorage
       try {
-        const existing = this._getLocalStorageBackup();
-        const map = new Map(existing.map((i) => [i.id, i]));
-        items.forEach((i) => map.set(i.id, i));
-        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(Array.from(map.values())));
-      } catch (err) {}
-      return true;
+        const res = await fetch(`${API_BASE}/api/items/batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(items)
+        });
+        if (res.ok) return true;
+      } catch (err) {
+        console.error('Failed to batch save to SQLite Database:', err);
+        throw err;
+      }
+      return false;
     },
 
     async delete(id) {
-      if (this.isServerAvailable) {
-        try {
-          await fetch(`/api/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        } catch (err) {
-          console.warn('SQLite API delete failed:', err);
-        }
-      }
-
-      const instance = await this.init();
-      if (instance) {
-        await new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.delete(id);
-            req.onsuccess = () => resolve(true);
-            req.onerror = () => resolve(false);
-          } catch (err) {
-            resolve(false);
-          }
-        });
-      }
-
       try {
-        const existing = this._getLocalStorageBackup().filter((i) => i.id !== id);
-        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
-      } catch (err) {}
-      return true;
+        const res = await fetch(`${API_BASE}/api/items/${encodeURIComponent(id)}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) return true;
+      } catch (err) {
+        console.error('Failed to delete item from SQLite Database:', err);
+        throw err;
+      }
+      return false;
     },
 
     async deleteMany(ids) {
-      if (this.isServerAvailable) {
-        try {
-          await fetch('/api/items/batch-delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids })
-          });
-        } catch (err) {
-          console.warn('SQLite API batch-delete failed:', err);
-        }
-      }
-
-      const instance = await this.init();
-      if (instance) {
-        await new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            ids.forEach((id) => store.delete(id));
-            tx.oncomplete = () => resolve(true);
-            tx.onerror = () => resolve(false);
-          } catch (err) {
-            resolve(false);
-          }
-        });
-      }
-
       try {
-        const idSet = new Set(ids);
-        const existing = this._getLocalStorageBackup().filter((i) => !idSet.has(i.id));
-        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
-      } catch (err) {}
-      return true;
+        const res = await fetch(`${API_BASE}/api/items/batch-delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids })
+        });
+        if (res.ok) return true;
+      } catch (err) {
+        console.error('Failed to batch delete from SQLite Database:', err);
+        throw err;
+      }
+      return false;
     },
 
     async clear() {
-      if (this.isServerAvailable) {
-        try {
-          await fetch('/api/items/clear', { method: 'POST' });
-        } catch (err) {
-          console.warn('SQLite API clear failed:', err);
-        }
-      }
-
-      const instance = await this.init();
-      if (instance) {
-        await new Promise((resolve) => {
-          try {
-            const tx = instance.transaction([STORE_NAME], 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.clear();
-            req.onsuccess = () => resolve(true);
-            req.onerror = () => resolve(false);
-          } catch (err) {
-            resolve(false);
-          }
+      try {
+        const res = await fetch(`${API_BASE}/api/items/clear`, {
+          method: 'POST'
         });
-      }
-
-      try {
-        localStorage.removeItem('nexus_cms_backup_items');
-      } catch (err) {}
-      return true;
-    },
-
-    async _cacheToIndexedDB(items) {
-      const instance = await this.init();
-      if (instance && Array.isArray(items)) {
-        try {
-          const tx = instance.transaction([STORE_NAME], 'readwrite');
-          const store = tx.objectStore(STORE_NAME);
-          items.forEach((item) => store.put(item));
-        } catch (err) {}
-      }
-    },
-
-    _getLocalStorageBackup() {
-      try {
-        const raw = localStorage.getItem('nexus_cms_backup_items');
-        return raw ? JSON.parse(raw) : [];
+        if (res.ok) return true;
       } catch (err) {
-        return [];
+        console.error('Failed to clear SQLite Database:', err);
+        throw err;
       }
-    },
-
-    _saveItemToLocalStorage(item) {
-      try {
-        const existing = this._getLocalStorageBackup();
-        const idx = existing.findIndex((i) => i.id === item.id);
-        if (idx !== -1) {
-          existing[idx] = item;
-        } else {
-          existing.unshift(item);
-        }
-        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
-      } catch (err) {}
+      return false;
     }
   };
 
@@ -349,8 +150,8 @@
   const state = {
     items: [],
     selectedIds: new Set(),
-    viewMode: localStorage.getItem('nexus_cms_view') || 'grid',
-    theme: localStorage.getItem('nexus_cms_theme') || 'dark',
+    viewMode: 'grid',
+    theme: 'dark',
     filter: {
       type: 'all',
       status: 'all',
@@ -358,6 +159,16 @@
       tags: new Set(),
       datePreset: 'all',
       sizePreset: 'all'
+    },
+    sortBy: 'date-desc',
+    activeViewerIndex: -1,
+    activeViewerList: [],
+    pendingUploadFile: null,
+    uploadTags: new Set(),
+    editTags: new Set(),
+    batchTags: new Set(),
+    lastDeletedItems: [] // for undo toast
+  };
     },
     sortBy: 'date-desc',
     activeViewerIndex: -1,
@@ -638,7 +449,7 @@
         rating: 5,
         starred: false,
         tags: ['docs', 'architecture', 'spec', 'system-design'],
-        description: 'Comprehensive specification document outlining distributed caching, IndexedDB persistence, metadata indexing, and media pipelines.',
+        description: 'Comprehensive specification document outlining distributed caching, SQLite database persistence, metadata indexing, and media pipelines.',
         customProps: [
           { key: 'Version', value: '2.5.0-RC1' },
           { key: 'Security Review', value: 'Approved' },
@@ -647,10 +458,10 @@
         textContent: `# Strategic System Architecture Blueprint
 
 ## Executive Overview
-Nexus CMS provides a zero-latency, local-first content repository capable of handling diverse media formats, extensive metadata attributes, and responsive playback.
+Nexus CMS provides a zero-latency, local-first content repository capable of handling diverse media formats, extensive metadata attributes, and responsive playback backed by SQLite.
 
 ### Core Modules
-1. **Local IndexedDB Engine**: Non-blocking asynchronous transactions supporting binary blobs, Base64 data URLs, and indexed compound queries.
+1. **Persistent SQLite Database Engine**: ACID-compliant relational transactions with WAL mode, indexing, and REST APIs.
 2. **Dynamic Media Engine**: Custom playback controllers for video, frequency visualizer for audio, and interactive canvas zoom/pan for images.
 3. **Omnisearch & Filter Pipeline**: Multi-dimensional token matching across display names, extensions, tag collections, and custom key-value pairs.
 
@@ -784,19 +595,19 @@ class SpectrumVisualizer {
     bindDeleteModalEvents();
     bindShortcutsModalEvents();
 
-    try {
-      await db.init();
+    const connected = await db.init();
+    if (connected) {
       const stored = await db.getAll();
       if (!stored || stored.length === 0) {
         const samples = getSampleDataset();
         await db.putMany(samples);
-        state.items = samples;
+        state.items = await db.getAll();
       } else {
         state.items = stored;
       }
-    } catch (err) {
-      console.warn('Falling back to memory storage:', err);
-      state.items = getSampleDataset();
+    } else {
+      state.items = [];
+      showToast('Connecting to SQLite Database Server (python3 server.py)...', 'info');
     }
 
     renderApp();
@@ -967,12 +778,12 @@ class SpectrumVisualizer {
     const dbStatusBadge = document.getElementById('dbStatusBadge');
     const dbStatusText = document.getElementById('dbStatusText');
     if (dbStatusBadge && dbStatusText) {
-      if (db.isServerAvailable) {
+      if (db.isConnected) {
         dbStatusBadge.className = 'db-status-badge';
-        dbStatusText.textContent = `SQLite DB: Connected (${state.items.length} records saved)`;
+        dbStatusText.textContent = `SQLite DB: ${db.dbName} (${state.items.length} records)`;
       } else {
         dbStatusBadge.className = 'db-status-badge offline';
-        dbStatusText.textContent = `Local DB: IndexedDB Active (${state.items.length} records)`;
+        dbStatusText.textContent = `SQLite DB: Disconnected (Start server.py)`;
       }
     }
 
@@ -1556,14 +1367,9 @@ class SpectrumVisualizer {
         try {
           await db.putMany(state.items);
           renderSidebarCounts();
-          showToast(
-            db.isServerAvailable
-              ? `Saved ${state.items.length} records to SQLite Database (cms_database.db)`
-              : `Saved ${state.items.length} records to Local Database (IndexedDB)`,
-            'success'
-          );
+          showToast(`Saved ${state.items.length} records to SQLite Database (${db.dbName})`, 'success');
         } catch (err) {
-          showToast('Failed to save records to database', 'danger');
+          showToast('Failed to save records to SQLite database', 'danger');
         } finally {
           saveDbBtn.disabled = false;
         }
