@@ -27,7 +27,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Prime Counter](prime_counter_app/) - Prime counting utility with timing and charting.
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
-- [Casa Lumen Architectural Design](architectural_design_app/) - Interactive concept board for a modern five-bedroom, five-bathroom, two-storey home with plans, site strategy, section, elevations, materials, and area schedule.
+- [Casa Lumen Architectural Design](architectural_design_app/) - Responsive, print-ready concept board for a modern five-bedroom, five-bathroom, two-storey home. Includes dimensioned ground and upper plans, wide hallway circulation, door swings, windows, kitchen/bath fixtures, site strategy, section, four elevations, material studies, and area schedule.
 
 ### Reports and presentation pages
 
