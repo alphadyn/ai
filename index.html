@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alphadyn AI Apps</title>
+  <meta name="description" content="Interactive apps, reports, dashboards, and experiments by Alphadyn AI.">
+  <style>
+    :root { color-scheme: dark; --bg: #0b1020; --panel: #151d33; --line: #293653; --text: #f4f7ff; --muted: #9ba9c5; --accent: #6ee7d2; --accent-2: #8aa7ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top right, #263d69 0, transparent 35%), var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0 56px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 42px; }
+    h1 { margin: 0; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.04em; }
+    .intro { max-width: 580px; color: var(--muted); font-size: 1.08rem; }
+    .intro a { color: var(--accent); }
+    .apps { display: grid; grid-template-columns: repeat(auto-fit, minmax(245px, 1fr)); gap: 14px; }
+    .app { display: flex; flex-direction: column; min-height: 150px; padding: 22px; background: color-mix(in srgb, var(--panel) 90%, transparent); border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: inherit; transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+    .app:hover, .app:focus-visible { transform: translateY(-4px); border-color: var(--accent); background: #1b2946; outline: none; }
+    .app strong { color: var(--accent); font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; }
+    .app h2 { margin: 10px 0 6px; font-size: 1.15rem; }
+    .app p { margin: 0; color: var(--muted); font-size: .92rem; }
+    footer { margin-top: 40px; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 680px) { main { width: min(100% - 28px, 1180px); padding-top: 42px; } header { display: block; } .intro { margin-top: 20px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Alphadyn<br>AI apps.</h1>
+      </div>
+      <div class="intro">
+        A collection of interactive tools, reports, dashboards, and experiments. Select an app to open it.
+        Read the project documentation on <a href="https://github.com/alphadyn/ai#readme">GitHub</a>.
+      </div>
+    </header>
+    <section class="apps" aria-label="Available applications">
+      <a class="app" href="architectural_design_app/"><strong>Design</strong><h2>Architectural Design</h2><p>Concept board and plans for a modern home.</p></a>
+      <a class="app" href="audio_equalizer_app/"><strong>Audio</strong><h2>Audio Equalizer</h2><p>Media player with live spectrum and waveform analysis.</p></a>
+      <a class="app" href="business_plan/"><strong>Report</strong><h2>Business Plan</h2><p>Presentation-style startup business plan.</p></a>
+      <a class="app" href="business_site/"><strong>Site</strong><h2>Business Site</h2><p>Marketing landing page for an AI company.</p></a>
+      <a class="app" href="checkin_map_app/"><strong>Maps</strong><h2>Check-in Map</h2><p>Location check-ins with a recent-history log.</p></a>
+      <a class="app" href="content_management_app/"><strong>CMS</strong><h2>Nexus CMS</h2><p>Content and media management system.</p></a>
+      <a class="app" href="crawler_indexer/"><strong>Tool</strong><h2>Crawler Indexer</h2><p>Domain-scoped crawler and indexer.</p></a>
+      <a class="app" href="earth_3d_explorer/"><strong>3D</strong><h2>Earth Explorer</h2><p>Interactive globe with country overlays.</p></a>
+      <a class="app" href="ehr_web_app/"><strong>Health</strong><h2>EHR Web App</h2><p>Electronic health record demo interface.</p></a>
+      <a class="app" href="enterprise_executive_dashboard/"><strong>Dashboard</strong><h2>Executive Dashboard</h2><p>Operations and strategy dashboard.</p></a>
+      <a class="app" href="fractal_patterns_app/"><strong>Visuals</strong><h2>Fractal Patterns</h2><p>Interactive fractal visualizer.</p></a>
+      <a class="app" href="game_videos_site/"><strong>Media</strong><h2>Game Videos</h2><p>Gaming video showcase page.</p></a>
+      <a class="app" href="human_vs_ai_skills_report/"><strong>Report</strong><h2>Human vs AI Skills</h2><p>Comparison of human and AI capabilities.</p></a>
+      <a class="app" href="index_fund_report/"><strong>Finance</strong><h2>Index Fund Report</h2><p>Index fund overview and risk breakdown.</p></a>
+      <a class="app" href="iphone_17_simulator/"><strong>Simulator</strong><h2>iPhone 17 Pro</h2><p>Interactive phone simulator.</p></a>
+      <a class="app" href="iphone_duo_app/"><strong>Simulator</strong><h2>iPhone Duo</h2><p>Responsive dual-device phone experience.</p></a>
+      <a class="app" href="largest_companies_report/"><strong>Report</strong><h2>Largest Companies</h2><p>Report on large public companies.</p></a>
+      <a class="app" href="legal_docketing_app/"><strong>Operations</strong><h2>Legal Docketing</h2><p>Matter and deadline tracking.</p></a>
+      <a class="app" href="multi_search_engine_app/"><strong>Search</strong><h2>Multi-Search Engine</h2><p>Compare findings across search engines.</p></a>
+      <a class="app" href="pencil_sketch_app/"><strong>Creative</strong><h2>Pencil Sketch</h2><p>Image-to-pencil-sketch converter.</p></a>
+      <a class="app" href="photo_gallery_app/"><strong>Gallery</strong><h2>Photo Gallery</h2><p>Responsive gallery with random images.</p></a>
+      <a class="app" href="postboard_app/"><strong>Productivity</strong><h2>Postboard</h2><p>Personal post archive with Supabase persistence.</p></a>
+      <a class="app" href="prime_counter_app/"><strong>Math</strong><h2>Prime Counter</h2><p>Prime counting utility with timing charts.</p></a>
+      <a class="app" href="resume/"><strong>Profile</strong><h2>Resume</h2><p>AI-focused software engineer resume.</p></a>
+      <a class="app" href="sp500_analysis_app/"><strong>Finance</strong><h2>S&amp;P 500 Analysis</h2><p>Watchlist with transparent screening signals.</p></a>
+      <a class="app" href="sp500_quarterly_returns/"><strong>Finance</strong><h2>S&amp;P 500 Returns</h2><p>Quarterly return highlights.</p></a>
+      <a class="app" href="top_20_occupations_income_report/"><strong>Report</strong><h2>Top Occupations</h2><p>Income report for leading occupations.</p></a>
+      <a class="app" href="vcard_generator_app/"><strong>Utility</strong><h2>vCard Generator</h2><p>Generate contact cards and QR codes.</p></a>
+    </section>
+    <footer>Alphadyn AI &middot; 28 projects</footer>
+  </main>
+</body>
+</html>
