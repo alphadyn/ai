@@ -78,6 +78,9 @@ python3 -m http.server 8000
 
 cd iphone_duo_app
 python3 -m http.server 8000
+
+cd content_management_app
+python3 -m http.server 8000
 ```
 
 ### Postboard setup
