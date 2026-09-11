@@ -2,6 +2,7 @@
 Automated validation and integration tests for Nexus Content Management System (CMS).
 """
 
+import json
 import os
 import re
 import subprocess
@@ -360,3 +361,31 @@ def test_readme_contains_all_requirements():
     assert "Omnisearch" in readme
     assert "Batch Actions" in readme
     assert "Keyboard Shortcuts" in readme
+
+
+def test_server_and_database_auto_connect():
+    """Verify server health check endpoint and database connection availability on app load."""
+    import urllib.request
+    from http.server import HTTPServer
+    import threading
+    import time
+    from content_management_app.server import CMSHTTPRequestHandler
+
+    server = HTTPServer(("127.0.0.1", 0), CMSHTTPRequestHandler)
+    port = server.server_port
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+
+    time.sleep(0.1)
+    health_url = f"http://127.0.0.1:{port}/api/health"
+
+    try:
+        with urllib.request.urlopen(health_url) as resp:
+            assert resp.status == 200
+            data = json.loads(resp.read().decode("utf-8"))
+            assert data.get("status") == "ok"
+            assert data.get("storage") == "sqlite"
+            assert "database" in data
+    finally:
+        server.shutdown()
+        server.server_close()

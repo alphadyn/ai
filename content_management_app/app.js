@@ -22,22 +22,40 @@
   const db = {
     isConnected: false,
     dbName: 'cms_database.db',
+    activeApiBase: API_BASE,
 
     async checkHealth() {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1200);
-        const res = await fetch(`${API_BASE}/api/health`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          this.isConnected = data.status === 'ok';
-          this.dbName = data.database || 'cms_database.db';
-          return this.isConnected;
+      const candidates = [];
+      if (typeof window !== 'undefined' && window.location) {
+        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+          candidates.push(window.location.origin);
         }
-      } catch (err) {
-        this.isConnected = false;
       }
+      candidates.push('http://localhost:8000');
+      candidates.push('http://127.0.0.1:8000');
+
+      const uniqueCandidates = Array.from(new Set(candidates));
+
+      for (const base of uniqueCandidates) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 1200);
+          const res = await fetch(`${base}/api/health`, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === 'ok') {
+              this.activeApiBase = base;
+              this.isConnected = true;
+              this.dbName = data.database || 'cms_database.db';
+              return true;
+            }
+          }
+        } catch (err) {
+          // Continue testing next base candidate
+        }
+      }
+      this.isConnected = false;
       return false;
     },
 
@@ -51,7 +69,7 @@
         return [];
       }
       try {
-        const res = await fetch(`${API_BASE}/api/items`);
+        const res = await fetch(`${this.activeApiBase}/api/items`);
         if (res.ok) {
           const items = await res.json();
           return Array.isArray(items) ? items : [];
@@ -64,7 +82,7 @@
 
     async getById(id) {
       try {
-        const res = await fetch(`${API_BASE}/api/items/${encodeURIComponent(id)}`);
+        const res = await fetch(`${this.activeApiBase}/api/items/${encodeURIComponent(id)}`);
         if (res.ok) return await res.json();
       } catch (err) {
         console.error('Failed to get item from SQLite Database:', err);
@@ -74,7 +92,7 @@
 
     async put(item) {
       try {
-        const res = await fetch(`${API_BASE}/api/items`, {
+        const res = await fetch(`${this.activeApiBase}/api/items`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(item)
@@ -89,7 +107,7 @@
 
     async putMany(items) {
       try {
-        const res = await fetch(`${API_BASE}/api/items/batch`, {
+        const res = await fetch(`${this.activeApiBase}/api/items/batch`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(items)
@@ -104,7 +122,7 @@
 
     async delete(id) {
       try {
-        const res = await fetch(`${API_BASE}/api/items/${encodeURIComponent(id)}`, {
+        const res = await fetch(`${this.activeApiBase}/api/items/${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
         if (res.ok) return true;
@@ -117,7 +135,7 @@
 
     async deleteMany(ids) {
       try {
-        const res = await fetch(`${API_BASE}/api/items/batch-delete`, {
+        const res = await fetch(`${this.activeApiBase}/api/items/batch-delete`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ids })
@@ -132,7 +150,7 @@
 
     async clear() {
       try {
-        const res = await fetch(`${API_BASE}/api/items/clear`, {
+        const res = await fetch(`${this.activeApiBase}/api/items/clear`, {
           method: 'POST'
         });
         if (res.ok) return true;
@@ -575,6 +593,45 @@ class SpectrumVisualizer {
   // ==========================================================================
   // 5. App Initialization & UI Setup
   // ==========================================================================
+  let connectionRetryInterval = null;
+
+  async function connectAndFetchItems() {
+    const connected = await db.init();
+    if (connected) {
+      if (connectionRetryInterval) {
+        clearInterval(connectionRetryInterval);
+        connectionRetryInterval = null;
+      }
+      const stored = await db.getAll();
+      if (!stored || stored.length === 0) {
+        const samples = getSampleDataset();
+        await db.putMany(samples);
+        state.items = await db.getAll();
+      } else {
+        state.items = stored;
+      }
+      renderApp();
+      return true;
+    } else {
+      state.items = [];
+      renderApp();
+      return false;
+    }
+  }
+
+  function startDatabaseAutoReconnect() {
+    if (connectionRetryInterval) return;
+    connectionRetryInterval = setInterval(async () => {
+      const connected = await db.checkHealth();
+      if (connected) {
+        const ok = await connectAndFetchItems();
+        if (ok) {
+          showToast(`Database connected successfully (${db.dbName})`, 'success');
+        }
+      }
+    }, 2000);
+  }
+
   async function initApp() {
     applyTheme(state.theme);
     bindGlobalEvents();
@@ -585,22 +642,33 @@ class SpectrumVisualizer {
     bindDeleteModalEvents();
     bindShortcutsModalEvents();
 
-    const connected = await db.init();
-    if (connected) {
-      const stored = await db.getAll();
-      if (!stored || stored.length === 0) {
-        const samples = getSampleDataset();
-        await db.putMany(samples);
-        state.items = await db.getAll();
-      } else {
-        state.items = stored;
-      }
-    } else {
-      state.items = [];
-      showToast('Connecting to SQLite Database Server (python3 server.py)...', 'info');
+    const dbBadge = document.getElementById('dbStatusBadge');
+    if (dbBadge) {
+      dbBadge.addEventListener('click', async () => {
+        showToast('Checking database server connection...', 'info');
+        const isOk = await db.checkHealth();
+        if (isOk) {
+          await connectAndFetchItems();
+          showToast(`Connected to SQLite Database (${db.dbName})`, 'success');
+        } else {
+          showToast('Database server unreachable. Please start python3 server.py', 'error');
+        }
+      });
     }
 
-    renderApp();
+    const connected = await connectAndFetchItems();
+    if (!connected) {
+      showToast('Connecting to SQLite Database Server (python3 server.py)...', 'info');
+      startDatabaseAutoReconnect();
+    } else {
+      setInterval(async () => {
+        const stillOk = await db.checkHealth();
+        renderSidebarCounts();
+        if (!stillOk && !connectionRetryInterval) {
+          startDatabaseAutoReconnect();
+        }
+      }, 10000);
+    }
 
     // Check URL query parameter or hash for direct deep-link to item
     handleUrlRouting();
