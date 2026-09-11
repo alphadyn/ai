@@ -17,6 +17,7 @@
   const db = {
     isConnected: false,
     dbName: 'Supabase media_items',
+    connectionError: '',
 
     async request(path, options = {}) {
       if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -74,9 +75,19 @@
       try {
         const res = await this.request('/rest/v1/media_items?select=id&limit=1');
         this.isConnected = res.ok;
+        this.connectionError = res.ok ? '' : `Supabase returned HTTP ${res.status}`;
+        if (!res.ok) {
+          try {
+            const error = await res.json();
+            this.connectionError = error.message || this.connectionError;
+          } catch (err) {
+            // Keep the HTTP status when the response is not JSON.
+          }
+        }
         return res.ok;
       } catch (err) {
         this.isConnected = false;
+        this.connectionError = err.message || 'Supabase request failed';
         return false;
       }
     },
@@ -663,7 +674,7 @@ class SpectrumVisualizer {
           await connectAndFetchItems();
           showToast(`Connected to Supabase (${db.dbName})`, 'success');
         } else {
-          showToast('Supabase is unreachable. Check supabase-config.js and your project status.', 'error');
+          showToast(db.connectionError || 'Supabase is unreachable. Check supabase-config.js and your project status.', 'error');
         }
       });
     }
@@ -853,7 +864,7 @@ class SpectrumVisualizer {
         dbStatusText.textContent = `Supabase: ${state.items.length} records`;
       } else {
         dbStatusBadge.className = 'db-status-badge offline';
-        dbStatusText.textContent = 'Supabase: Disconnected';
+        dbStatusText.textContent = `Supabase: Disconnected (${db.connectionError || 'check configuration'})`;
       }
     }
 
