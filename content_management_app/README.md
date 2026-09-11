@@ -1,9 +1,9 @@
 # Nexus Content Management System (CMS)
 
-A modern, full-featured web-based Content Management System (CMS) for uploading, displaying, playing, searching, ordering, editing, and managing all kinds of digital media and documents (text, code, documents, audio, video, images, PDFs, archives, and custom binary formats) with persistent SQLite database storage.
+A modern, full-featured web-based Content Management System (CMS) for uploading, displaying, playing, searching, ordering, editing, and managing all kinds of digital media and documents (text, code, documents, audio, video, images, PDFs, archives, and custom binary formats) with persistent Supabase storage.
 
 ![Nexus CMS Banner](https://img.shields.io/badge/Status-Complete-brightgreen)
-![SQLite](https://img.shields.io/badge/Storage-SQLite%203%20(WAL%20Mode)-blue)
+![Supabase](https://img.shields.io/badge/Storage-Supabase-3ECF8E)
 ![Zero Dependencies](https://img.shields.io/badge/Dependencies-Python%20Standard%20Library-orange)
 
 ---
@@ -67,11 +67,11 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Clear All Database**: Full database wipe with sample reset capability.
 - **Undo Stack**: Toast notification with instant "Undo" button to restore accidentally deleted files.
 
-### 7. Persistent SQLite Database Storage & Data Portability
-- **Exclusive Persistent Database Storage (`cms_database.db`)**: All data storage, edits, metadata, tags, and media assets are saved exclusively to the SQLite database file via ACID-compliant transactions with WAL mode, indexing, and REST endpoints (`GET /api/items`, `POST /api/items`, `PUT /api/items/:id`, `DELETE /api/items/:id`, `POST /api/items/batch`, `POST /api/items/clear`). Browser local storage and IndexedDB have been completely removed.
-- **Database Status Indicator**: Live status badge in the UI displaying current SQLite database connectivity and record counts.
-- **Export & Import Backup Tools**: One-click JSON backup export and import to transfer or restore data from the SQLite database.
-- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in `cms_database.db`.
+### 7. Persistent Supabase Database Storage & Data Portability
+- **Exclusive Persistent Database Storage (`media_items`)**: All data storage, edits, metadata, tags, and media assets are saved to the configured Supabase table through PostgREST. Browser local storage and IndexedDB are not used for CMS records.
+- **Database Status Indicator**: Live status badge in the UI displaying Supabase connectivity and record counts.
+- **Export & Import Backup Tools**: One-click JSON backup export and import to transfer or restore data from Supabase.
+- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in the `media_items` table.
 
 ### 8. Direct Entry URLs & Deep Linking
 - **Direct Web URLs**: Every entry has a direct URL (e.g. `http://localhost:8000/?item=sample_img_1`) that can be copied and opened in any browser to launch the media viewer.
@@ -84,17 +84,10 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Check SQLite database connection and record count |
-| `GET` | `/api/items` | Retrieve all media items sorted by date |
-| `GET` | `/api/items/:id` | Retrieve single item by ID |
-| `POST` | `/api/items` | Insert or update (upsert) a media item |
-| `PUT` | `/api/items/:id` | Update properties of an existing item |
-| `DELETE` | `/api/items/:id` | Delete an item by ID |
-| `POST` | `/api/items/batch` | Batch insert or update a list of items |
-| `POST` | `/api/items/batch-delete` | Batch delete items by array of IDs |
-| `POST` | `/api/items/clear` | Delete all records in database |
-| `GET` | `/media/:id` | Stream raw media file (image, audio, video, text) |
-| `GET` | `/view/:id` | Redirects to `/index.html?item=:id` |
+| `GET` | `/rest/v1/media_items` | Retrieve media items through Supabase PostgREST |
+| `POST` | `/rest/v1/media_items?on_conflict=id` | Insert or update media items |
+| `DELETE` | `/rest/v1/media_items?id=eq.<id>` | Delete a media item |
+| `DELETE` | `/rest/v1/media_items?id=not.is.null` | Clear all media items |
 
 ---
 
@@ -116,10 +109,15 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 
 ## Quick Start & Running
 
-Start the SQLite Database Server:
+Configure Supabase:
+
+1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
+2. Set the project URL and anon key in [supabase-config.js](supabase-config.js).
+
+Run the static app locally:
 
 ```bash
 cd content_management_app
-python3 server.py --port 8000
+python3 -m http.server 8000
 ```
-Open `http://localhost:8000` in your web browser. All uploaded files, property updates, tags, and deletions persist directly into `cms_database.db`.
+Open `http://localhost:8000` in your web browser. All uploaded files, property updates, tags, and deletions persist directly in Supabase.

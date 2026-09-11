@@ -1,6 +1,6 @@
 /**
  * Nexus CMS — Modern Content & Media Management System
- * Full-featured content management system with SQLite Database persistence,
+ * Full-featured content management system with Supabase persistence,
  * rich media players, metadata editing, tags, multi-criteria search, sorting, and batch actions.
  */
 
@@ -8,55 +8,77 @@
   'use strict';
 
   // ==========================================================================
-  // 1. Persistent SQLite Database Client (No LocalStorage / IndexedDB Storage)
+  // 1. Persistent Supabase Database Client (No LocalStorage / IndexedDB Storage)
   // ==========================================================================
-  const API_BASE = (function () {
-    if (typeof window !== 'undefined' && window.location) {
-      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-        return window.location.origin;
-      }
-    }
-    return 'http://localhost:8000';
-  })();
+  const SUPABASE_CONFIG = window.NEXUS_SUPABASE || {};
+  const SUPABASE_URL = SUPABASE_CONFIG.url;
+  const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
 
   const db = {
     isConnected: false,
-    dbName: 'cms_database.db',
-    activeApiBase: API_BASE,
+    dbName: 'Supabase media_items',
+
+    async request(path, options = {}) {
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        throw new Error('Supabase is not configured. Add credentials to supabase-config.js.');
+      }
+      return fetch(`${SUPABASE_URL.replace(/\/$/, '')}${path}`, {
+        ...options,
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+    },
+
+    mapRow(row) {
+      return {
+        ...row,
+        mimeType: row.mime_type,
+        customProps: row.custom_props || [],
+        dataUrl: row.data_url,
+        textContent: row.text_content,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        starred: Boolean(row.starred)
+      };
+    },
+
+    mapItem(item) {
+      return {
+        id: item.id,
+        title: item.title || 'Untitled',
+        filename: item.filename || 'file.bin',
+        type: item.type || 'other',
+        mime_type: item.mimeType || item.mime_type || 'application/octet-stream',
+        size: Number(item.size || 0),
+        date: item.date || new Date().toISOString(),
+        category: item.category || 'General',
+        author: item.author || 'Anonymous',
+        status: item.status || 'published',
+        rating: Number(item.rating || 0),
+        starred: Boolean(item.starred),
+        tags: item.tags || [],
+        description: item.description || '',
+        custom_props: item.customProps || item.custom_props || [],
+        data_url: item.dataUrl || item.data_url || null,
+        text_content: item.textContent || item.text_content || null,
+        created_at: item.createdAt || item.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    },
 
     async checkHealth() {
-      const candidates = [];
-      if (typeof window !== 'undefined' && window.location) {
-        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-          candidates.push(window.location.origin);
-        }
+      try {
+        const res = await this.request('/rest/v1/media_items?select=id&limit=1');
+        this.isConnected = res.ok;
+        return res.ok;
+      } catch (err) {
+        this.isConnected = false;
+        return false;
       }
-      candidates.push('http://localhost:8000');
-      candidates.push('http://127.0.0.1:8000');
-
-      const uniqueCandidates = Array.from(new Set(candidates));
-
-      for (const base of uniqueCandidates) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1200);
-          const res = await fetch(`${base}/api/health`, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.status === 'ok') {
-              this.activeApiBase = base;
-              this.isConnected = true;
-              this.dbName = data.database || 'cms_database.db';
-              return true;
-            }
-          }
-        } catch (err) {
-          // Continue testing next base candidate
-        }
-      }
-      this.isConnected = false;
-      return false;
     },
 
     async init() {
@@ -64,42 +86,37 @@
     },
 
     async getAll() {
-      await this.checkHealth();
-      if (!this.isConnected) {
-        return [];
-      }
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items`);
+        const res = await this.request('/rest/v1/media_items?select=*&order=date.desc');
         if (res.ok) {
-          const items = await res.json();
-          return Array.isArray(items) ? items : [];
+          return (await res.json()).map((row) => this.mapRow(row));
         }
       } catch (err) {
-        console.error('Failed to fetch from SQLite Database:', err);
+        console.error('Failed to fetch from Supabase:', err);
       }
       return [];
     },
 
     async getById(id) {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items/${encodeURIComponent(id)}`);
-        if (res.ok) return await res.json();
+        const res = await this.request(`/rest/v1/media_items?id=eq.${encodeURIComponent(id)}&select=*`);
+        if (res.ok) return this.mapRow((await res.json())[0]);
       } catch (err) {
-        console.error('Failed to get item from SQLite Database:', err);
+        console.error('Failed to get item from Supabase:', err);
       }
       return null;
     },
 
     async put(item) {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items`, {
+        const res = await this.request('/rest/v1/media_items?on_conflict=id', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(item)
+          headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify(this.mapItem(item))
         });
-        if (res.ok) return await res.json();
+        if (res.ok) return this.mapRow((await res.json())[0]);
       } catch (err) {
-        console.error('Failed to save item to SQLite Database:', err);
+        console.error('Failed to save item to Supabase:', err);
         throw err;
       }
       return item;
@@ -107,14 +124,14 @@
 
     async putMany(items) {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items/batch`, {
+        const res = await this.request('/rest/v1/media_items?on_conflict=id', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(items)
+          headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify(items.map((item) => this.mapItem(item)))
         });
         if (res.ok) return true;
       } catch (err) {
-        console.error('Failed to batch save to SQLite Database:', err);
+        console.error('Failed to batch save to Supabase:', err);
         throw err;
       }
       return false;
@@ -122,12 +139,12 @@
 
     async delete(id) {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items/${encodeURIComponent(id)}`, {
+        const res = await this.request(`/rest/v1/media_items?id=eq.${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
         if (res.ok) return true;
       } catch (err) {
-        console.error('Failed to delete item from SQLite Database:', err);
+        console.error('Failed to delete item from Supabase:', err);
         throw err;
       }
       return false;
@@ -135,14 +152,11 @@
 
     async deleteMany(ids) {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items/batch-delete`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids })
-        });
+        const filter = ids.map((id) => encodeURIComponent(id)).join(',');
+        const res = await this.request(`/rest/v1/media_items?id=in.(${filter})`, { method: 'DELETE' });
         if (res.ok) return true;
       } catch (err) {
-        console.error('Failed to batch delete from SQLite Database:', err);
+        console.error('Failed to batch delete from Supabase:', err);
         throw err;
       }
       return false;
@@ -150,12 +164,10 @@
 
     async clear() {
       try {
-        const res = await fetch(`${this.activeApiBase}/api/items/clear`, {
-          method: 'POST'
-        });
+        const res = await this.request('/rest/v1/media_items?id=not.is.null', { method: 'DELETE' });
         if (res.ok) return true;
       } catch (err) {
-        console.error('Failed to clear SQLite Database:', err);
+        console.error('Failed to clear Supabase database:', err);
         throw err;
       }
       return false;
@@ -649,16 +661,16 @@ class SpectrumVisualizer {
         const isOk = await db.checkHealth();
         if (isOk) {
           await connectAndFetchItems();
-          showToast(`Connected to SQLite Database (${db.dbName})`, 'success');
+          showToast(`Connected to Supabase (${db.dbName})`, 'success');
         } else {
-          showToast('Database server unreachable. Please start python3 server.py', 'error');
+          showToast('Supabase is unreachable. Check supabase-config.js and your project status.', 'error');
         }
       });
     }
 
     const connected = await connectAndFetchItems();
     if (!connected) {
-      showToast('Connecting to SQLite Database Server (python3 server.py)...', 'info');
+      showToast('Connecting to Supabase...', 'info');
       startDatabaseAutoReconnect();
     } else {
       setInterval(async () => {
@@ -838,10 +850,10 @@ class SpectrumVisualizer {
     if (dbStatusBadge && dbStatusText) {
       if (db.isConnected) {
         dbStatusBadge.className = 'db-status-badge';
-        dbStatusText.textContent = `SQLite DB: ${db.dbName} (${state.items.length} records)`;
+        dbStatusText.textContent = `Supabase: ${state.items.length} records`;
       } else {
         dbStatusBadge.className = 'db-status-badge offline';
-        dbStatusText.textContent = `SQLite DB: Disconnected (Start server.py)`;
+        dbStatusText.textContent = 'Supabase: Disconnected';
       }
     }
 
@@ -1425,9 +1437,9 @@ class SpectrumVisualizer {
         try {
           await db.putMany(state.items);
           renderSidebarCounts();
-          showToast(`Saved ${state.items.length} records to SQLite Database (${db.dbName})`, 'success');
+          showToast(`Saved ${state.items.length} records to Supabase (${db.dbName})`, 'success');
         } catch (err) {
-          showToast('Failed to save records to SQLite database', 'danger');
+          showToast('Failed to save records to Supabase', 'danger');
         } finally {
           saveDbBtn.disabled = false;
         }
