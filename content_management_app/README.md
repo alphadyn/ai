@@ -67,8 +67,10 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Clear All Database**: Full database wipe with sample reset capability.
 - **Undo Stack**: Toast notification with instant "Undo" button to restore accidentally deleted files.
 
-### 7. Data Portability & Persistence
-- **IndexedDB**: Asynchronous, local-first storage with automatic schema upgrades and offline capability.
+### 7. Dual Database Persistence & Data Portability
+- **SQLite Database Server (`server.py` & `database.py`)**: File-backed relational database persistence in `cms_database.db` with indexes, WAL mode, transactions, and REST endpoints (`GET /api/items`, `POST /api/items`, `PUT /api/items/:id`, `DELETE /api/items/:id`, `POST /api/items/batch`, `POST /api/items/clear`).
+- **IndexedDB & LocalStorage**: Automatic browser-side caching and full offline persistence when accessing directly via `file:///` or static hosts.
+- **Save to Database Control**: Dedicated "Save DB" tool button and live database connection status badge in the UI.
 - **Export Database**: Download entire CMS library and metadata bundle as a single JSON backup.
 - **Import Database**: Restore and merge backups.
 - **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo.
@@ -91,14 +93,20 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 
 ---
 
-## Quick Start
+## Quick Start & Running
 
-Open `index.html` directly in any modern browser:
+### Option A: Run with SQLite Database Backend Server (Recommended)
 
 ```bash
-# Start a local web server (optional)
+cd content_management_app
+python3 server.py --port 8000
+```
+Open `http://localhost:8000` in your web browser. All uploaded files, property modifications, and tags will automatically persist directly into `cms_database.db`.
+
+### Option B: Open directly in any browser (Local IndexedDB Mode)
+
+Open `content_management_app/index.html` directly or run:
+```bash
 cd content_management_app
 python3 -m http.server 8000
 ```
-
-Navigate to `http://localhost:8000` in your web browser.

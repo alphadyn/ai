@@ -8,7 +8,7 @@
   'use strict';
 
   // ==========================================================================
-  // 1. IndexedDB Storage Engine
+  // 1. Unified SQLite & IndexedDB Database Storage Engine
   // ==========================================================================
   const DB_NAME = 'NexusCMS_DB';
   const DB_VERSION = 1;
@@ -16,108 +16,330 @@
 
   const db = {
     _db: null,
+    isServerAvailable: false,
+
+    async checkServer() {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+        this.isServerAvailable = false;
+        return false;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
+        const res = await fetch('/api/health', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          this.isServerAvailable = data.status === 'ok';
+          return this.isServerAvailable;
+        }
+      } catch (err) {
+        this.isServerAvailable = false;
+      }
+      return false;
+    },
 
     async init() {
+      await this.checkServer();
+
       if (this._db) return this._db;
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onupgradeneeded = (e) => {
-          const dbInstance = e.target.result;
-          if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
-            const store = dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id' });
-            store.createIndex('type', 'type', { unique: false });
-            store.createIndex('category', 'category', { unique: false });
-            store.createIndex('date', 'date', { unique: false });
-            store.createIndex('name', 'name', { unique: false });
-            store.createIndex('starred', 'starred', { unique: false });
-          }
-        };
-        request.onsuccess = (e) => {
-          this._db = e.target.result;
-          resolve(this._db);
-        };
-        request.onerror = (e) => {
-          console.error('IndexedDB error:', e);
-          reject(e);
-        };
+      return new Promise((resolve) => {
+        if (!('indexedDB' in window)) {
+          resolve(null);
+          return;
+        }
+        try {
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
+          request.onupgradeneeded = (e) => {
+            const dbInstance = e.target.result;
+            if (!dbInstance.objectStoreNames.contains(STORE_NAME)) {
+              const store = dbInstance.createObjectStore(STORE_NAME, { keyPath: 'id' });
+              store.createIndex('type', 'type', { unique: false });
+              store.createIndex('category', 'category', { unique: false });
+              store.createIndex('date', 'date', { unique: false });
+              store.createIndex('name', 'name', { unique: false });
+              store.createIndex('starred', 'starred', { unique: false });
+            }
+          };
+          request.onsuccess = (e) => {
+            this._db = e.target.result;
+            resolve(this._db);
+          };
+          request.onerror = (e) => {
+            console.warn('IndexedDB unavailable, using memory/API:', e);
+            resolve(null);
+          };
+        } catch (err) {
+          resolve(null);
+        }
       });
     },
 
     async getAll() {
+      // 1. Try SQLite Backend API if available
+      if (this.isServerAvailable) {
+        try {
+          const res = await fetch('/api/items');
+          if (res.ok) {
+            const serverItems = await res.json();
+            if (Array.isArray(serverItems) && serverItems.length > 0) {
+              // Cache to IndexedDB in background
+              this._cacheToIndexedDB(serverItems);
+              return serverItems;
+            }
+          }
+        } catch (err) {
+          console.warn('SQLite API fetch failed, fallback to local DB:', err);
+        }
+      }
+
+      // 2. Query IndexedDB
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => reject(req.error);
-      });
+      if (instance) {
+        return new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve(this._getLocalStorageBackup());
+          } catch (err) {
+            resolve(this._getLocalStorageBackup());
+          }
+        });
+      }
+
+      return this._getLocalStorageBackup();
     },
 
     async getById(id) {
+      if (this.isServerAvailable) {
+        try {
+          const res = await fetch(`/api/items/${encodeURIComponent(id)}`);
+          if (res.ok) return await res.json();
+        } catch (err) {}
+      }
+
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(id);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
+      if (instance) {
+        return new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get(id);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+          } catch (err) {
+            resolve(null);
+          }
+        });
+      }
+      return null;
     },
 
     async put(item) {
+      // 1. Persist to SQLite Database via REST API
+      if (this.isServerAvailable) {
+        try {
+          await fetch('/api/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(item)
+          });
+        } catch (err) {
+          console.warn('SQLite API save failed:', err);
+        }
+      }
+
+      // 2. Persist to IndexedDB
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.put(item);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
+      if (instance) {
+        await new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.put(item);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => resolve(null);
+          } catch (err) {
+            resolve(null);
+          }
+        });
+      }
+
+      // 3. Update localStorage backup
+      this._saveItemToLocalStorage(item);
+      return item;
     },
 
     async putMany(items) {
+      // 1. Persist batch to SQLite Backend
+      if (this.isServerAvailable) {
+        try {
+          await fetch('/api/items/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(items)
+          });
+        } catch (err) {
+          console.warn('SQLite API batch save failed:', err);
+        }
+      }
+
+      // 2. Persist to IndexedDB
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        items.forEach((item) => store.put(item));
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = () => reject(tx.error);
-      });
+      if (instance) {
+        await new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            items.forEach((item) => store.put(item));
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      }
+
+      // 3. Update localStorage
+      try {
+        const existing = this._getLocalStorageBackup();
+        const map = new Map(existing.map((i) => [i.id, i]));
+        items.forEach((i) => map.set(i.id, i));
+        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(Array.from(map.values())));
+      } catch (err) {}
+      return true;
     },
 
     async delete(id) {
+      if (this.isServerAvailable) {
+        try {
+          await fetch(`/api/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        } catch (err) {
+          console.warn('SQLite API delete failed:', err);
+        }
+      }
+
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.delete(id);
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
+      if (instance) {
+        await new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.delete(id);
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => resolve(false);
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      }
+
+      try {
+        const existing = this._getLocalStorageBackup().filter((i) => i.id !== id);
+        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
+      } catch (err) {}
+      return true;
     },
 
     async deleteMany(ids) {
+      if (this.isServerAvailable) {
+        try {
+          await fetch('/api/items/batch-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+          });
+        } catch (err) {
+          console.warn('SQLite API batch-delete failed:', err);
+        }
+      }
+
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        ids.forEach((id) => store.delete(id));
-        tx.oncomplete = () => resolve(true);
-        tx.onerror = () => reject(tx.error);
-      });
+      if (instance) {
+        await new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            ids.forEach((id) => store.delete(id));
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = () => resolve(false);
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      }
+
+      try {
+        const idSet = new Set(ids);
+        const existing = this._getLocalStorageBackup().filter((i) => !idSet.has(i.id));
+        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
+      } catch (err) {}
+      return true;
     },
 
     async clear() {
+      if (this.isServerAvailable) {
+        try {
+          await fetch('/api/items/clear', { method: 'POST' });
+        } catch (err) {
+          console.warn('SQLite API clear failed:', err);
+        }
+      }
+
       const instance = await this.init();
-      return new Promise((resolve, reject) => {
-        const tx = instance.transaction([STORE_NAME], 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.clear();
-        req.onsuccess = () => resolve(true);
-        req.onerror = () => reject(req.error);
-      });
+      if (instance) {
+        await new Promise((resolve) => {
+          try {
+            const tx = instance.transaction([STORE_NAME], 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.clear();
+            req.onsuccess = () => resolve(true);
+            req.onerror = () => resolve(false);
+          } catch (err) {
+            resolve(false);
+          }
+        });
+      }
+
+      try {
+        localStorage.removeItem('nexus_cms_backup_items');
+      } catch (err) {}
+      return true;
+    },
+
+    async _cacheToIndexedDB(items) {
+      const instance = await this.init();
+      if (instance && Array.isArray(items)) {
+        try {
+          const tx = instance.transaction([STORE_NAME], 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          items.forEach((item) => store.put(item));
+        } catch (err) {}
+      }
+    },
+
+    _getLocalStorageBackup() {
+      try {
+        const raw = localStorage.getItem('nexus_cms_backup_items');
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        return [];
+      }
+    },
+
+    _saveItemToLocalStorage(item) {
+      try {
+        const existing = this._getLocalStorageBackup();
+        const idx = existing.findIndex((i) => i.id === item.id);
+        if (idx !== -1) {
+          existing[idx] = item;
+        } else {
+          existing.unshift(item);
+        }
+        localStorage.setItem('nexus_cms_backup_items', JSON.stringify(existing));
+      } catch (err) {}
     }
   };
 
@@ -243,6 +465,29 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  function getDirectItemUrl(itemOrId) {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
+    if (typeof window === 'undefined' || !window.location) return `/?item=${encodeURIComponent(id)}`;
+
+    const loc = window.location;
+    // Base URL without existing search params or hash
+    const baseUrl = `${loc.protocol}//${loc.host}${loc.pathname}`;
+    return `${baseUrl}?item=${encodeURIComponent(id)}`;
+  }
+
+  function copyItemDirectUrl(itemOrId) {
+    const url = getDirectItemUrl(itemOrId);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast(`Copied direct URL to clipboard`, 'success');
+      }).catch(() => {
+        prompt('Direct CMS URL:', url);
+      });
+    } else {
+      prompt('Direct CMS URL:', url);
+    }
   }
 
   // ==========================================================================
@@ -555,6 +800,44 @@ class SpectrumVisualizer {
     }
 
     renderApp();
+
+    // Check URL query parameter or hash for direct deep-link to item
+    handleUrlRouting();
+    window.addEventListener('popstate', () => handleUrlRouting());
+    window.addEventListener('hashchange', () => handleUrlRouting());
+  }
+
+  function handleUrlRouting() {
+    if (typeof window === 'undefined' || !window.location) return;
+    const url = new URL(window.location.href);
+    let targetId = url.searchParams.get('item') || url.searchParams.get('id');
+
+    if (!targetId && window.location.hash) {
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash.startsWith('item=')) {
+        targetId = hash.split('item=')[1];
+      } else if (hash.startsWith('id=')) {
+        targetId = hash.split('id=')[1];
+      } else if (hash.length > 2) {
+        targetId = hash;
+      }
+    }
+
+    if (targetId) {
+      const decoded = decodeURIComponent(targetId);
+      const list = getFilteredAndSortedItems();
+      const itemIdx = list.findIndex((i) => i.id === decoded);
+      if (itemIdx !== -1) {
+        openViewerModal(itemIdx);
+      } else {
+        // Find in full items list
+        const directIdx = state.items.findIndex((i) => i.id === decoded);
+        if (directIdx !== -1) {
+          state.activeViewerList = [state.items[directIdx]];
+          openViewerModal(0);
+        }
+      }
+    }
   }
 
   // ==========================================================================
@@ -679,6 +962,19 @@ class SpectrumVisualizer {
     document.getElementById('storagePctText').textContent = `${pct}%`;
     document.getElementById('storageProgressBar').style.width = `${pct}%`;
     document.getElementById('totalItemsCountBadge').textContent = `${state.items.length} files indexed`;
+
+    // Database Status Indicator
+    const dbStatusBadge = document.getElementById('dbStatusBadge');
+    const dbStatusText = document.getElementById('dbStatusText');
+    if (dbStatusBadge && dbStatusText) {
+      if (db.isServerAvailable) {
+        dbStatusBadge.className = 'db-status-badge';
+        dbStatusText.textContent = `SQLite DB: Connected (${state.items.length} records saved)`;
+      } else {
+        dbStatusBadge.className = 'db-status-badge offline';
+        dbStatusText.textContent = `Local DB: IndexedDB Active (${state.items.length} records)`;
+      }
+    }
 
     // Counts by type
     document.getElementById('countAll').textContent = state.items.length;
@@ -930,6 +1226,9 @@ class SpectrumVisualizer {
             <button class="card-act-btn" data-action="view" data-id="${item.id}" data-idx="${idx}" title="Open / Play Media">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
+            <button class="card-act-btn" data-action="copy-link" data-id="${item.id}" title="Copy Direct URL Link">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </button>
             <button class="card-act-btn" data-action="edit" data-id="${item.id}" title="Edit Properties">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </button>
@@ -979,6 +1278,9 @@ class SpectrumVisualizer {
           <button class="card-star-btn ${item.starred ? 'starred' : ''}" data-action="toggle-star" data-id="${item.id}">★</button>
           <button class="card-act-btn" data-action="view" data-id="${item.id}" data-idx="${idx}" title="Open / Play">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+          <button class="card-act-btn" data-action="copy-link" data-id="${item.id}" title="Copy Direct URL Link">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
           </button>
           <button class="card-act-btn" data-action="edit" data-id="${item.id}" title="Edit">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -1054,6 +1356,8 @@ class SpectrumVisualizer {
           openEditModal(item);
         } else if (action === 'download') {
           downloadFileItem(item);
+        } else if (action === 'copy-link') {
+          copyItemDirectUrl(item);
         } else if (action === 'delete') {
           openDeleteConfirmModal([item]);
         }
@@ -1243,6 +1547,28 @@ class SpectrumVisualizer {
       const selected = state.items.filter((i) => state.selectedIds.has(i.id));
       openDeleteConfirmModal(selected);
     });
+
+    // Force Save All to Database Button
+    const saveDbBtn = document.getElementById('saveDbBtn');
+    if (saveDbBtn) {
+      saveDbBtn.addEventListener('click', async () => {
+        saveDbBtn.disabled = true;
+        try {
+          await db.putMany(state.items);
+          renderSidebarCounts();
+          showToast(
+            db.isServerAvailable
+              ? `Saved ${state.items.length} records to SQLite Database (cms_database.db)`
+              : `Saved ${state.items.length} records to Local Database (IndexedDB)`,
+            'success'
+          );
+        } catch (err) {
+          showToast('Failed to save records to database', 'danger');
+        } finally {
+          saveDbBtn.disabled = false;
+        }
+      });
+    }
 
     // Clear All Entries in Database
     document.getElementById('clearAllEntriesBtn').addEventListener('click', () => {
@@ -1791,6 +2117,7 @@ class SpectrumVisualizer {
     const fullscreenBtn = document.getElementById('viewerFullscreenBtn');
     const toggleSidebarBtn = document.getElementById('viewerToggleSidebarBtn');
     const downloadBtn = document.getElementById('viewerDownloadBtn');
+    const copyLinkBtn = document.getElementById('viewerCopyLinkBtn');
     const editPropsBtn = document.getElementById('viewerEditPropsBtn');
 
     closeBtn.addEventListener('click', () => closeViewerModal());
@@ -1824,6 +2151,13 @@ class SpectrumVisualizer {
       if (item) downloadFileItem(item);
     });
 
+    if (copyLinkBtn) {
+      copyLinkBtn.addEventListener('click', () => {
+        const item = state.activeViewerList[state.activeViewerIndex];
+        if (item) copyItemDirectUrl(item);
+      });
+    }
+
     editPropsBtn.addEventListener('click', () => {
       const item = state.activeViewerList[state.activeViewerIndex];
       if (item) {
@@ -1855,6 +2189,13 @@ class SpectrumVisualizer {
     renderViewerSidebarDetails(item);
 
     document.getElementById('mediaViewerModal').classList.add('open');
+
+    // Update URL query parameter without reloading
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('item', item.id);
+      window.history.replaceState({ itemId: item.id }, '', url.toString());
+    }
   }
 
   function closeViewerModal() {
@@ -1862,6 +2203,15 @@ class SpectrumVisualizer {
     document.getElementById('mediaViewerModal').classList.remove('open');
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
+    }
+
+    // Clean up URL query parameter without reloading
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('item')) {
+        url.searchParams.delete('item');
+        window.history.replaceState({}, '', url.toString());
+      }
     }
   }
 
@@ -2246,6 +2596,8 @@ class SpectrumVisualizer {
       )
       .join('');
 
+    const directUrl = getDirectItemUrl(item);
+
     container.innerHTML = `
       <div class="detail-item"><span class="detail-label">Title</span><span class="detail-value" style="font-weight:600;">${escapeHtml(item.title)}</span></div>
       <div class="detail-item"><span class="detail-label">Filename</span><span class="detail-value" style="font-family:var(--font-mono);font-size:0.78rem;">${escapeHtml(item.filename)}</span></div>
@@ -2256,10 +2608,21 @@ class SpectrumVisualizer {
       <div class="detail-item"><span class="detail-label">Author</span><span class="detail-value">${escapeHtml(item.author || 'Anonymous')}</span></div>
       <div class="detail-item"><span class="detail-label">Date & Time</span><span class="detail-value">${formatDateTime(item.date)}</span></div>
       <div class="detail-item"><span class="detail-label">Rating</span><span class="detail-value">${item.rating ? '★'.repeat(item.rating) : 'Unrated'}</span></div>
+      <div class="detail-item"><span class="detail-label">Direct Share URL</span>
+        <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+          <input type="text" class="form-input" readonly value="${escapeHtml(directUrl)}" style="font-size:0.75rem; font-family:var(--font-mono); padding:4px 8px;" onclick="this.select();">
+          <button class="btn btn-sm btn-primary" id="copySidebarDirectUrlBtn" title="Copy URL">Copy</button>
+        </div>
+      </div>
       <div class="detail-item"><span class="detail-label">Tags</span><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">${tagsHtml}</div></div>
       ${item.description ? `<div class="detail-item"><span class="detail-label">Description</span><span class="detail-value">${escapeHtml(item.description)}</span></div>` : ''}
       ${propsHtml ? `<div style="border-top:1px solid var(--border-color);padding-top:10px;margin-top:6px;"><span class="detail-label" style="margin-bottom:8px;display:block;">Custom Metadata</span>${propsHtml}</div>` : ''}
     `;
+
+    const copyBtn = container.querySelector('#copySidebarDirectUrlBtn');
+    if (copyBtn) {
+      copyBtn.onclick = () => copyItemDirectUrl(item);
+    }
   }
 
   // ==========================================================================

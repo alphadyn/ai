@@ -212,6 +212,142 @@ def test_js_syntax_validation():
         pass
 
 
+def test_sqlite_database_crud(tmp_path):
+    """Verify SQLite database CRUD operations."""
+    from content_management_app.database import DatabaseManager
+
+    db_file = tmp_path / "test_cms.db"
+    mgr = DatabaseManager(db_path=db_file)
+
+    # Initial count
+    assert mgr.count() == 0
+
+    # Insert an item
+    sample_item = {
+        "id": "test_1",
+        "title": "Quarterly Financial Analysis",
+        "filename": "q3_financial_report.pdf",
+        "type": "document",
+        "mimeType": "application/pdf",
+        "size": 1048576,
+        "date": "2026-09-11T12:00:00Z",
+        "category": "Finance & Reports",
+        "author": "Chief Economist",
+        "status": "published",
+        "rating": 5,
+        "starred": True,
+        "tags": ["finance", "quarterly", "q3", "confidential"],
+        "description": "Comprehensive balance sheet and valuation assessment.",
+        "customProps": [{"key": "Audited", "value": "Yes"}, {"key": "Department", "value": "Finance"}],
+        "dataUrl": "data:application/pdf;base64,JVBERi0xLjQK...",
+        "textContent": None,
+    }
+
+    saved = mgr.upsert(sample_item)
+    assert saved["id"] == "test_1"
+    assert saved["title"] == "Quarterly Financial Analysis"
+    assert saved["starred"] is True
+    assert "finance" in saved["tags"]
+    assert len(saved["customProps"]) == 2
+    assert mgr.count() == 1
+
+    # Query item by ID
+    fetched = mgr.get_by_id("test_1")
+    assert fetched is not None
+    assert fetched["filename"] == "q3_financial_report.pdf"
+    assert fetched["size"] == 1048576
+
+    # Update item properties
+    sample_item["title"] = "Updated Q3 Financial Analysis"
+    sample_item["rating"] = 4
+    sample_item["tags"].append("reviewed")
+    updated = mgr.upsert(sample_item)
+    assert updated["title"] == "Updated Q3 Financial Analysis"
+    assert updated["rating"] == 4
+    assert "reviewed" in updated["tags"]
+
+    # Delete item
+    deleted = mgr.delete("test_1")
+    assert deleted is True
+    assert mgr.get_by_id("test_1") is None
+    assert mgr.count() == 0
+
+
+def test_sqlite_batch_operations_and_clear(tmp_path):
+    """Verify SQLite batch insertion, batch deletion, and clear operations."""
+    from content_management_app.database import DatabaseManager
+
+    db_file = tmp_path / "test_batch.db"
+    mgr = DatabaseManager(db_path=db_file)
+
+    items = [
+        {"id": f"batch_{i}", "title": f"Media Asset {i}", "filename": f"asset_{i}.png", "type": "image", "size": i * 1000}
+        for i in range(10)
+    ]
+
+    # Batch Insert
+    inserted_count = mgr.upsert_many(items)
+    assert inserted_count == 10
+    assert mgr.count() == 10
+
+    # Get all items
+    all_items = mgr.get_all()
+    assert len(all_items) == 10
+
+    # Batch delete
+    deleted_count = mgr.delete_many(["batch_0", "batch_1", "batch_2"])
+    assert deleted_count == 3
+    assert mgr.count() == 7
+
+    # Clear all
+    cleared_count = mgr.clear_all()
+    assert cleared_count == 7
+    assert mgr.count() == 0
+
+
+def test_server_direct_media_and_view_endpoints():
+    """Verify server direct URL endpoints (/view/:id, /media/:id, /api/items)."""
+    import urllib.request
+    from http.server import HTTPServer
+    import threading
+    import time
+    from content_management_app.server import CMSHTTPRequestHandler, db_manager
+
+    # Ensure a sample item exists
+    sample = {
+        "id": "sample_endpoint_test",
+        "title": "Endpoint Test File",
+        "filename": "test.txt",
+        "type": "document",
+        "mimeType": "text/plain",
+        "textContent": "Direct access verified!",
+    }
+    db_manager.upsert(sample)
+
+    server = HTTPServer(("127.0.0.1", 0), CMSHTTPRequestHandler)
+    port = server.server_port
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+
+    time.sleep(0.1)
+    base_url = f"http://127.0.0.1:{port}"
+
+    try:
+        # 1. Test /api/items
+        with urllib.request.urlopen(f"{base_url}/api/items") as resp:
+            assert resp.status == 200
+
+        # 2. Test /media/:id (raw stream)
+        with urllib.request.urlopen(f"{base_url}/media/sample_endpoint_test") as resp:
+            assert resp.status == 200
+            content = resp.read().decode("utf-8")
+            assert content == "Direct access verified!"
+    finally:
+        server.shutdown()
+        server.server_close()
+        db_manager.delete("sample_endpoint_test")
+
+
 def test_readme_contains_all_requirements():
     """Verify README covers all user requirements, features, and keyboard shortcuts."""
     with open(README_MD, "r", encoding="utf-8") as f:

@@ -98,6 +98,10 @@
           <div class="storage-bar">
             <div class="storage-progress" id="storageProgressBar" style="width: 0%"></div>
           </div>
+          <div class="db-status-badge" id="dbStatusBadge">
+            <span class="db-status-dot"></span>
+            <span id="dbStatusText">SQLite DB: Initializing</span>
+          </div>
           <div class="storage-footer">
             <span id="totalItemsCountBadge">0 files indexed</span>
             <button class="link-btn" id="clearAllEntriesBtn" title="Delete all files">Clear All</button>
@@ -213,7 +217,11 @@
         <!-- Data Management & Backups -->
         <div class="sidebar-section sidebar-footer-section">
           <div class="sidebar-section-title">Database & Tools</div>
-          <div class="sidebar-tools-grid">
+          <div class="sidebar-tools-grid sidebar-tools-grid-4">
+            <button class="btn btn-outline btn-sm" id="saveDbBtn" title="Explicitly flush and save all records to SQLite Database">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              <span>Save DB</span>
+            </button>
             <button class="btn btn-outline btn-sm" id="exportDataBtn" title="Export database to JSON file">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
               <span>Export</span>
@@ -635,6 +643,9 @@
           <div class="viewer-divider"></div>
           <button class="icon-btn viewer-act-btn" id="viewerDownloadBtn" title="Download File">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </button>
+          <button class="icon-btn viewer-act-btn" id="viewerCopyLinkBtn" title="Copy Direct Share URL">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
           </button>
           <button class="icon-btn viewer-act-btn" id="viewerEditPropsBtn" title="Edit Properties">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
