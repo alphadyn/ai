@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f1e8" />
+  <title>Casa Lumen | Architectural Concept</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Casa Lumen home"><span class="brand-mark">CL</span><span>Casa Lumen</span></a>
+      <nav class="topnav" aria-label="Primary navigation">
+        <a class="active" href="#overview">Overview</a>
+        <a href="#plans">Plans</a>
+        <a href="#specification">Specification</a>
+      </nav>
+      <button class="outline-button" id="printButton" type="button">Print concept <span>↗</span></button>
+    </header>
+
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">Residential concept / CL-05</p>
+        <h1>Casa<br /><em>Lumen</em></h1>
+        <p class="hero-intro">A warm, light-filled family home shaped around a planted courtyard and the rituals of everyday life.</p>
+        <div class="hero-meta"><span>North-facing site</span><i></i><span>Contemporary / 2026</span></div>
+      </div>
+      <div class="hero-visual" aria-label="Architectural exterior concept">
+        <div class="sun-disc"></div>
+        <div class="skyline"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="house-mass mass-back"><div class="window-strip"><i></i><i></i><i></i><i></i></div></div>
+        <div class="house-mass mass-front"><div class="cladding"></div><div class="window-grid"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="door"></div></div>
+        <div class="courtyard-tree"><b></b><i></i><i></i><i></i></div>
+        <div class="hero-caption"><span>01</span><span>Courtyard elevation / west light</span></div>
+      </div>
+    </section>
+
+    <section class="intro-grid" id="overview">
+      <div class="section-label"><span>01</span><strong>Brief</strong></div>
+      <div class="brief-copy"><h2>Room to gather.<br /><em>Space to retreat.</em></h2><p>Casa Lumen is a two-storey, five-bedroom home designed as a sequence of calm, connected rooms. A double-height living volume anchors the plan, while a sheltered courtyard draws daylight deep into the heart of the house.</p><a class="text-link" href="#plans">Explore the plan <span>↓</span></a></div>
+      <div class="metrics"><div><strong>5</strong><span>Bedrooms</span></div><div><strong>5</strong><span>Bathrooms</span></div><div><strong>318</strong><span>m² internal</span></div><div><strong>2</strong><span>Storeys</span></div></div>
+    </section>
+
+    <section class="plans-section" id="plans">
+      <div class="section-heading"><div><p class="eyebrow">The arrangement</p><h2>Plans that follow<br /><em>the daylight.</em></h2></div><div class="plan-switcher" role="tablist" aria-label="Floor plan selector"><button class="selected" data-floor="ground" role="tab" aria-selected="true" type="button">01 / Ground floor</button><button data-floor="upper" role="tab" aria-selected="false" type="button">02 / Upper floor</button></div></div>
+      <div class="plan-layout">
+        <div class="floorplan-wrap"><div class="north-arrow">N <span>↑</span></div><div class="floorplan" id="groundPlan" role="img" aria-label="Ground floor plan"><div class="room entry"><span>Entry</span><small>06 m²</small></div><div class="room study"><span>Study</span><small>12 m²</small></div><div class="room powder"><span>Powder</span><small>03 m²</small></div><div class="room living"><span>Living / dining</span><small>54 m²</small></div><div class="room kitchen"><span>Kitchen</span><small>22 m²</small></div><div class="room pantry"><span>Scullery</span><small>07 m²</small></div><div class="room guest"><span>Guest suite</span><small>21 m²</small></div><div class="room bath"><span>Ensuite</span><small>05 m²</small></div><div class="room courtyard"><span>Courtyard</span><small>Open to sky</small></div><div class="room stair"><span>↑</span><small>Stair</small></div><div class="dimension dim-a">14.8 m</div><div class="dimension dim-b">11.2 m</div></div><div class="floorplan hidden" id="upperPlan" role="img" aria-label="Upper floor plan"><div class="room primary"><span>Primary suite</span><small>30 m²</small></div><div class="room primary-bath"><span>Ensuite</span><small>11 m²</small></div><div class="room robe"><span>Walk-in robe</span><small>08 m²</small></div><div class="room bedroom-two"><span>Bedroom 02</span><small>16 m²</small></div><div class="room bedroom-three"><span>Bedroom 03</span><small>15 m²</small></div><div class="room bedroom-four"><span>Bedroom 04</span><small>15 m²</small></div><div class="room bedroom-five"><span>Bedroom 05</span><small>14 m²</small></div><div class="room shared-bath"><span>Bath</span><small>07 m²</small></div><div class="room landing"><span>Gallery landing</span><small>18 m²</small></div><div class="room upper-void"><span>Void to living</span><small>Double height</small></div><div class="dimension dim-a">14.8 m</div><div class="dimension dim-b">10.4 m</div></div></div>
+        <aside class="plan-aside"><div class="aside-kicker"><span id="planNumber">01</span><span id="planLabel">Ground floor</span></div><h3 id="planTitle">Gathering spaces<br /><em>at the garden edge.</em></h3><p id="planDescription">The ground floor is an easy loop between arrival, living, cooking, and the courtyard. A private guest suite sits apart from the family zone.</p><dl class="room-list" id="roomList"><div><dt>01</dt><dd>Entry + study</dd><span>18 m²</span></div><div><dt>02</dt><dd>Living / dining</dd><span>54 m²</span></div><div><dt>03</dt><dd>Kitchen + scullery</dd><span>29 m²</span></div><div><dt>04</dt><dd>Guest suite</dd><span>26 m²</span></div></dl><div class="plan-legend"><span><i class="legend-swatch sand"></i>Enclosed room</span><span><i class="legend-swatch green"></i>Outdoor / void</span></div></aside>
+      </div>
+    </section>
+
+    <section class="spec-section" id="specification"><div class="section-label"><span>02</span><strong>Character</strong></div><div class="spec-content"><div class="spec-heading"><p class="eyebrow">Material study</p><h2>Quiet materials,<br /><em>precise details.</em></h2></div><div class="materials"><div class="material-card concrete"><div class="material-surface"></div><span>01 / Mineral render</span><strong>Soft limestone</strong></div><div class="material-card timber"><div class="material-surface"></div><span>02 / Screen + joinery</span><strong>Smoked oak</strong></div><div class="material-card stone"><div class="material-surface"></div><span>03 / Landscape + floor</span><strong>Basalt stone</strong></div></div><div class="spec-notes"><div><span>Climate response</span><p>Deep overhangs, operable cross-ventilation, and a planted courtyard temper the western sun.</p></div><div><span>Arrival sequence</span><p>A compressed entry expands into a 6.2 m-high living room with the garden revealed beyond.</p></div><div><span>Parking</span><p>Two-car carport with secure storage, EV provision, and direct access to the service spine.</p></div></div></div></section>
+
+    <section class="drawing-set" id="drawings">
+      <div class="section-label"><span>03</span><strong>Drawing set</strong></div>
+      <div class="drawing-content">
+        <div class="drawing-heading"><p class="eyebrow">Schematic studies</p><h2>How the house<br /><em>meets its site.</em></h2><p class="drawing-note">A compact set of concept drawings for orientation, proportion, and conversation. Not for construction.</p></div>
+        <div class="site-drawing drawing-card"><div class="drawing-card-head"><span>A / 01</span><strong>Site strategy</strong><span>1:200 / indicative</span></div><div class="site-plan"><div class="site-road">NORTH / STREET</div><div class="site-boundary"><div class="site-house"><span>CASA LUMEN</span><i></i><i></i></div><div class="site-courtyard">COURTYARD</div><div class="site-carport">2 CAR<br />CARPORT</div><div class="site-garden garden-a"></div><div class="site-garden garden-b"></div><div class="site-path"></div></div><div class="site-annotation ann-one">Morning light / kitchen</div><div class="site-annotation ann-two">Filtered west light</div><div class="site-annotation ann-three">Private garden</div><div class="site-arrow">N<br /><b>↑</b></div></div></div>
+        <div class="section-drawing drawing-card"><div class="drawing-card-head"><span>A / 02</span><strong>Longitudinal section</strong><span>1:100 / indicative</span></div><div class="section-graphic"><div class="section-ground"></div><div class="section-shell"><div class="section-room section-living"><span>DOUBLE-HEIGHT LIVING</span><i></i></div><div class="section-room section-kitchen"><span>KITCHEN</span></div><div class="section-room section-bed"><span>PRIMARY SUITE</span><i></i></div><div class="section-room section-gallery"><span>GALLERY</span></div><div class="section-tree"></div><div class="section-sun"></div></div><div class="section-line line-one"><span>6.2 m</span></div><div class="section-line line-two"><span>3.0 m</span></div><div class="section-labels"><span>WEST / GARDEN</span><span>EAST / ENTRY</span></div></div></div>
+        <div class="elevations drawing-card"><div class="drawing-card-head"><span>A / 03-06</span><strong>Elevations</strong><span>1:150 / indicative</span></div><div class="elevation-grid"><div class="elevation"><div class="elevation-art front-elevation"><i></i><i></i><i></i><b></b></div><span>North / arrival</span></div><div class="elevation"><div class="elevation-art garden-elevation"><i></i><i></i><i></i><b></b></div><span>South / courtyard</span></div><div class="elevation"><div class="elevation-art side-elevation"><i></i><i></i><b></b></div><span>East / service</span></div><div class="elevation"><div class="elevation-art west-elevation"><i></i><i></i><i></i><b></b></div><span>West / sunset</span></div></div></div>
+        <div class="schedule drawing-card"><div class="drawing-card-head"><span>A / 07</span><strong>Area schedule</strong><span>Net internal areas</span></div><div class="schedule-table"><div class="schedule-row header"><span>Level</span><span>Program</span><span>Area</span></div><div class="schedule-row"><span>01</span><strong>Ground floor</strong><span>155 m²</span></div><div class="schedule-row sub"><span></span><span>Living / dining / kitchen / scullery</span><span>83 m²</span></div><div class="schedule-row sub"><span></span><span>Guest suite + support</span><span>31 m²</span></div><div class="schedule-row sub"><span></span><span>Entry / study / circulation</span><span>41 m²</span></div><div class="schedule-row"><span>02</span><strong>Upper floor</strong><span>163 m²</span></div><div class="schedule-row sub"><span></span><span>Primary suite + robe + ensuite</span><span>49 m²</span></div><div class="schedule-row sub"><span></span><span>Four secondary bedrooms</span><span>60 m²</span></div><div class="schedule-row sub"><span></span><span>Gallery / shared bath / circulation</span><span>54 m²</span></div><div class="schedule-row total"><span></span><strong>Total internal area</strong><strong>318 m²</strong></div></div></div>
+      </div>
+    </section>
+
+    <footer class="footer"><span>CASA LUMEN / CONCEPT DESIGN</span><span>All dimensions indicative / For discussion</span><span>© 2026</span></footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
