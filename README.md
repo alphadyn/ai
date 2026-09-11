@@ -28,7 +28,7 @@ This repository contains a collection of small web apps, reports, demos, and uti
 - [Resume](resume/) - HTML resume for an AI-focused software engineer.
 - [vCard Generator](vcard_generator_app/) - Generates downloadable contact cards and QR codes.
 - [Casa Lumen Architectural Design](architectural_design_app/) - Responsive, print-ready concept board for a modern five-bedroom, five-bathroom, two-storey home. Includes dimensioned ground and upper plans, wide hallway circulation, door swings, windows, kitchen/bath fixtures, site strategy, section, four elevations, material studies, and area schedule.
-- [Nexus Content Management System](content_management_app/) - Modern content & media management system for uploading any file type (video, audio, image, document, code, archive), full-screen media players with visualizer, multi-criteria ordering, omnisearch & tagging, live property editing, and single/batch/all deletion with undo.
+- [Nexus Content Management System](content_management_app/) - Modern content and media management system for uploading any file type (video, audio, image, document, code, archive), fullscreen media players with frequency visualizer, multi-criteria ordering, omnisearch and tagging, live property editing, persistent SQLite database storage (`cms_database.db`), direct access URLs, and single/batch/all deletion with undo.
 
 ### Reports and presentation pages
 
@@ -78,9 +78,13 @@ python3 -m http.server 8000
 
 cd iphone_duo_app
 python3 -m http.server 8000
+```
 
+For the **Nexus Content Management System**, run the SQLite-backed backend server:
+
+```bash
 cd content_management_app
-python3 -m http.server 8000
+python3 server.py --port 8000
 ```
 
 ### Postboard setup

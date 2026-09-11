@@ -169,16 +169,6 @@
     batchTags: new Set(),
     lastDeletedItems: [] // for undo toast
   };
-    },
-    sortBy: 'date-desc',
-    activeViewerIndex: -1,
-    activeViewerList: [],
-    pendingUploadFile: null,
-    uploadTags: new Set(),
-    editTags: new Set(),
-    batchTags: new Set(),
-    lastDeletedItems: [] // for undo toast
-  };
 
   // ==========================================================================
   // 3. Helper Functions

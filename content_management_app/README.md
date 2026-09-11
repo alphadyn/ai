@@ -1,10 +1,10 @@
 # Nexus Content Management System (CMS)
 
-A modern, full-featured web-based Content Management System (CMS) for uploading, displaying, playing, searching, ordering, editing, and managing all kinds of digital media and documents (text, code, documents, audio, video, images, PDFs, archives, and custom binary formats).
+A modern, full-featured web-based Content Management System (CMS) for uploading, displaying, playing, searching, ordering, editing, and managing all kinds of digital media and documents (text, code, documents, audio, video, images, PDFs, archives, and custom binary formats) with persistent SQLite database storage.
 
 ![Nexus CMS Banner](https://img.shields.io/badge/Status-Complete-brightgreen)
-![IndexedDB](https://img.shields.io/badge/Storage-IndexedDB%20Local-blue)
-![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Pure%20Web%20APIs)-orange)
+![SQLite](https://img.shields.io/badge/Storage-SQLite%203%20(WAL%20Mode)-blue)
+![Zero Dependencies](https://img.shields.io/badge/Dependencies-Python%20Standard%20Library-orange)
 
 ---
 
@@ -72,6 +72,29 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Database Status Indicator**: Live status badge in the UI displaying current SQLite database connectivity and record counts.
 - **Export & Import Backup Tools**: One-click JSON backup export and import to transfer or restore data from the SQLite database.
 - **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in `cms_database.db`.
+
+### 8. Direct Entry URLs & Deep Linking
+- **Direct Web URLs**: Every entry has a direct URL (e.g. `http://localhost:8000/?item=sample_img_1`) that can be copied and opened in any browser to launch the media viewer.
+- **Raw Media Streaming**: Server endpoints like `/media/:id` stream raw binary media files directly.
+- **One-Click Link Copying**: Copy link buttons on cards, list rows, and in the media viewer inspector.
+
+---
+
+## REST API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/health` | Check SQLite database connection and record count |
+| `GET` | `/api/items` | Retrieve all media items sorted by date |
+| `GET` | `/api/items/:id` | Retrieve single item by ID |
+| `POST` | `/api/items` | Insert or update (upsert) a media item |
+| `PUT` | `/api/items/:id` | Update properties of an existing item |
+| `DELETE` | `/api/items/:id` | Delete an item by ID |
+| `POST` | `/api/items/batch` | Batch insert or update a list of items |
+| `POST` | `/api/items/batch-delete` | Batch delete items by array of IDs |
+| `POST` | `/api/items/clear` | Delete all records in database |
+| `GET` | `/media/:id` | Stream raw media file (image, audio, video, text) |
+| `GET` | `/view/:id` | Redirects to `/index.html?item=:id` |
 
 ---
 
