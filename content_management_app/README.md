@@ -64,7 +64,8 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
   - Batch Star / Unstar
   - Batch Tag Assignment
   - Batch File Download
-- **Clear All Database**: Full database wipe with sample reset capability.
+- **Admin Screen**: Database-level controls are available from the Admin screen in the sidebar.
+- **Clear All Files**: The Admin screen provides a full database wipe action; users must verify the deletion in a confirmation dialog before any files are removed.
 - **Undo Stack**: Toast notification with instant "Undo" button to restore accidentally deleted files.
 
 ### 7. Persistent Supabase Database Storage & Data Portability
@@ -121,3 +122,5 @@ cd content_management_app
 python3 -m http.server 8000
 ```
 Open `http://localhost:8000` in your web browser. All uploaded files, property updates, tags, and deletions persist directly in Supabase.
+
+For destructive database operations, open **Admin** from the sidebar and choose **Clear All Files**. The CMS asks for confirmation before deleting every indexed file, and the resulting notification provides an **Undo** action.

@@ -104,7 +104,6 @@
           </div>
           <div class="storage-footer">
             <span id="totalItemsCountBadge">0 files indexed</span>
-            <button class="link-btn" id="clearAllEntriesBtn" title="Delete all files">Clear All</button>
           </div>
         </div>
 
@@ -160,6 +159,18 @@
               </span>
               <span class="nav-label">Favorites & Starred</span>
               <span class="nav-count" id="countStarred">0</span>
+            </button>
+          </nav>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Administration</div>
+          <nav class="nav-list">
+            <button class="nav-item" data-screen="admin" id="adminNavBtn">
+              <span class="nav-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"></path><path d="M9 12l2 2 4-4"></path></svg>
+              </span>
+              <span class="nav-label">Admin</span>
             </button>
           </nav>
         </div>
@@ -241,6 +252,33 @@
 
       <!-- Main Center Content Explorer Area -->
       <main class="main-content">
+
+        <!-- Admin Screen -->
+        <section class="admin-screen" id="adminScreen" hidden>
+          <div class="admin-screen-header">
+            <div>
+              <span class="eyebrow-label">Administration</span>
+              <h1>System controls</h1>
+              <p>Manage database-level operations for the content library.</p>
+            </div>
+            <span class="admin-status-badge">Restricted actions</span>
+          </div>
+
+          <section class="admin-danger-zone">
+            <div class="admin-danger-copy">
+              <span class="admin-danger-icon">!</span>
+              <div>
+                <h2>Delete all files</h2>
+                <p>Permanently remove every file record and its stored content from the CMS.</p>
+                <span class="admin-danger-count" id="adminFileCount">0 files currently indexed</span>
+              </div>
+            </div>
+            <button class="btn btn-danger" id="adminClearAllEntriesBtn" title="Delete all files">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Clear All Files</span>
+            </button>
+          </section>
+        </section>
 
         <!-- Top Controls Bar: Breadcrumbs, Sort, Multi-select action bar -->
         <div class="content-toolbar">

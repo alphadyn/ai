@@ -192,6 +192,7 @@
     items: [],
     selectedIds: new Set(),
     viewMode: 'grid',
+    activeScreen: 'library',
     theme: 'dark',
     filter: {
       type: 'all',
@@ -838,11 +839,22 @@ class SpectrumVisualizer {
   }
 
   function renderApp() {
+    const mainContent = document.querySelector('.main-content');
+    const adminScreen = document.getElementById('adminScreen');
+    const isAdminScreen = state.activeScreen === 'admin';
+    mainContent.classList.toggle('admin-view', isAdminScreen);
+    adminScreen.hidden = !isAdminScreen;
+
     renderSidebarCounts();
     renderTagCloud();
     renderActiveFilterRibbon();
     renderContentItems();
     updateBatchActionBar();
+
+    const adminFileCount = document.getElementById('adminFileCount');
+    if (adminFileCount) {
+      adminFileCount.textContent = `${state.items.length} file${state.items.length === 1 ? '' : 's'} currently indexed`;
+    }
   }
 
   function renderSidebarCounts() {
@@ -1276,11 +1288,20 @@ class SpectrumVisualizer {
     // Sidebar Navigation filter by media type
     document.querySelectorAll('#typeNavList .nav-item').forEach((btn) => {
       btn.addEventListener('click', () => {
+        state.activeScreen = 'library';
+        document.getElementById('adminNavBtn').classList.remove('active');
         document.querySelectorAll('#typeNavList .nav-item').forEach((b) => b.classList.remove('active'));
         btn.classList.add('active');
         state.filter.type = btn.dataset.typeFilter;
         renderApp();
       });
+    });
+
+    document.getElementById('adminNavBtn').addEventListener('click', () => {
+      state.activeScreen = 'admin';
+      document.getElementById('adminNavBtn').classList.add('active');
+      document.querySelectorAll('#typeNavList .nav-item').forEach((btn) => btn.classList.remove('active'));
+      renderApp();
     });
 
     // Status chip filters
@@ -1457,8 +1478,8 @@ class SpectrumVisualizer {
       });
     }
 
-    // Clear All Entries in Database
-    document.getElementById('clearAllEntriesBtn').addEventListener('click', () => {
+    // Clear All Entries in Database from the Admin screen
+    document.getElementById('adminClearAllEntriesBtn').addEventListener('click', () => {
       openDeleteConfirmModal(state.items, true);
     });
 
