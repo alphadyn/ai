@@ -295,6 +295,24 @@
     return 'other';
   }
 
+  function inferMimeType(fileOrName, mimeType = '') {
+    const providedMimeType = (mimeType || (typeof fileOrName === 'string' ? '' : fileOrName.type || '')).toLowerCase();
+    if (providedMimeType && providedMimeType !== 'application/octet-stream') return providedMimeType;
+
+    const name = typeof fileOrName === 'string' ? fileOrName : fileOrName.name || '';
+    const extension = name.split('.').pop().toLowerCase();
+    const mimeTypes = {
+      mp4: 'video/mp4',
+      m4v: 'video/mp4',
+      webm: 'video/webm',
+      ogv: 'video/ogg',
+      mov: 'video/quicktime',
+      avi: 'video/x-msvideo',
+      mkv: 'video/x-matroska'
+    };
+    return mimeTypes[extension] || providedMimeType || 'application/octet-stream';
+  }
+
   function getFileExtension(filename = '') {
     const parts = filename.split('.');
     return parts.length > 1 ? parts.pop().toUpperCase() : 'FILE';
@@ -1772,7 +1790,7 @@ class SpectrumVisualizer {
 
     const file = state.pendingUploadFile;
     const itemType = file ? detectFileType(file) : detectFileType(filenameInput.value);
-    const mimeType = file ? file.type || 'application/octet-stream' : 'application/octet-stream';
+    const mimeType = file ? inferMimeType(file) : inferMimeType(filenameInput.value);
     const size = file ? file.size : 1024;
 
     // Collect custom properties
@@ -1790,7 +1808,7 @@ class SpectrumVisualizer {
       if (itemType === 'code' || (itemType === 'document' && file.name.endsWith('.md')) || file.type.startsWith('text/')) {
         textContent = await file.text();
       }
-      dataUrl = await readFileAsDataUrl(file);
+      dataUrl = await readFileAsDataUrl(file, mimeType);
     } else {
       // Created without file binary
       dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent('Empty content record created in Nexus CMS.')}`;
@@ -1825,10 +1843,16 @@ class SpectrumVisualizer {
     showToast(`Uploaded "${newItem.title}" successfully`, 'success');
   }
 
-  function readFileAsDataUrl(file) {
+  function readFileAsDataUrl(file, mimeType = '') {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => {
+        const dataUrl = String(reader.result || '');
+        const normalizedDataUrl = mimeType && dataUrl.startsWith('data:')
+          ? dataUrl.replace(/^data:[^;,]+/, `data:${mimeType}`)
+          : dataUrl;
+        resolve(normalizedDataUrl);
+      };
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
@@ -2228,7 +2252,6 @@ class SpectrumVisualizer {
     const wrapper = document.createElement('div');
     wrapper.className = 'video-player-wrapper';
     wrapper.innerHTML = `
-      <video class="video-player-element" controls autoplay playsinline src="${item.dataUrl}"></video>
       <div class="video-custom-controls">
         <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Playback Speed:</span>
         <select class="form-select-sm" id="videoSpeedSelect">
@@ -2245,9 +2268,15 @@ class SpectrumVisualizer {
         </label>
       </div>
     `;
+    const video = document.createElement('video');
+    video.className = 'video-player-element';
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.src = item.dataUrl || '';
+    wrapper.insertBefore(video, wrapper.firstChild);
     stage.appendChild(wrapper);
 
-    const video = wrapper.querySelector('video');
     const speedSelect = wrapper.querySelector('#videoSpeedSelect');
     const loopChk = wrapper.querySelector('#videoLoopChk');
 
