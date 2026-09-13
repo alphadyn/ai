@@ -93,18 +93,22 @@ let lastPinchDistance = 0;
 let lastPinchMidX = 0;
 let lastPinchMidY = 0;
 let controlsHidden = false;
+let renderScheduled = false;
 
 const CONTROLS_STORAGE_KEY = "fractal-atlas-controls-hidden";
 
-function updateCanvasResolution() {
-  const pixelRatio = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  const width = Math.max(800, Math.floor(rect.width));
-  const height = Math.max(520, Math.floor(rect.height));
+function getDevicePixelRatio() {
+  return Math.min(window.devicePixelRatio || 1, 2);
+}
 
-  canvas.width = width * pixelRatio;
-  canvas.height = height * pixelRatio;
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+function updateCanvasResolution() {
+  const pixelRatio = getDevicePixelRatio();
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(1, Math.floor(rect.width));
+  const height = Math.max(1, Math.floor(rect.height));
+
+  canvas.width = Math.floor(width * pixelRatio);
+  canvas.height = Math.floor(height * pixelRatio);
 }
 
 function setStatus(text) {
@@ -138,9 +142,11 @@ function zoomAtPoint(factor, anchorX, anchorY) {
 }
 
 function withViewTransform(drawFn) {
+  const pixelRatio = getDevicePixelRatio();
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   ctx.save();
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   ctx.translate(view.panX, view.panY);
   ctx.translate(w / 2, h / 2);
   ctx.scale(view.zoom, view.zoom);
@@ -213,87 +219,12 @@ function updateDescription() {
 }
 
 function clearCanvas() {
+  const pixelRatio = getDevicePixelRatio();
+  ctx.save();
+  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   ctx.fillStyle = "#090b14";
   ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-}
-
-function autoFitRenderedContent() {
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  const image = ctx.getImageData(0, 0, w, h);
-  const data = image.data;
-
-  let minX = w;
-  let minY = h;
-  let maxX = -1;
-  let maxY = -1;
-
-  for (let y = 0; y < h; y += 1) {
-    for (let x = 0; x < w; x += 1) {
-      const idx = (y * w + x) * 4;
-      const r = data[idx];
-      const g = data[idx + 1];
-      const b = data[idx + 2];
-      const a = data[idx + 3];
-
-      if (a === 0) {
-        continue;
-      }
-
-      const isBackground = r === 9 && g === 11 && b === 20;
-      if (isBackground) {
-        continue;
-      }
-
-      if (x < minX) {
-        minX = x;
-      }
-      if (y < minY) {
-        minY = y;
-      }
-      if (x > maxX) {
-        maxX = x;
-      }
-      if (y > maxY) {
-        maxY = y;
-      }
-    }
-  }
-
-  if (maxX < minX || maxY < minY) {
-    return;
-  }
-
-  const padX = Math.max(2, Math.floor(w * 0.01));
-  const padY = Math.max(2, Math.floor(h * 0.01));
-  minX = Math.max(0, minX - padX);
-  minY = Math.max(0, minY - padY);
-  maxX = Math.min(w - 1, maxX + padX);
-  maxY = Math.min(h - 1, maxY + padY);
-
-  const srcW = maxX - minX + 1;
-  const srcH = maxY - minY + 1;
-
-  if (srcW <= 0 || srcH <= 0) {
-    return;
-  }
-
-  const crop = ctx.getImageData(minX, minY, srcW, srcH);
-  const sourceCanvas = document.createElement("canvas");
-  sourceCanvas.width = srcW;
-  sourceCanvas.height = srcH;
-  sourceCanvas.getContext("2d").putImageData(crop, 0, 0);
-
-  const scale = Math.max(w / srcW, h / srcH);
-  const drawW = srcW * scale;
-  const drawH = srcH * scale;
-  const drawX = (w - drawW) / 2;
-  const drawY = (h - drawH) / 2;
-
-  clearCanvas();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(sourceCanvas, drawX, drawY, drawW, drawH);
+  ctx.restore();
 }
 
 function hsvToRgb(h, s, v) {
@@ -332,22 +263,25 @@ function hsvToRgb(h, s, v) {
 }
 
 function drawMandelbrot(detail) {
+  const pixelRatio = getDevicePixelRatio();
+  const bufferW = canvas.width;
+  const bufferH = canvas.height;
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
-  const maxIter = 40 + detail * 30;
-  const xMin = -2.2;
-  const xMax = 0.85;
-  const xRange = xMax - xMin;
-  const yRange = xRange * (h / w);
-  const yMin = -yRange / 2;
-  const image = ctx.createImageData(w, h);
+  const maxIter = 40 + detail * 25;
+  const scale = Math.max(3.0 / w, 2.4 / h);
+  const centerX = -0.65;
+  const centerY = 0;
+  const image = ctx.createImageData(bufferW, bufferH);
   const data = image.data;
 
-  for (let py = 0; py < h; py += 1) {
-    for (let px = 0; px < w; px += 1) {
-      const sample = screenToFractalSpace(px, py);
-      const x0 = xMin + (sample.x / w) * xRange;
-      const y0 = yMin + (sample.y / h) * yRange;
+  for (let py = 0; py < bufferH; py += 1) {
+    const screenY = py / pixelRatio;
+    for (let px = 0; px < bufferW; px += 1) {
+      const screenX = px / pixelRatio;
+      const sample = screenToFractalSpace(screenX, screenY);
+      const x0 = centerX + (sample.x - w / 2) * scale;
+      const y0 = centerY + (sample.y - h / 2) * scale;
       let x = 0;
       let y = 0;
       let iter = 0;
@@ -359,10 +293,10 @@ function drawMandelbrot(detail) {
         iter += 1;
       }
 
-      const idx = (py * w + px) * 4;
+      const idx = (py * bufferW + px) * 4;
       if (iter === maxIter) {
-        data[idx] = 6;
-        data[idx + 1] = 10;
+        data[idx] = 9;
+        data[idx + 1] = 11;
         data[idx + 2] = 20;
       } else {
         const hue = (iter / maxIter) * 320;
@@ -379,24 +313,25 @@ function drawMandelbrot(detail) {
 }
 
 function drawJulia(detail) {
+  const pixelRatio = getDevicePixelRatio();
+  const bufferW = canvas.width;
+  const bufferH = canvas.height;
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
-  const maxIter = 45 + detail * 28;
+  const maxIter = 45 + detail * 25;
   const cRe = -0.79;
   const cIm = 0.15;
-  const xMin = -1.45;
-  const xMax = 1.45;
-  const xRange = xMax - xMin;
-  const yRange = xRange * (h / w);
-  const yMin = -yRange / 2;
-  const image = ctx.createImageData(w, h);
+  const scale = Math.max(3.2 / w, 2.6 / h);
+  const image = ctx.createImageData(bufferW, bufferH);
   const data = image.data;
 
-  for (let py = 0; py < h; py += 1) {
-    for (let px = 0; px < w; px += 1) {
-      const sample = screenToFractalSpace(px, py);
-      let x = xMin + (sample.x / w) * xRange;
-      let y = yMin + (sample.y / h) * yRange;
+  for (let py = 0; py < bufferH; py += 1) {
+    const screenY = py / pixelRatio;
+    for (let px = 0; px < bufferW; px += 1) {
+      const screenX = px / pixelRatio;
+      const sample = screenToFractalSpace(screenX, screenY);
+      let x = (sample.x - w / 2) * scale;
+      let y = (sample.y - h / 2) * scale;
       let iter = 0;
 
       while (x * x + y * y < 4 && iter < maxIter) {
@@ -406,11 +341,11 @@ function drawJulia(detail) {
         iter += 1;
       }
 
-      const idx = (py * w + px) * 4;
+      const idx = (py * bufferW + px) * 4;
       if (iter === maxIter) {
         data[idx] = 9;
-        data[idx + 1] = 8;
-        data[idx + 2] = 30;
+        data[idx + 1] = 11;
+        data[idx + 2] = 20;
       } else {
         const hue = 190 + (iter / maxIter) * 160;
         const rgb = hsvToRgb(hue % 360, 0.82, 0.98);
@@ -426,28 +361,29 @@ function drawJulia(detail) {
 }
 
 function drawNewton(detail) {
+  const pixelRatio = getDevicePixelRatio();
+  const bufferW = canvas.width;
+  const bufferH = canvas.height;
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   const maxIter = 12 + detail * 4;
-  const xMin = -1.35;
-  const xMax = 1.35;
-  const xRange = xMax - xMin;
-  const yRange = xRange * (h / w);
-  const yMin = -yRange / 2;
+  const scale = Math.max(3.0 / w, 3.0 / h);
   const roots = [
     { x: 1, y: 0, color: [255, 99, 72] },
     { x: -0.5, y: 0.8660254, color: [36, 255, 167] },
     { x: -0.5, y: -0.8660254, color: [72, 120, 255] }
   ];
 
-  const image = ctx.createImageData(w, h);
+  const image = ctx.createImageData(bufferW, bufferH);
   const data = image.data;
 
-  for (let py = 0; py < h; py += 1) {
-    for (let px = 0; px < w; px += 1) {
-      const sample = screenToFractalSpace(px, py);
-      let x = xMin + (sample.x / w) * xRange;
-      let y = yMin + (sample.y / h) * yRange;
+  for (let py = 0; py < bufferH; py += 1) {
+    const screenY = py / pixelRatio;
+    for (let px = 0; px < bufferW; px += 1) {
+      const screenX = px / pixelRatio;
+      const sample = screenToFractalSpace(screenX, screenY);
+      let x = (sample.x - w / 2) * scale;
+      let y = (sample.y - h / 2) * scale;
       let iter = 0;
 
       for (; iter < maxIter; iter += 1) {
@@ -491,7 +427,7 @@ function drawNewton(detail) {
 
       const fade = 1 - iter / maxIter;
       const base = roots[closest].color;
-      const idx = (py * w + px) * 4;
+      const idx = (py * bufferW + px) * 4;
       data[idx] = Math.round(base[0] * fade);
       data[idx + 1] = Math.round(base[1] * fade);
       data[idx + 2] = Math.round(base[2] * fade);
@@ -507,15 +443,21 @@ function drawSierpinskiTriangle(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    const pad = 24;
+    const side = Math.min(w - pad * 2, (h - pad * 2) / (Math.sqrt(3) / 2));
+    const triH = side * (Math.sqrt(3) / 2);
+    const cx = w / 2;
+    const cy = h / 2;
+
     const points = [
-      { x: w / 2, y: 10 },
-      { x: 10, y: h - 10 },
-      { x: w - 10, y: h - 10 }
+      { x: cx, y: cy - triH / 2 },
+      { x: cx - side / 2, y: cy + triH / 2 },
+      { x: cx + side / 2, y: cy + triH / 2 }
     ];
 
-    let x = w * 0.37;
-    let y = h * 0.22;
-    const iterations = 12000 + detail * 22000;
+    let x = points[0].x;
+    let y = points[0].y;
+    const iterations = 15000 + detail * 22000;
 
     ctx.fillStyle = "#fcbf49";
 
@@ -533,7 +475,8 @@ function drawSierpinskiCarpet(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const size = Math.min(w, h) - 16;
+    const pad = 24;
+    const size = Math.min(w - pad * 2, h - pad * 2);
     const startX = (w - size) / 2;
     const startY = (h - size) / 2;
 
@@ -569,11 +512,14 @@ function drawKochSnowflake(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    const radius = Math.min(w, h) * 0.45;
+    const pad = 24;
+    const radius = Math.min(w - pad * 2, h - pad * 2) * 0.45;
+    const cx = w / 2;
+    const cy = h / 2;
 
-    const p1 = { x: w / 2, y: h / 2 - radius };
-    const p2 = { x: w / 2 - radius * 0.866, y: h / 2 + radius / 2 };
-    const p3 = { x: w / 2 + radius * 0.866, y: h / 2 + radius / 2 };
+    const p1 = { x: cx, y: cy - radius };
+    const p2 = { x: cx - radius * 0.866025, y: cy + radius * 0.5 };
+    const p3 = { x: cx + radius * 0.866025, y: cy + radius * 0.5 };
 
     let segments = [
       [p1, p2],
@@ -625,21 +571,40 @@ function drawDragonCurve(detail) {
       turns = [...turns, 1, ...revInvert];
     }
 
-    const step = Math.max(2, Math.min(w, h) / (18 + detail * 4));
-    let x = w * 0.34;
-    let y = h * 0.64;
+    const pts = [{ x: 0, y: 0 }];
+    let curX = 0;
+    let curY = 0;
     let angle = 0;
+    let minX = 0;
+    let maxX = 0;
+    let minY = 0;
+    let maxY = 0;
+
+    for (const turn of turns) {
+      angle += turn * (Math.PI / 2);
+      curX += Math.round(Math.cos(angle));
+      curY += Math.round(Math.sin(angle));
+      pts.push({ x: curX, y: curY });
+      if (curX < minX) minX = curX;
+      if (curX > maxX) maxX = curX;
+      if (curY < minY) minY = curY;
+      if (curY > maxY) maxY = curY;
+    }
+
+    const pad = 24;
+    const spanX = Math.max(1, maxX - minX);
+    const spanY = Math.max(1, maxY - minY);
+    const scale = Math.min((w - pad * 2) / spanX, (h - pad * 2) / spanY);
+    const offX = (w - spanX * scale) / 2 - minX * scale;
+    const offY = (h - spanY * scale) / 2 - minY * scale;
 
     ctx.strokeStyle = "#eae2b7";
     ctx.lineWidth = Math.max(0.35, 1.1 / view.zoom);
     ctx.beginPath();
-    ctx.moveTo(x, y);
+    ctx.moveTo(pts[0].x * scale + offX, pts[0].y * scale + offY);
 
-    for (const turn of turns) {
-      angle += turn * (Math.PI / 2);
-      x += Math.cos(angle) * step;
-      y += Math.sin(angle) * step;
-      ctx.lineTo(x, y);
+    for (let i = 1; i < pts.length; i += 1) {
+      ctx.lineTo(pts[i].x * scale + offX, pts[i].y * scale + offY);
     }
 
     ctx.stroke();
@@ -651,6 +616,10 @@ function drawBarnsleyFern(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    const pad = 24;
+    const scale = Math.min((w - pad * 2) / 5.2, (h - pad * 2) / 10.4);
+    const cx = w / 2;
+    const bottomY = (h + 10.0 * scale) / 2;
     const points = 24000 + detail * 22000;
     let x = 0;
     let y = 0;
@@ -679,8 +648,8 @@ function drawBarnsleyFern(detail) {
       x = nextX;
       y = nextY;
 
-      const px = Math.round(w / 2 + x * (w / 7.8));
-      const py = Math.round(h - y * (h / 9.2) - 8);
+      const px = cx + (x - 0.2) * scale;
+      const py = bottomY - y * scale;
       ctx.fillRect(px, py, 1, 1);
     }
   });
@@ -691,6 +660,9 @@ function drawFractalTree(detail) {
   withViewTransform(() => {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    const pad = 24;
+    const treeSize = Math.min((w - pad * 2) * 0.45, (h - pad * 2) * 0.32);
+    const startY = h - pad;
 
     ctx.lineCap = "round";
 
@@ -713,7 +685,7 @@ function drawFractalTree(detail) {
       branch(x2, y2, length * 0.74, angle - 0.35, depth - 1);
     }
 
-    branch(w / 2, h - 8, h * 0.3, Math.PI / 2, detail + 2);
+    branch(w / 2, startY, treeSize, Math.PI / 2, detail + 2);
   });
 }
 
@@ -723,7 +695,9 @@ function drawCantorSet(detail) {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
     const levels = detail + 2;
-    const rowGap = (h - 24) / levels;
+    const pad = 24;
+    const rowGap = (h - pad * 2) / (levels + 0.5);
+    const barHeight = Math.max(2, Math.min(12, rowGap * 0.45)) / view.zoom;
 
     ctx.fillStyle = "#fcbf49";
 
@@ -731,13 +705,13 @@ function drawCantorSet(detail) {
       if (depth <= 0) {
         return;
       }
-      ctx.fillRect(x, y, width, Math.max(2, 8 / view.zoom));
+      ctx.fillRect(x, y, width, barHeight);
       const third = width / 3;
       carve(x, y + rowGap, third, depth - 1);
       carve(x + 2 * third, y + rowGap, third, depth - 1);
     }
 
-    carve(8, 8, w - 16, levels);
+    carve(pad, pad, w - pad * 2, levels);
   });
 }
 
@@ -765,10 +739,20 @@ async function renderActiveFractal() {
   const draw = drawMap[fractal.key];
   if (draw) {
     draw(detail);
-    autoFitRenderedContent();
   }
 
   setStatus(`Rendered ${fractal.name} | detail ${detail} | zoom ${view.zoom.toFixed(2)}x | pan (${Math.round(view.panX)}, ${Math.round(view.panY)})`);
+}
+
+function scheduleRender() {
+  if (renderScheduled) {
+    return;
+  }
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    renderActiveFractal();
+  });
 }
 
 selectEl.addEventListener("change", () => {
@@ -780,6 +764,10 @@ selectEl.addEventListener("change", () => {
 
 detailEl.addEventListener("input", () => {
   detailValueEl.textContent = detailEl.value;
+});
+
+detailEl.addEventListener("change", () => {
+  renderActiveFractal();
 });
 
 renderBtn.addEventListener("click", renderActiveFractal);
@@ -819,7 +807,7 @@ canvas.addEventListener("wheel", (event) => {
   const y = event.clientY - rect.top;
   const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
   zoomAtPoint(factor, x, y);
-  renderActiveFractal();
+  scheduleRender();
 }, { passive: false });
 
 canvas.addEventListener("mousedown", (event) => {
@@ -842,20 +830,22 @@ window.addEventListener("mousemove", (event) => {
   view.panY += dy;
   panStartX = event.clientX;
   panStartY = event.clientY;
-  renderActiveFractal();
+  scheduleRender();
 });
 
 window.addEventListener("mouseup", () => {
-  isPanning = false;
-  canvas.classList.remove("is-panning");
+  if (isPanning) {
+    isPanning = false;
+    canvas.classList.remove("is-panning");
+    renderActiveFractal();
+  }
 });
 
 canvas.addEventListener("mouseleave", () => {
-  if (!isPanning) {
-    return;
+  if (isPanning) {
+    isPanning = false;
+    canvas.classList.remove("is-panning");
   }
-  isPanning = false;
-  canvas.classList.remove("is-panning");
 });
 
 canvas.addEventListener("touchstart", (event) => {
@@ -886,7 +876,7 @@ canvas.addEventListener("touchmove", (event) => {
     view.panY += dy;
     panStartX = touch.clientX;
     panStartY = touch.clientY;
-    renderActiveFractal();
+    scheduleRender();
     return;
   }
 
@@ -910,7 +900,7 @@ canvas.addEventListener("touchmove", (event) => {
     lastPinchDistance = distance;
     lastPinchMidX = midpoint.x;
     lastPinchMidY = midpoint.y;
-    renderActiveFractal();
+    scheduleRender();
   }
 }, { passive: false });
 
@@ -928,15 +918,20 @@ function endTouchInteraction(event) {
     isPanning = false;
     isPinching = false;
     canvas.classList.remove("is-panning");
+    renderActiveFractal();
   }
 }
 
 canvas.addEventListener("touchend", endTouchInteraction);
 canvas.addEventListener("touchcancel", endTouchInteraction);
 
+let resizeTimer = null;
 window.addEventListener("resize", () => {
-  updateCanvasResolution();
-  renderActiveFractal();
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    updateCanvasResolution();
+    renderActiveFractal();
+  }, 100);
 });
 
 buildUI();

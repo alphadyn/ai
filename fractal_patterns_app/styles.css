@@ -16,6 +16,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
   color: var(--text);
   background: linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
@@ -66,9 +67,14 @@ body {
   gap: 10px;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   max-width: none;
   margin: 0;
   padding: 10px;
+  padding-top: max(10px, env(safe-area-inset-top));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(10px, env(safe-area-inset-left));
+  padding-right: max(10px, env(safe-area-inset-right));
 }
 
 .app-shell.controls-hidden {
@@ -241,33 +247,105 @@ canvas.is-panning {
   color: #313b57;
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: 8px;
     padding: 8px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
   }
 
   .panel {
     order: 2;
-    max-height: 33vh;
+    max-height: 40vh;
+    max-height: 40dvh;
+    padding: 10px 12px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .canvas-wrap {
     order: 1;
     min-height: 0;
+    height: 100%;
   }
 
   canvas {
-    height: 63vh;
+    height: 100%;
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    margin: 4px 0 10px;
+  }
+
+  select {
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+  }
+
+  .button-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 10px 0;
+  }
+
+  .button-row button {
+    padding: 8px 6px;
+    font-size: 0.82rem;
+  }
+
+  .description {
+    min-height: auto;
+    font-size: 0.86rem;
+    margin: 4px 0 6px;
+  }
+
+  .fractal-list {
+    display: none;
   }
 
   .app-shell.controls-hidden {
     grid-template-rows: minmax(0, 1fr);
   }
 
+  .app-shell.controls-hidden .panel {
+    display: none;
+  }
+
   .app-shell.controls-hidden canvas {
     height: 100%;
+  }
+
+  .toggle-controls-btn {
+    top: 12px;
+    left: 12px;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .status {
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 480px) {
+  .button-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .button-row #render-btn {
+    grid-column: 1 / -1;
   }
 }
