@@ -38,8 +38,9 @@
     async uploadMedia(file, itemId, filename) {
       const safeFilename = filename.replace(/[^a-z0-9._-]/gi, '_');
       const objectPath = `${itemId}/${safeFilename}`;
+      const encodedObjectPath = objectPath.split('/').map(encodeURIComponent).join('/');
       const response = await this.request(
-        `/storage/v1/object/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${encodeURIComponent(objectPath)}`,
+        `/storage/v1/object/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${encodedObjectPath}`,
         {
           method: 'POST',
           headers: {
@@ -52,10 +53,7 @@
       if (!response.ok) {
         throw new Error(`Supabase Storage upload failed (HTTP ${response.status})`);
       }
-      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${objectPath
-        .split('/')
-        .map(encodeURIComponent)
-        .join('/')}`;
+      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${encodedObjectPath}`;
     },
 
     mapRow(row) {
@@ -1703,8 +1701,12 @@ class SpectrumVisualizer {
     });
 
     // Save Upload button
-    saveBtn.addEventListener('click', () => {
-      saveUploadedContent();
+    saveBtn.addEventListener('click', async () => {
+      try {
+        await saveUploadedContent();
+      } catch (err) {
+        showToast(`Upload failed: ${err.message || 'Supabase request failed'}`, 'danger');
+      }
     });
   }
 
@@ -1845,7 +1847,6 @@ class SpectrumVisualizer {
       if (itemType === 'code' || (itemType === 'document' && file.name.endsWith('.md')) || file.type.startsWith('text/')) {
         textContent = await file.text();
       }
-      dataUrl = await readFileAsDataUrl(file, mimeType);
     } else {
       // Created without file binary
       dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent('Empty content record created in Nexus CMS.')}`;
@@ -1878,21 +1879,6 @@ class SpectrumVisualizer {
     closeModal('uploadModal');
     renderApp();
     showToast(`Uploaded "${savedItem.title}" successfully`, 'success');
-  }
-
-  function readFileAsDataUrl(file, mimeType = '') {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = String(reader.result || '');
-        const normalizedDataUrl = mimeType && dataUrl.startsWith('data:')
-          ? dataUrl.replace(/^data:[^;,]+/, `data:${mimeType}`)
-          : dataUrl;
-        resolve(normalizedDataUrl);
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsDataURL(file);
-    });
   }
 
   // ==========================================================================
