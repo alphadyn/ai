@@ -2231,6 +2231,7 @@ body {
   padding: 20px;
   overflow: auto;
   position: relative;
+  touch-action: pan-y;
 }
 
 /* Viewer Sidebar */

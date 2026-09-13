@@ -51,7 +51,18 @@
         }
       );
       if (!response.ok) {
-        throw new Error(`Supabase Storage upload failed (HTTP ${response.status})`);
+        let errorMessage = `Supabase Storage upload failed (HTTP ${response.status})`;
+        try {
+          const error = await response.json();
+          if (error.code === 'NoSuchBucket' || error.message === 'Bucket not found') {
+            errorMessage = `Supabase Storage bucket "${SUPABASE_MEDIA_BUCKET}" is missing. Run supabase-schema.sql first.`;
+          } else if (error.message) {
+            errorMessage = `${errorMessage}: ${error.message}`;
+          }
+        } catch (err) {
+          // Keep the HTTP status when the response is not JSON.
+        }
+        throw new Error(errorMessage);
       }
       return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${encodedObjectPath}`;
     },
@@ -2076,6 +2087,10 @@ class SpectrumVisualizer {
     const downloadBtn = document.getElementById('viewerDownloadBtn');
     const copyLinkBtn = document.getElementById('viewerCopyLinkBtn');
     const editPropsBtn = document.getElementById('viewerEditPropsBtn');
+    const viewerStage = document.getElementById('viewerStage');
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeTargetIsInteractive = false;
 
     closeBtn.addEventListener('click', () => closeViewerModal());
 
@@ -2094,6 +2109,27 @@ class SpectrumVisualizer {
         openViewerModal(0);
       }
     });
+
+    viewerStage.addEventListener('touchstart', (event) => {
+      const touch = event.changedTouches[0];
+      const target = event.target;
+      swipeStartX = touch.clientX;
+      swipeStartY = touch.clientY;
+      swipeTargetIsInteractive = Boolean(target.closest('button, input, select, textarea, video, audio'));
+    }, { passive: true });
+
+    viewerStage.addEventListener('touchend', (event) => {
+      if (swipeTargetIsInteractive) return;
+
+      const touch = event.changedTouches[0];
+      const deltaX = touch.clientX - swipeStartX;
+      const deltaY = touch.clientY - swipeStartY;
+      const horizontalSwipe = Math.abs(deltaX) >= 50 && Math.abs(deltaX) > Math.abs(deltaY);
+
+      if (horizontalSwipe) {
+        (deltaX < 0 ? nextBtn : prevBtn).click();
+      }
+    }, { passive: true });
 
     fullscreenBtn.addEventListener('click', () => {
       toggleViewerFullscreen();

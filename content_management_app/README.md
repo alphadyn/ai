@@ -32,6 +32,7 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Code & Markdown Reader**: Monospace syntax preview, rendered vs raw markdown toggle, line formatting, and one-click copy to clipboard.
 - **PDF & Document Embed**: In-browser document viewer with download action.
 - **Previous / Next Keyboard Navigation**: Seamless navigation across media items with `←` and `→` arrow keys.
+- **Mobile Swipe Navigation**: Swipe left or right in the media viewer to move to the next or previous file.
 - **Collapsible Metadata Inspector**: Side panel in viewer displaying all properties, tags, and custom metadata with quick edit access.
 
 ### 3. Multi-Criteria Ordering & Sorting
@@ -116,6 +117,8 @@ Configure Supabase:
 2. Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 
 The schema creates the public `nexus-media` Storage bucket and its policies. Binary uploads, including videos, are stored there; the `media_items` table stores their durable public URLs.
+
+If uploads report `NoSuchBucket`, the schema has not been applied to the configured Supabase project. Run it in the SQL Editor, then retry the upload.
 
 Run the static app locally:
 
