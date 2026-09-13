@@ -20,6 +20,10 @@ create table if not exists public.media_items (
   updated_at timestamptz not null default now()
 );
 
+insert into storage.buckets (id, name, public)
+values ('nexus-media', 'nexus-media', true)
+on conflict (id) do update set public = true;
+
 create index if not exists media_items_type_idx on public.media_items(type);
 create index if not exists media_items_category_idx on public.media_items(category);
 create index if not exists media_items_status_idx on public.media_items(status);
@@ -41,5 +45,19 @@ create policy "Nexus CMS can update media items"
   on public.media_items for update to anon using (true) with check (true);
 create policy "Nexus CMS can delete media items"
   on public.media_items for delete to anon using (true);
+
+drop policy if exists "Nexus CMS can upload media" on storage.objects;
+drop policy if exists "Nexus CMS can update media" on storage.objects;
+drop policy if exists "Nexus CMS can read media" on storage.objects;
+drop policy if exists "Nexus CMS can delete media" on storage.objects;
+
+create policy "Nexus CMS can upload media"
+  on storage.objects for insert to anon with check (bucket_id = 'nexus-media');
+create policy "Nexus CMS can update media"
+  on storage.objects for update to anon using (bucket_id = 'nexus-media') with check (bucket_id = 'nexus-media');
+create policy "Nexus CMS can read media"
+  on storage.objects for select to anon using (bucket_id = 'nexus-media');
+create policy "Nexus CMS can delete media"
+  on storage.objects for delete to anon using (bucket_id = 'nexus-media');
 
 notify pgrst, 'reload schema';

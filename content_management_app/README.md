@@ -115,6 +115,8 @@ Configure Supabase:
 1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
 2. Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 
+The schema creates the public `nexus-media` Storage bucket and its policies. Binary uploads, including videos, are stored there; the `media_items` table stores their durable public URLs.
+
 Run the static app locally:
 
 ```bash

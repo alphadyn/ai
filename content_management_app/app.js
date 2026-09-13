@@ -13,6 +13,7 @@
   const SUPABASE_CONFIG = window.NEXUS_SUPABASE || {};
   const SUPABASE_URL = SUPABASE_CONFIG.url;
   const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
+  const SUPABASE_MEDIA_BUCKET = SUPABASE_CONFIG.mediaBucket || 'nexus-media';
 
   const db = {
     isConnected: false,
@@ -32,6 +33,29 @@
           ...(options.headers || {})
         }
       });
+    },
+
+    async uploadMedia(file, itemId, filename) {
+      const safeFilename = filename.replace(/[^a-z0-9._-]/gi, '_');
+      const objectPath = `${itemId}/${safeFilename}`;
+      const response = await this.request(
+        `/storage/v1/object/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${encodeURIComponent(objectPath)}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': file.type || 'application/octet-stream',
+            'x-upsert': 'true'
+          },
+          body: file
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Supabase Storage upload failed (HTTP ${response.status})`);
+      }
+      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${encodeURIComponent(SUPABASE_MEDIA_BUCKET)}/${objectPath
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')}`;
     },
 
     mapRow(row) {
@@ -118,14 +142,26 @@
       return null;
     },
 
-    async put(item) {
+    async put(item, file = null) {
       try {
+        const persistedItem = { ...item };
+        if (file) {
+          persistedItem.dataUrl = await this.uploadMedia(file, item.id, item.filename);
+        }
         const res = await this.request('/rest/v1/media_items?on_conflict=id', {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
-          body: JSON.stringify(this.mapItem(item))
+          body: JSON.stringify(this.mapItem(persistedItem))
         });
         if (res.ok) return this.mapRow((await res.json())[0]);
+        let errorMessage = `Supabase returned HTTP ${res.status}`;
+        try {
+          const error = await res.json();
+          errorMessage = error.message || errorMessage;
+        } catch (err) {
+          // Keep the HTTP status when the response is not JSON.
+        }
+        throw new Error(errorMessage);
       } catch (err) {
         console.error('Failed to save item to Supabase:', err);
         throw err;
@@ -209,7 +245,8 @@
     uploadTags: new Set(),
     editTags: new Set(),
     batchTags: new Set(),
-    lastDeletedItems: [] // for undo toast
+    lastDeletedItems: [], // for undo toast
+    pendingEditFile: null
   };
 
   // ==========================================================================
@@ -1836,11 +1873,11 @@ class SpectrumVisualizer {
       updatedAt: new Date().toISOString()
     };
 
-    await db.put(newItem);
-    state.items.unshift(newItem);
+    const savedItem = await db.put(newItem, file);
+    state.items.unshift(savedItem);
     closeModal('uploadModal');
     renderApp();
-    showToast(`Uploaded "${newItem.title}" successfully`, 'success');
+    showToast(`Uploaded "${savedItem.title}" successfully`, 'success');
   }
 
   function readFileAsDataUrl(file, mimeType = '') {
@@ -1907,8 +1944,8 @@ class SpectrumVisualizer {
         const item = state.items.find((i) => i.id === id);
         if (item) {
           item.size = file.size;
-          item.mimeType = file.type || item.mimeType;
-          item.dataUrl = await readFileAsDataUrl(file);
+          item.mimeType = inferMimeType(file);
+          state.pendingEditFile = file;
           if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.js')) {
             item.textContent = await file.text();
           }
@@ -1935,6 +1972,7 @@ class SpectrumVisualizer {
   }
 
   function openEditModal(item) {
+    state.pendingEditFile = null;
     document.getElementById('editItemId').value = item.id;
     document.getElementById('editTitleInput').value = item.title || '';
     document.getElementById('editFilenameInput').value = item.filename || '';
@@ -2028,7 +2066,10 @@ class SpectrumVisualizer {
     item.customProps = customProps;
     item.updatedAt = new Date().toISOString();
 
-    await db.put(item);
+    const savedItem = await db.put(item, state.pendingEditFile);
+    const itemIndex = state.items.findIndex((candidate) => candidate.id === savedItem.id);
+    if (itemIndex !== -1) state.items[itemIndex] = savedItem;
+    state.pendingEditFile = null;
     closeModal('editModal');
     renderApp();
     showToast(`Saved changes to "${item.title}"`, 'success');
