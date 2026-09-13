@@ -8,7 +8,7 @@
   'use strict';
 
   // ==========================================================================
-  // 1. Persistent Supabase Database Client (No LocalStorage / IndexedDB Storage)
+  // 1. Persistent Supabase Database Client
   // ==========================================================================
   const SUPABASE_CONFIG = window.NEXUS_SUPABASE || {};
   const SUPABASE_URL = SUPABASE_CONFIG.url;
@@ -481,7 +481,7 @@
         rating: 5,
         starred: false,
         tags: ['docs', 'architecture', 'spec', 'system-design'],
-        description: 'Comprehensive specification document outlining distributed caching, SQLite database persistence, metadata indexing, and media pipelines.',
+        description: 'Comprehensive specification document outlining distributed caching, Supabase persistence, metadata indexing, and media pipelines.',
         customProps: [
           { key: 'Version', value: '2.5.0-RC1' },
           { key: 'Security Review', value: 'Approved' },
@@ -490,10 +490,10 @@
         textContent: `# Strategic System Architecture Blueprint
 
 ## Executive Overview
-Nexus CMS provides a zero-latency, local-first content repository capable of handling diverse media formats, extensive metadata attributes, and responsive playback backed by SQLite.
+Nexus CMS provides a network-backed content repository capable of handling diverse media formats, extensive metadata attributes, and responsive playback backed by Supabase.
 
 ### Core Modules
-1. **Persistent SQLite Database Engine**: ACID-compliant relational transactions with WAL mode, indexing, and REST APIs.
+1. **Persistent Supabase Database Engine**: ACID-compliant relational transactions, indexing, and REST APIs.
 2. **Dynamic Media Engine**: Custom playback controllers for video, frequency visualizer for audio, and interactive canvas zoom/pan for images.
 3. **Omnisearch & Filter Pipeline**: Multi-dimensional token matching across display names, extensions, tag collections, and custom key-value pairs.
 
@@ -1391,7 +1391,6 @@ class SpectrumVisualizer {
         Object.values(viewButtons).forEach((b) => b.classList.remove('active'));
         viewButtons[mode].classList.add('active');
         state.viewMode = mode;
-        localStorage.setItem('nexus_cms_view', mode);
         renderApp();
       });
     });
@@ -1541,7 +1540,6 @@ class SpectrumVisualizer {
   function applyTheme(theme) {
     state.theme = theme;
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('nexus_cms_theme', theme);
   }
 
   function openModal(modalId) {
