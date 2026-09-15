@@ -87,7 +87,7 @@ function changeText(value) { return value === null ? '--' : `${value >= 0 ? '+' 
 
 function renderSummary() {
   const buckets = { Buy: results.filter((item) => item.signal === 'Buy').sort((a, b) => b.score - a.score), Hold: results.filter((item) => item.signal === 'Hold').sort((a, b) => Math.abs(50 - a.score) - Math.abs(50 - b.score)), Sell: results.filter((item) => item.signal === 'Sell').sort((a, b) => a.score - b.score) };
-  [['Buy', buckets.Buy[0], 'buy'], ['Hold', buckets.Hold[0], 'hold'], ['Sell', buckets.Sell[0], 'sell']].forEach(([signal, item, prefix]) => { $(`#${prefix}-symbol`).textContent = item?.symbol || '--'; $(`#${prefix}-name`).textContent = item?.name || 'No signal available'; $(`#${prefix}-score`).textContent = item ? item.score : '--'; });
+  [['Buy', buckets.Buy[0], 'buy'], ['Hold', buckets.Hold[0], 'hold'], ['Sell', buckets.Sell[0], 'sell']].forEach(([signal, item, prefix]) => { $(`#${prefix}-symbol`).textContent = item?.symbol || '--'; $(`#${prefix}-name`).textContent = item?.name || (results.length ? `No ${signal} threshold met` : 'No market data'); $(`#${prefix}-score`).textContent = item ? item.score : '--'; });
 }
 
 function renderTable() {
