@@ -1,4 +1,5 @@
 const API = '/api';
+const STATIC_DATA = './market_data.json';
 const WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD'];
 const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com' };
 
@@ -31,6 +32,14 @@ async function getJson(path) {
   const payload = await response.json();
   if (!payload.data) throw new Error('Market data was empty');
   return payload.data;
+}
+
+async function getStaticQuotes() {
+  const response = await fetch(STATIC_DATA, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Static market data request failed: ${response.status}`);
+  const payload = await response.json();
+  if (!Array.isArray(payload.quotes)) throw new Error('Static market data was empty');
+  return payload.quotes;
 }
 
 function parseQuote(symbol, info, chart) {
@@ -138,6 +147,13 @@ async function runScan() {
   elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr>';
   const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => { const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]); return scoreQuote(parseQuote(symbol, info, chart)); }));
   results = settled.filter((entry) => entry.status === 'fulfilled').map((entry) => entry.value);
+  if (!results.length) {
+    try {
+      results = (await getStaticQuotes()).map(({ symbol, info, chart }) => scoreQuote(parseQuote(symbol, info, chart)));
+    } catch (error) {
+      console.error('Market data unavailable from live and static sources:', error);
+    }
+  }
   renderSummary();
   renderTable();
   if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : results[0].symbol);
