@@ -5,10 +5,10 @@ Market Lens is a dependency-free browser dashboard for screening a selected grou
 ## Run locally
 
 ```bash
-python3 -m http.server 8000
+python3 server.py
 ```
 
-Open `http://localhost:8000/sp500_analysis_app/` from the repository root, or run the server from this directory and open `http://localhost:8000`.
+Open `http://localhost:8000`. The local server proxies Nasdaq requests because Nasdaq's public API does not allow browser cross-origin requests.
 
 ## Model notes
 

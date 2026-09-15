@@ -1,4 +1,4 @@
-const API = 'https://api.nasdaq.com/api';
+const API = '/api';
 const WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD'];
 const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com' };
 
