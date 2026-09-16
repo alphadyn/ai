@@ -1,5 +1,4 @@
 const API = '/api';
-const STATIC_DATA = './market_data.json';
 const WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD'];
 const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com' };
 
@@ -33,20 +32,6 @@ async function getJson(path) {
   const payload = await response.json();
   if (!payload.data) throw new Error('Market data was empty');
   return payload.data;
-}
-
-async function getStaticSnapshot() {
-  const response = await fetch(`${STATIC_DATA}?_=${Date.now()}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Static market data request failed: ${response.status}`);
-  const payload = await response.json();
-  if (!Array.isArray(payload.quotes)) throw new Error('Static market data was empty');
-  return payload;
-}
-
-function formatRefreshTime(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function parseQuote(symbol, info, chart) {
@@ -152,31 +137,13 @@ async function runScan() {
   elements.refresh.disabled = true;
   elements.status.textContent = 'Refreshing market data';
   elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr>';
-  let dataSource = 'live';
-  let snapshot = null;
-  try {
-    snapshot = await getStaticSnapshot();
-  } catch (error) {
-    console.warn('GitHub refresh metadata unavailable:', error);
-  }
   const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => { const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]); return scoreQuote(parseQuote(symbol, info, chart)); }));
   results = settled.filter((entry) => entry.status === 'fulfilled').map((entry) => entry.value);
-  if (!results.length) {
-    dataSource = 'snapshot';
-    elements.status.textContent = 'Using latest deployment snapshot';
-    try {
-      snapshot = snapshot || await getStaticSnapshot();
-      results = snapshot.quotes.map(({ symbol, info, chart }) => scoreQuote(parseQuote(symbol, info, chart)));
-    } catch (error) {
-      console.error('Market data unavailable from live and static sources:', error);
-    }
-  }
   renderSummary();
   renderTable();
   if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : results[0].symbol);
-  elements.status.textContent = results.length ? dataSource === 'snapshot' ? 'Deployment snapshot connected' : 'Live data connected' : 'Data unavailable';
-  const refreshTime = formatRefreshTime(snapshot?.generatedAt);
-  if (refreshTime) elements.updated.textContent = `Updated ${refreshTime}`;
+  elements.status.textContent = results.length ? 'Live data connected' : 'Live data unavailable';
+  elements.updated.textContent = results.length ? `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live refresh failed';
   elements.refresh.disabled = false;
 }
 
