@@ -8,7 +8,9 @@ Market Lens is a dependency-free browser dashboard for screening a selected grou
 python3 server.py
 ```
 
-Open `http://localhost:8000`. The local server proxies Nasdaq requests because Nasdaq's public API does not allow browser cross-origin requests. The GitHub Pages deployment publishes a fresh Nasdaq snapshot every 15 minutes; the refresh button reloads the latest published snapshot.
+Open `http://localhost:8000`. The local server proxies Nasdaq requests because Nasdaq's public API does not allow browser cross-origin requests. GitHub Pages publishes a scheduled snapshot, but GitHub schedule timing is best-effort. For request-time live data, deploy this directory as a Vercel project with `sp500_analysis_app` as the project root; `api/[...path].js` provides the same-origin Nasdaq proxy used by the dashboard.
+
+The Vercel deployment can be connected directly to the GitHub repository. Once deployed, the dashboard refresh button requests current quote, chart, and financial data through the Vercel API function instead of waiting for a Pages snapshot.
 
 ## Model notes
 
