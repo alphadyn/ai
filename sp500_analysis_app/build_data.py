@@ -9,11 +9,14 @@ import json
 API = "https://api.nasdaq.com/api"
 WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD']
 OUTPUT = Path(__file__).with_name("market_data.json")
+CACHE_BUSTER = int(datetime.now(timezone.utc).timestamp() * 1000)
 
 
 def fetch(path):
+    separator = "&" if "?" in path else "?"
+    request_url = f"{API}{path}{separator}_={CACHE_BUSTER}"
     request = Request(
-        f"{API}{path}",
+        request_url,
         headers={
             "Accept": "application/json",
             "User-Agent": "Mozilla/5.0 (Market Lens deploy snapshot)",
