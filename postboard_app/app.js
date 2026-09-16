@@ -2,6 +2,8 @@ const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const SUPABASE_CONFIG = window.POSTBOARD_SUPABASE || {};
 const SUPABASE_URL = SUPABASE_CONFIG.url;
 const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
+const STORAGE_BUCKET = SUPABASE_CONFIG.storageBucket || 'postboard-attachments';
+const STORAGE_FOLDER = 'posts';
 
 const state = {
   posts: [],
@@ -286,10 +288,41 @@ function readFile(file) {
   });
 }
 
+async function uploadAttachmentToStorage(file) {
+  if (!file) return null;
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/-+/g, '-').toLowerCase();
+  const objectPath = `${STORAGE_FOLDER}/${Date.now()}-${Math.random().toString(16).slice(2)}-${safeName}`;
+  const uploadUrl = `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/${STORAGE_BUCKET}/${objectPath}`;
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    const error = await getApiError(response, 'Could not upload the attachment to Supabase Storage.');
+    throw new Error(error);
+  }
+
+  return {
+    name: file.name,
+    type: file.type || 'application/octet-stream',
+    size: file.size,
+    url: `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${STORAGE_BUCKET}/${objectPath}`,
+  };
+}
+
 function attachmentMarkup(attachment) {
   if (!attachment) return '';
-  const image = attachment.type.startsWith('image/');
-  return `<div class="attachment-preview">${image ? `<img class="image-attachment" data-action="open-image" src="${attachment.data}" alt="${escapeHtml(attachment.name)}" />` : '<span class="file-badge">FILE</span>'}<span>${escapeHtml(attachment.name)}</span></div>`;
+  const image = attachment.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(attachment.name || '');
+  const source = attachment.data || attachment.url;
+  return `<div class="attachment-preview">${image ? `<img class="image-attachment" data-action="open-image" src="${source}" alt="${escapeHtml(attachment.name)}" />` : '<span class="file-badge">FILE</span>'}<span>${escapeHtml(attachment.name)}</span></div>`;
 }
 
 function render() {
@@ -360,7 +393,9 @@ async function handleSubmit(event) {
 
   elements.submit.disabled = true;
   try {
-    if (file) state.pendingAttachment = await readFile(file);
+    if (file) {
+      state.pendingAttachment = await uploadAttachmentToStorage(file);
+    }
     post.attachment = state.pendingAttachment;
     const editingId = elements.editingId.value;
     if (editingId) {

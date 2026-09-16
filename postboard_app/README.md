@@ -32,9 +32,11 @@ python3 -m http.server 8000
 
 The demo uses public CRUD policies so it can run as a static frontend without auth. For production or private usage, replace those policies with authenticated, user-scoped access.
 
+Create a public Storage bucket named `postboard-attachments` in Supabase, or change `storageBucket` in [supabase-config.js](supabase-config.js) to match a bucket you already created. The app uploads attached files there and stores only the URL metadata in the posts table.
+
 ## Notes
 
 - The message editor sanitizes HTML before saving so only a safe subset of formatting is preserved. New messages start as plain text; use the toolbar to apply formatting.
-- Large attachments are limited to 4 MB per upload.
+- Large attachments are limited to 15 MB per upload.
 - Images can be clicked to open in a full-size viewer.
 - Use the export button to create a JSON archive and the import button to restore it later.
