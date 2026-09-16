@@ -295,6 +295,7 @@ body {
 }
 
 .fullscreen-caption {
+  display: none;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.9rem;
   color: var(--text);

@@ -278,8 +278,19 @@ fullscreenModal.addEventListener(
 );
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "ArrowLeft") prev();
-  if (event.key === "ArrowRight") next();
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+    return;
+  }
+
+  if (event.key === "ArrowLeft") {
+    prev();
+  } else {
+    next();
+  }
+
+  if (fullscreenModal.classList.contains("active")) {
+    updateFullscreenImage();
+  }
 });
 
 buildSlides();
