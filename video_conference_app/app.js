@@ -52,6 +52,7 @@
   let myName = '';
   let isHost = false;
   let hostPeerId = '';
+  let roomKey = null; // AES-256-GCM CryptoKey derived from the meeting code
   /** peerId -> { name, conn, call, videoEl } */
   const participants = new Map();
   /** host-only: peerId -> name, tracks everyone known in the room */
@@ -86,6 +87,64 @@
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  // ---- End-to-end encryption ---------------------------------------------
+  // Every data-channel message (chat, roster/signaling, and file transfers) is
+  // encrypted with AES-256-GCM using a key derived from the meeting code via
+  // PBKDF2. Only people who know the meeting code can decrypt this traffic —
+  // not the PeerJS signaling broker or any relay in between. This is on top
+  // of the DTLS-SRTP encryption WebRTC itself mandates for every connection
+  // (audio, video, and data channels), so audio/video is always encrypted
+  // in transit even though it isn't re-encrypted at the application layer.
+  if (!window.crypto?.subtle) {
+    throw new Error('This browser does not support the Web Crypto API needed for encrypted meetings.');
+  }
+
+  async function deriveRoomKey(room) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey('raw', enc.encode(room), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: enc.encode('meetings-app-e2ee-v1'), iterations: 150000, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async function deriveHostPeerId(room) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('meetings-app-host-id-v1:' + room));
+    const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    return HOST_PREFIX + hex.slice(0, 24);
+  }
+
+  // Encrypts an arbitrary JSON-serializable message and sends it on `conn`.
+  async function sendSecure(conn, message) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const plaintext = new TextEncoder().encode(JSON.stringify(message));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, roomKey, plaintext);
+    conn.send({ type: 'enc', iv: Array.from(iv), ct });
+  }
+
+  // Encrypts a raw file chunk (ArrayBuffer) without JSON/base64 overhead.
+  async function sendSecureBinary(conn, fileId, buffer) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, roomKey, buffer);
+    conn.send({ type: 'enc-bin', id: fileId, iv: Array.from(iv), ct });
+  }
+
+  async function decryptEnvelope(envelope) {
+    const iv = new Uint8Array(envelope.iv);
+    if (envelope.type === 'enc') {
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, roomKey, envelope.ct);
+      return JSON.parse(new TextDecoder().decode(pt));
+    }
+    if (envelope.type === 'enc-bin') {
+      const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, roomKey, envelope.ct);
+      return { type: 'file-chunk', id: envelope.id, buffer: pt };
+    }
+    return null;
   }
 
   // ---- Local media preflight ---------------------------------------------
@@ -136,13 +195,14 @@
     joinForm.querySelector('button[type="submit"]').disabled = true;
     startMeeting(room).catch((err) => {
       console.error(err);
-      setStatus(joinStatus, 'Could not connect. Please try again.');
+      setStatus(joinStatus, err.message || 'Could not connect. Please try again.');
       joinForm.querySelector('button[type="submit"]').disabled = false;
     });
   });
 
   async function startMeeting(room) {
-    hostPeerId = HOST_PREFIX + room;
+    roomKey = await deriveRoomKey(room);
+    hostPeerId = await deriveHostPeerId(room);
     await tryBecomeHost(room);
   }
 
@@ -227,10 +287,13 @@
     participants.set(conn.peer, { ...existing, conn });
 
     conn.on('open', () => {
-      conn.send({ type: 'hello', name: myName, id: myId });
+      sendSecure(conn, { type: 'hello', name: myName, id: myId });
     });
 
-    conn.on('data', (msg) => handleMessage(conn.peer, msg));
+    conn.on('data', async (envelope) => {
+      const msg = await decryptEnvelope(envelope);
+      if (msg) handleMessage(conn.peer, msg);
+    });
 
     conn.on('close', () => removeParticipant(conn.peer));
   }
@@ -261,7 +324,7 @@
             const peers = [...roster.entries()]
               .filter(([id]) => id !== fromId)
               .map(([id, name]) => ({ id, name }));
-            conn.send({ type: 'roster', peers });
+            sendSecure(conn, { type: 'roster', peers });
           }
           broadcast({ type: 'peer-joined', id: fromId, name: msg.name }, [fromId]);
         }
@@ -309,7 +372,7 @@
 
   function broadcast(message, excludeIds = []) {
     participants.forEach(({ conn }, id) => {
-      if (conn && conn.open && !excludeIds.includes(id)) conn.send(message);
+      if (conn && conn.open && !excludeIds.includes(id)) sendSecure(conn, message);
     });
   }
 
@@ -411,8 +474,8 @@
       const meta = { type: 'file-meta', id: fileId, from: myName, name: file.name, mime: file.type, size: file.size };
       participants.forEach(({ conn }) => {
         if (conn && conn.open) {
-          conn.send(meta);
-          conn.send({ type: 'file-chunk', id: fileId, buffer });
+          sendSecure(conn, meta);
+          sendSecureBinary(conn, fileId, buffer);
         }
       });
       logFileEvent(`You shared "${file.name}" (${formatBytes(file.size)}).`);
