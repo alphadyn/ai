@@ -29,6 +29,10 @@ const elements = {
   status: document.getElementById('formStatus'),
   imageViewer: document.getElementById('imageViewer'),
   imageViewerImage: document.getElementById('imageViewerImage'),
+  imageViewerVideo: document.getElementById('imageViewerVideo'),
+  imageViewerAudio: document.getElementById('imageViewerAudio'),
+  imageViewerFrame: document.getElementById('imageViewerFrame'),
+  imageViewerClose: document.getElementById('imageViewerClose'),
   message: document.getElementById('message'),
   messageInput: document.getElementById('messageInput'),
   formatButtons: [...document.querySelectorAll('.format-button')],
@@ -322,7 +326,10 @@ function attachmentMarkup(attachment) {
   if (!attachment) return '';
   const image = attachment.type?.startsWith('image/') || /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(attachment.name || '');
   const source = attachment.data || attachment.url;
-  return `<div class="attachment-preview">${image ? `<img class="image-attachment" data-action="open-image" src="${source}" alt="${escapeHtml(attachment.name)}" />` : '<span class="file-badge">FILE</span>'}<span>${escapeHtml(attachment.name)}</span></div>`;
+  const preview = image
+    ? `<img class="image-attachment" data-action="open-attachment" src="${source}" alt="${escapeHtml(attachment.name)}" />`
+    : '<button type="button" class="file-badge attachment-trigger" data-action="open-attachment" aria-label="Open attachment">FILE</button>';
+  return `<div class="attachment-preview">${preview}<span>${escapeHtml(attachment.name)}</span></div>`;
 }
 
 function render() {
@@ -467,10 +474,21 @@ elements.attachment.addEventListener('change', (event) => {
   }
 });
 elements.cancelEdit.addEventListener('click', resetComposer);
-elements.imageViewerImage.addEventListener('click', () => {
+function closeAttachmentViewer() {
   elements.imageViewer.classList.add('hidden');
   elements.imageViewerImage.removeAttribute('src');
-});
+  elements.imageViewerVideo.removeAttribute('src');
+  elements.imageViewerVideo.pause();
+  elements.imageViewerAudio.removeAttribute('src');
+  elements.imageViewerAudio.pause();
+  elements.imageViewerFrame.removeAttribute('src');
+  elements.imageViewerFrame.classList.add('hidden');
+  elements.imageViewerVideo.classList.add('hidden');
+  elements.imageViewerAudio.classList.add('hidden');
+  elements.imageViewerImage.classList.remove('hidden');
+}
+elements.imageViewerClose.addEventListener('click', closeAttachmentViewer);
+elements.imageViewerImage.addEventListener('click', closeAttachmentViewer);
 elements.deleteAll.addEventListener('click', async () => {
   if (state.posts.length && window.confirm('Delete every saved post? This cannot be undone.')) {
     state.posts = [];
@@ -479,16 +497,57 @@ elements.deleteAll.addEventListener('click', async () => {
     render();
   }
 });
+function openAttachmentViewer(post) {
+  const attachment = post?.attachment;
+  if (!attachment) return;
+
+  const source = attachment.data || attachment.url;
+  if (!source) return;
+
+  const name = attachment.name || 'Attachment';
+  const mime = (attachment.type || '').toLowerCase();
+  const lowerName = (name || '').toLowerCase();
+  const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName);
+  const isVideo = mime.startsWith('video/') || /\.(mp4|webm|ogg|mov|m4v)$/i.test(lowerName);
+  const isAudio = mime.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(lowerName);
+  const isDocument = mime.includes('pdf') || /\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|csv|md|json|xml)$/i.test(lowerName) || mime.includes('text/') || mime.includes('json') || mime.includes('xml');
+
+  elements.imageViewerImage.classList.add('hidden');
+  elements.imageViewerVideo.classList.add('hidden');
+  elements.imageViewerAudio.classList.add('hidden');
+  elements.imageViewerFrame.classList.add('hidden');
+
+  if (isImage) {
+    elements.imageViewerImage.src = source;
+    elements.imageViewerImage.alt = name;
+    elements.imageViewerImage.classList.remove('hidden');
+  } else if (isVideo) {
+    elements.imageViewerVideo.src = source;
+    elements.imageViewerVideo.classList.remove('hidden');
+    elements.imageViewerVideo.load();
+  } else if (isAudio) {
+    elements.imageViewerAudio.src = source;
+    elements.imageViewerAudio.classList.remove('hidden');
+    elements.imageViewerAudio.load();
+  } else if (isDocument) {
+    elements.imageViewerFrame.src = source;
+    elements.imageViewerFrame.classList.remove('hidden');
+  } else {
+    window.open(source, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  elements.imageViewer.classList.remove('hidden');
+}
+
 elements.list.addEventListener('click', async (event) => {
   const button = event.target.closest('[data-action]');
   if (!button) return;
   const card = button.closest('[data-post-id]');
   const post = state.posts.find((item) => item.id === card.dataset.postId);
   if (!post) return;
-  if (button.dataset.action === 'open-image' && post.attachment?.type.startsWith('image/')) {
-    elements.imageViewerImage.src = post.attachment.data;
-    elements.imageViewerImage.alt = post.attachment.name;
-    elements.imageViewer.classList.remove('hidden');
+  if (button.dataset.action === 'open-attachment') {
+    openAttachmentViewer(post);
     return;
   }
   if (button.dataset.action === 'edit') beginEdit(post);
