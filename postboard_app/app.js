@@ -1,4 +1,4 @@
-const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
 const SUPABASE_CONFIG = window.POSTBOARD_SUPABASE || {};
 const SUPABASE_URL = SUPABASE_CONFIG.url;
 const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
@@ -250,7 +250,7 @@ function resetComposer() {
   elements.message.innerHTML = '';
   elements.messageInput.value = '';
   elements.editingId.value = '';
-  elements.attachmentName.textContent = 'JPG, PNG, PDF, or any small file';
+  elements.attachmentName.textContent = 'Images, video, media, or any file up to 15 MB';
   elements.cancelEdit.classList.add('hidden');
   elements.eyebrow.textContent = 'New entry';
   elements.title.textContent = 'What happened?';
@@ -342,7 +342,7 @@ async function handleSubmit(event) {
   if (!post.personName || !post.userName || !stripHtml(post.message)) return;
   const file = elements.attachment.files[0];
   if (file && file.size > MAX_ATTACHMENT_BYTES) {
-    setStatus('Please choose a file smaller than 4 MB.', 'error');
+    setStatus('Please choose a file smaller than 15 MB.', 'error');
     return;
   }
 
@@ -414,7 +414,10 @@ elements.export.addEventListener('click', exportPosts);
 elements.import.addEventListener('change', importPosts);
 elements.attachment.addEventListener('change', (event) => {
   const [file] = event.target.files;
-  if (file) elements.attachmentName.textContent = `${file.name} (${Math.ceil(file.size / 1024)} KB)`;
+  if (file) {
+    const sizeLabel = file.size >= 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.ceil(file.size / 1024)} KB`;
+    elements.attachmentName.textContent = `${file.name} (${sizeLabel})`;
+  }
 });
 elements.cancelEdit.addEventListener('click', resetComposer);
 elements.imageViewerImage.addEventListener('click', () => {
