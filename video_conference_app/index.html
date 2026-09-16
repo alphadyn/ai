@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meetings — Video Conferencing</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Join screen -->
+  <section id="joinScreen" class="join-screen">
+    <div class="join-card">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <h1>Meetings</h1>
+      </div>
+      <p class="tagline">Chat, talk, and share files with your team — right from the browser.</p>
+
+      <form id="joinForm" class="join-form">
+        <label class="field">
+          <span>Your name</span>
+          <input id="nameInput" type="text" placeholder="e.g. Ada Lovelace" autocomplete="name" required maxlength="40" />
+        </label>
+        <label class="field">
+          <span>Meeting code</span>
+          <input id="roomInput" type="text" placeholder="e.g. team-standup" autocomplete="off" required maxlength="60" />
+        </label>
+        <div class="join-actions">
+          <button type="submit" class="primary-btn">Join meeting</button>
+          <button type="button" id="newMeetingBtn" class="ghost-btn">Generate a new code</button>
+        </div>
+      </form>
+
+      <div class="preflight">
+        <div class="preflight-preview">
+          <video id="previewVideo" autoplay muted playsinline></video>
+          <p id="previewStatus" class="hint">Camera preview will appear here once permission is granted.</p>
+        </div>
+        <div class="preflight-toggles">
+          <button type="button" id="previewMicBtn" class="toggle-btn is-on" aria-pressed="true">🎙️ Mic</button>
+          <button type="button" id="previewCamBtn" class="toggle-btn is-on" aria-pressed="true">📷 Camera</button>
+        </div>
+      </div>
+
+      <p id="joinStatus" class="status-text" role="status"></p>
+    </div>
+  </section>
+
+  <!-- Meeting screen -->
+  <section id="meetingScreen" class="meeting-screen hidden">
+    <header class="meeting-header">
+      <div class="meeting-info">
+        <strong id="roomLabel"></strong>
+        <button type="button" id="copyLinkBtn" class="link-btn">Copy invite link</button>
+      </div>
+      <span id="connectionStatus" class="connection-status">Connecting…</span>
+    </header>
+
+    <div class="meeting-body">
+      <div id="videoGrid" class="video-grid"></div>
+
+      <aside id="sidePanel" class="side-panel hidden">
+        <div class="side-tabs">
+          <button type="button" class="side-tab is-active" data-tab="chat">Chat</button>
+          <button type="button" class="side-tab" data-tab="people">People</button>
+          <button type="button" class="side-tab" data-tab="files">Files</button>
+        </div>
+
+        <div class="side-tab-panel" data-panel="chat">
+          <ol id="chatLog" class="chat-log"></ol>
+          <form id="chatForm" class="chat-form">
+            <input id="chatInput" type="text" placeholder="Type a message" autocomplete="off" maxlength="1000" />
+            <button type="submit" class="primary-btn small">Send</button>
+          </form>
+        </div>
+
+        <div class="side-tab-panel hidden" data-panel="people">
+          <ol id="peopleList" class="people-list"></ol>
+        </div>
+
+        <div class="side-tab-panel hidden" data-panel="files">
+          <label class="file-picker" for="fileInput">
+            <span>Share a file</span>
+            <input id="fileInput" type="file" />
+          </label>
+          <p class="hint">Files are sent directly to everyone in the meeting (up to 25 MB).</p>
+          <ol id="fileLog" class="file-log"></ol>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="control-bar">
+      <button type="button" id="micBtn" class="control-btn is-on" aria-pressed="true">
+        <span class="control-icon">🎙️</span><span class="control-label">Mute</span>
+      </button>
+      <button type="button" id="camBtn" class="control-btn is-on" aria-pressed="true">
+        <span class="control-icon">📷</span><span class="control-label">Stop video</span>
+      </button>
+      <button type="button" id="chatToggleBtn" class="control-btn">
+        <span class="control-icon">💬</span><span class="control-label">Chat</span>
+      </button>
+      <button type="button" id="peopleToggleBtn" class="control-btn">
+        <span class="control-icon">👥</span><span class="control-label">People</span>
+        <span id="peopleCount" class="control-badge">1</span>
+      </button>
+      <button type="button" id="filesToggleBtn" class="control-btn">
+        <span class="control-icon">📎</span><span class="control-label">Files</span>
+      </button>
+      <button type="button" id="leaveBtn" class="control-btn leave-btn">
+        <span class="control-icon">📵</span><span class="control-label">Leave</span>
+      </button>
+    </footer>
+  </section>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
