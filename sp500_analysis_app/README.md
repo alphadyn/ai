@@ -8,7 +8,7 @@ Market Lens is a dependency-free browser dashboard for screening a selected grou
 python3 server.py
 ```
 
-Open `http://localhost:8000`. The local server proxies Nasdaq requests because Nasdaq's public API does not allow browser cross-origin requests.
+Open `http://localhost:8000`. The local server proxies Nasdaq requests because Nasdaq's public API does not allow browser cross-origin requests. The GitHub Pages deployment publishes a fresh Nasdaq snapshot every 15 minutes; the refresh button reloads the latest published snapshot.
 
 ## Model notes
 
