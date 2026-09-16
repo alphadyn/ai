@@ -98,6 +98,14 @@ function mapPostToSupabase(post) {
   };
 }
 
+function chunkArray(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
 async function savePosts() {
   const existingResponse = await supabaseRequest('/rest/v1/posts?select=id');
   if (!existingResponse.ok) {
@@ -111,13 +119,17 @@ async function savePosts() {
     const response = await supabaseRequest(`/rest/v1/posts?id=in.(${removedIds.join(',')})`, { method: 'DELETE' });
     if (!response.ok) throw new Error(await getApiError(response, 'Could not delete posts from Supabase.'));
   }
+
   if (state.posts.length) {
-    const response = await supabaseRequest('/rest/v1/posts?on_conflict=id', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify(state.posts.map(mapPostToSupabase)),
-    });
-    if (!response.ok) throw new Error(await getApiError(response, 'Could not save posts to Supabase.'));
+    const batches = chunkArray(state.posts.map(mapPostToSupabase), 10);
+    for (const batch of batches) {
+      const response = await supabaseRequest('/rest/v1/posts?on_conflict=id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(batch),
+      });
+      if (!response.ok) throw new Error(await getApiError(response, 'Could not save posts to Supabase.'));
+    }
   }
 }
 
