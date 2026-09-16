@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from urllib.request import Request, urlopen
+from datetime import datetime, timezone
 import json
 
 
@@ -34,7 +35,7 @@ def main():
             "info": fetch(f"/quote/{symbol}/info?assetclass=stocks"),
             "chart": fetch(f"/quote/{symbol}/chart?assetclass=stocks"),
         })
-    OUTPUT.write_text(json.dumps({"generatedAt": __import__("datetime").datetime.now().isoformat(), "quotes": quotes}), encoding="utf-8")
+    OUTPUT.write_text(json.dumps({"generatedAt": datetime.now(timezone.utc).isoformat(), "quotes": quotes}), encoding="utf-8")
 
 
 if __name__ == "__main__":

@@ -35,12 +35,18 @@ async function getJson(path) {
   return payload.data;
 }
 
-async function getStaticQuotes() {
+async function getStaticSnapshot() {
   const response = await fetch(`${STATIC_DATA}?_=${Date.now()}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`Static market data request failed: ${response.status}`);
   const payload = await response.json();
   if (!Array.isArray(payload.quotes)) throw new Error('Static market data was empty');
-  return payload.quotes;
+  return payload;
+}
+
+function formatRefreshTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 function parseQuote(symbol, info, chart) {
@@ -147,13 +153,20 @@ async function runScan() {
   elements.status.textContent = 'Refreshing market data';
   elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr>';
   let dataSource = 'live';
+  let snapshot = null;
+  try {
+    snapshot = await getStaticSnapshot();
+  } catch (error) {
+    console.warn('GitHub refresh metadata unavailable:', error);
+  }
   const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => { const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]); return scoreQuote(parseQuote(symbol, info, chart)); }));
   results = settled.filter((entry) => entry.status === 'fulfilled').map((entry) => entry.value);
   if (!results.length) {
     dataSource = 'snapshot';
     elements.status.textContent = 'Using latest deployment snapshot';
     try {
-      results = (await getStaticQuotes()).map(({ symbol, info, chart }) => scoreQuote(parseQuote(symbol, info, chart)));
+      snapshot = snapshot || await getStaticSnapshot();
+      results = snapshot.quotes.map(({ symbol, info, chart }) => scoreQuote(parseQuote(symbol, info, chart)));
     } catch (error) {
       console.error('Market data unavailable from live and static sources:', error);
     }
@@ -162,7 +175,8 @@ async function runScan() {
   renderTable();
   if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : results[0].symbol);
   elements.status.textContent = results.length ? dataSource === 'snapshot' ? 'Deployment snapshot connected' : 'Live data connected' : 'Data unavailable';
-  elements.updated.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  const refreshTime = formatRefreshTime(snapshot?.generatedAt);
+  if (refreshTime) elements.updated.textContent = `Updated ${refreshTime}`;
   elements.refresh.disabled = false;
 }
 
