@@ -2,33 +2,124 @@
 
 /* Pulse — social news aggregator frontend (vanilla JS, no build step). */
 
-const api = (() => {
-  function authHeaders() {
-    const headers = { 'Content-Type': 'application/json' };
-    const token = localStorage.getItem('pulse_token');
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    headers['X-Anon-Id'] = anonId();
-    return headers;
-  }
+/* Pulse talks directly to Supabase (PostgREST + Auth) over HTTPS — there is
+ * no custom backend. Row Level Security in supabase-schema.sql enforces who
+ * can read/write what; this module just wraps the raw REST/Auth calls. */
+const CONFIG = window.PULSE_SUPABASE || {};
+const EMAIL_DOMAIN = 'pulse.local';
+const SESSION_KEY = 'pulse_session';
 
-  async function request(method, path, body) {
-    const res = await fetch(path, {
-      method,
-      headers: authHeaders(),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    let data = {};
-    try { data = await res.json(); } catch (_) { /* empty body */ }
-    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-    return data;
-  }
+function usernameToEmail(username) {
+  return `${username.trim().toLowerCase()}@${EMAIL_DOMAIN}`;
+}
 
-  return {
-    get: (path) => request('GET', path),
-    post: (path, body) => request('POST', path, body ?? {}),
-    del: (path) => request('DELETE', path),
+function getSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (_) { return null; }
+}
+
+function saveSession(data) {
+  const session = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Date.now() + (data.expires_in || 3600) * 1000,
+    user_id: (data.user && data.user.id) || null,
   };
-})();
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return session;
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+async function getAccessToken() {
+  const session = getSession();
+  if (!session) return null;
+  if (session.expires_at - 30000 > Date.now()) return session.access_token;
+  if (!session.refresh_token) { clearSession(); return null; }
+  try {
+    const res = await fetch(`${CONFIG.url}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { apikey: CONFIG.anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: session.refresh_token }),
+    });
+    if (!res.ok) { clearSession(); return null; }
+    const data = await res.json();
+    return saveSession(data).access_token;
+  } catch (_) {
+    clearSession();
+    return null;
+  }
+}
+
+async function currentVoterKey() {
+  const session = getSession();
+  if (session && session.user_id) {
+    const token = await getAccessToken();
+    if (token) return `user:${session.user_id}`;
+  }
+  return `anon:${anonId()}`;
+}
+
+function parseResponseBody(text) {
+  if (!text) return null;
+  try { return JSON.parse(text); } catch (_) { return text; }
+}
+
+async function authFetch(path, body) {
+  const res = await fetch(`${CONFIG.url}/auth/v1/${path}`, {
+    method: 'POST',
+    headers: { apikey: CONFIG.anonKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  const data = parseResponseBody(await res.text());
+  if (!res.ok) {
+    const message = (data && (data.msg || data.error_description || data.message)) || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  return data;
+}
+
+async function restFetch(method, table, { params, body, prefer, headers } = {}) {
+  const token = await getAccessToken();
+  const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
+  const res = await fetch(`${CONFIG.url}/rest/v1/${table}${qs}`, {
+    method,
+    headers: {
+      apikey: CONFIG.anonKey,
+      Authorization: `Bearer ${token || CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+      ...(prefer ? { Prefer: prefer } : {}),
+      ...(headers || {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = parseResponseBody(await res.text());
+  if (!res.ok) {
+    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  return { data, headers: res.headers };
+}
+
+async function rpcFetch(name, args) {
+  const token = await getAccessToken();
+  const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${name}`, {
+    method: 'POST',
+    headers: {
+      apikey: CONFIG.anonKey,
+      Authorization: `Bearer ${token || CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args || {}),
+  });
+  const data = parseResponseBody(await res.text());
+  if (!res.ok) {
+    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  return data;
+}
 
 function anonId() {
   let id = localStorage.getItem('pulse_anon_id');
@@ -38,6 +129,336 @@ function anonId() {
   }
   return id;
 }
+
+/* ---- Whitelist HTML sanitizer (mirrors the server-side one from before   */
+/* the static rewrite) — applied at both submit time and read time, since   */
+/* a client bypassing our JS could otherwise POST raw HTML directly.        */
+const ALLOWED_RICH_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'a', 'p', 'br', 'ul', 'ol', 'li',
+  'blockquote', 'code', 'pre', 'h3', 'h4', 'span']);
+
+function sanitizeRichText(raw) {
+  if (!raw) return '';
+  let text = raw.replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '');
+  text = text.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
+  text = text.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '');
+  text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
+  return text;
+}
+
+function plainExcerpt(html, limit = 5000) {
+  const text = (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return text.slice(0, limit);
+}
+
+function hotScore(upvotes, downvotes, createdAt) {
+  const score = upvotes - downvotes;
+  const order = Math.log10(Math.max(Math.abs(score), 1));
+  const sign = score > 0 ? 1 : (score < 0 ? -1 : 0);
+  const epochSeconds = new Date(createdAt).getTime() / 1000;
+  return sign * order + (epochSeconds - 1_600_000_000) / 45000;
+}
+
+function toUser(profile) {
+  return { id: profile.id, username: profile.username, role: profile.role, avatar: profile.avatar_data_url };
+}
+
+async function fetchProfile(userId) {
+  const { data } = await restFetch('GET', 'profiles', { params: { id: `eq.${userId}`, select: '*' } });
+  return (data && data[0]) || null;
+}
+
+async function fetchAvatars(ids) {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (!unique.length) return {};
+  const { data } = await restFetch('GET', 'profiles', { params: { id: `in.(${unique.join(',')})`, select: 'id,avatar_data_url' } });
+  const map = {};
+  (data || []).forEach((p) => { map[p.id] = p.avatar_data_url; });
+  return map;
+}
+
+function mapPostRow(row, commentCount = 0, myVote = 0, authorAvatar = null) {
+  return {
+    id: row.id,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    authorAvatar,
+    title: row.title,
+    body: sanitizeRichText(row.body || ''),
+    linkUrl: row.link_url,
+    tags: row.tags || [],
+    attachments: row.attachments || [],
+    score: row.upvotes - row.downvotes,
+    hotRank: hotScore(row.upvotes, row.downvotes, row.created_at),
+    commentCount,
+    myVote,
+    isDeleted: row.is_deleted,
+    createdAt: row.created_at,
+  };
+}
+
+function mapCommentRow(row, authorAvatar = null) {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    parentId: row.parent_id,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    authorAvatar,
+    body: sanitizeRichText(row.body || ''),
+    attachments: row.attachments || [],
+    score: row.upvotes - row.downvotes,
+    isDeleted: row.is_deleted,
+    createdAt: row.created_at,
+    replies: [],
+  };
+}
+
+async function buildCommentTree(rows) {
+  const avatars = await fetchAvatars(rows.map((r) => r.author_id));
+  const byId = {};
+  const roots = [];
+  for (const row of rows) {
+    const item = mapCommentRow(row, avatars[row.author_id]);
+    if (item.isDeleted) { item.body = ''; item.authorName = '[deleted]'; item.authorAvatar = null; item.attachments = []; }
+    byId[item.id] = item;
+  }
+  for (const item of Object.values(byId)) {
+    if (item.parentId && byId[item.parentId]) byId[item.parentId].replies.push(item);
+    else roots.push(item);
+  }
+  return roots;
+}
+
+const pulse = {
+  async register(username, password) {
+    username = username.trim();
+    if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) throw new Error('Username must be 3-32 characters (letters, numbers, _ . -).');
+    if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+    const data = await authFetch('signup', { email: usernameToEmail(username), password, data: { username } });
+    if (!data.access_token) {
+      throw new Error('Sign-up succeeded but no session was returned. Ask the site owner to disable "Confirm email" in Supabase Auth settings (see README).');
+    }
+    saveSession(data);
+    const profile = await fetchProfile(data.user.id);
+    return toUser(profile);
+  },
+
+  async login(username, password) {
+    const data = await authFetch('token?grant_type=password', { email: usernameToEmail(username), password });
+    saveSession(data);
+    const profile = await fetchProfile(data.user.id);
+    return toUser(profile);
+  },
+
+  async logout() {
+    const session = getSession();
+    if (session && session.access_token) {
+      try {
+        await fetch(`${CONFIG.url}/auth/v1/logout`, {
+          method: 'POST',
+          headers: { apikey: CONFIG.anonKey, Authorization: `Bearer ${session.access_token}` },
+        });
+      } catch (_) { /* best effort */ }
+    }
+    clearSession();
+  },
+
+  async me() {
+    const session = getSession();
+    if (!session || !session.user_id) return null;
+    const token = await getAccessToken();
+    if (!token) return null;
+    const profile = await fetchProfile(session.user_id);
+    return profile ? toUser(profile) : null;
+  },
+
+  async setAvatar(avatarDataUrl) {
+    const session = getSession();
+    if (!session || !session.user_id) throw new Error('Log in to set a profile picture.');
+    if (avatarDataUrl) {
+      if (!/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,/.test(avatarDataUrl)) {
+        throw new Error('Avatar must be a PNG, JPEG, GIF, WEBP, or SVG image.');
+      }
+      if ((avatarDataUrl.length * 3) / 4 > 256 * 1024) throw new Error('Avatar image must be smaller than 256KB.');
+    }
+    await restFetch('PATCH', 'profiles', {
+      params: { id: `eq.${session.user_id}` },
+      body: { avatar_data_url: avatarDataUrl },
+      prefer: 'return=minimal',
+    });
+  },
+
+  async listTags() {
+    const { data } = await restFetch('GET', 'posts', { params: { is_deleted: 'eq.false', select: 'tags' } });
+    const counts = {};
+    (data || []).forEach((row) => { (row.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; }); });
+    return Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
+  },
+
+  async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
+    const { data: rows } = await restFetch('GET', 'posts', { params: { select: '*' } });
+    const posts = rows || [];
+    const { data: commentRows } = await restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id' } });
+    const counts = {};
+    (commentRows || []).forEach((c) => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
+
+    const voterKey = await currentVoterKey();
+    const { data: voteRows } = await restFetch('GET', 'post_votes', { params: { voter_key: `eq.${voterKey}`, select: 'post_id,value' } });
+    const myVotes = {};
+    (voteRows || []).forEach((v) => { myVotes[v.post_id] = v.value; });
+
+    const avatars = await fetchAvatars(posts.map((p) => p.author_id));
+    let items = posts.map((row) => mapPostRow(row, counts[row.id] || 0, myVotes[row.id] || 0, avatars[row.author_id]));
+
+    if (tag) {
+      const t = tag.trim().toLowerCase();
+      items = items.filter((p) => p.tags.includes(t));
+    }
+    if (query) {
+      const q = query.trim().toLowerCase();
+      items = items.filter((p) => p.title.toLowerCase().includes(q)
+        || plainExcerpt(p.body).toLowerCase().includes(q)
+        || p.tags.some((t) => t.includes(q)));
+    }
+
+    if (sort === 'new') items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    else if (sort === 'top') items.sort((a, b) => (b.score - a.score) || (a.createdAt < b.createdAt ? 1 : -1));
+    else items.sort((a, b) => b.hotRank - a.hotRank);
+
+    return items.slice(offset, offset + limit);
+  },
+
+  async getPost(id) {
+    const { data: rows } = await restFetch('GET', 'posts', { params: { id: `eq.${id}`, select: '*' } });
+    if (!rows || !rows.length) return null;
+    const row = rows[0];
+
+    const { data: allComments } = await restFetch('GET', 'comments', { params: { post_id: `eq.${id}`, order: 'created_at.asc', select: '*' } });
+    const commentCount = (allComments || []).filter((c) => !c.is_deleted).length;
+
+    const voterKey = await currentVoterKey();
+    const { data: voteRows } = await restFetch('GET', 'post_votes', { params: { post_id: `eq.${id}`, voter_key: `eq.${voterKey}`, select: 'value' } });
+    const myVote = (voteRows && voteRows[0]) ? voteRows[0].value : 0;
+
+    const avatars = await fetchAvatars([row.author_id]);
+    const post = mapPostRow(row, commentCount, myVote, avatars[row.author_id]);
+    post.comments = await buildCommentTree(allComments || []);
+    return post;
+  },
+
+  async createPost({ title, body, linkUrl, tags, attachments }) {
+    title = (title || '').trim();
+    if (!title) throw new Error('Title is required.');
+    if (title.length > 300) throw new Error('Title is too long.');
+    const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
+    const session = getSession();
+    const authorId = session && session.user_id ? session.user_id : null;
+    const authorName = authorId && state.user ? state.user.username : 'Anonymous';
+    const { data } = await restFetch('POST', 'posts', {
+      body: {
+        author_id: authorId,
+        author_name: authorName,
+        title,
+        body: sanitizeRichText(body || ''),
+        link_url: (linkUrl || '').trim().slice(0, 2000) || null,
+        tags: cleanTags,
+        attachments: attachments || [],
+      },
+      prefer: 'return=representation',
+    });
+    return mapPostRow(data[0], 0, 0, state.user ? state.user.avatar : null);
+  },
+
+  async votePost(id, value) {
+    const voterKey = await currentVoterKey();
+    await rpcFetch('cast_post_vote', { p_post_id: id, p_voter_key: voterKey, p_value: value });
+    const { data: rows } = await restFetch('GET', 'posts', { params: { id: `eq.${id}`, select: 'upvotes,downvotes' } });
+    const row = rows && rows[0];
+    return { score: row ? row.upvotes - row.downvotes : 0 };
+  },
+
+  async deletePost(id) {
+    const { data } = await restFetch('PATCH', 'posts', { params: { id: `eq.${id}` }, body: { is_deleted: true }, prefer: 'return=representation' });
+    if (!data || !data.length) throw new Error('Not authorized to delete this post.');
+  },
+
+  async restorePost(id) {
+    const { data } = await restFetch('PATCH', 'posts', { params: { id: `eq.${id}` }, body: { is_deleted: false }, prefer: 'return=representation' });
+    if (!data || !data.length) throw new Error('Admin access required to restore a post.');
+  },
+
+  async createComment(postId, parentId, body, attachments) {
+    const cleanBody = sanitizeRichText((body || '').trim());
+    if (!cleanBody && !(attachments && attachments.length)) throw new Error('Comment body or an attachment is required.');
+    const session = getSession();
+    const authorId = session && session.user_id ? session.user_id : null;
+    const authorName = authorId && state.user ? state.user.username : 'Anonymous';
+    const { data } = await restFetch('POST', 'comments', {
+      body: {
+        post_id: postId,
+        parent_id: parentId || null,
+        author_id: authorId,
+        author_name: authorName,
+        body: cleanBody,
+        attachments: attachments || [],
+      },
+      prefer: 'return=representation',
+    });
+    return mapCommentRow(data[0], state.user ? state.user.avatar : null);
+  },
+
+  async voteComment(id, value) {
+    const voterKey = await currentVoterKey();
+    await rpcFetch('cast_comment_vote', { p_comment_id: id, p_voter_key: voterKey, p_value: value });
+    const { data: rows } = await restFetch('GET', 'comments', { params: { id: `eq.${id}`, select: 'upvotes,downvotes' } });
+    const row = rows && rows[0];
+    return { score: row ? row.upvotes - row.downvotes : 0 };
+  },
+
+  async deleteComment(id) {
+    const { data } = await restFetch('PATCH', 'comments', { params: { id: `eq.${id}` }, body: { is_deleted: true }, prefer: 'return=representation' });
+    if (!data || !data.length) throw new Error('Not authorized to delete this comment.');
+  },
+
+  async adminListUsers() {
+    const { data } = await restFetch('GET', 'profiles', { params: { select: '*', order: 'created_at.asc' } });
+    return (data || []).map((p) => ({ id: p.id, username: p.username, role: p.role, avatar: p.avatar_data_url, created_at: p.created_at }));
+  },
+
+  async adminSetUserRole(userId, role) {
+    if (!['user', 'admin'].includes(role)) throw new Error('Invalid role.');
+    const { data } = await restFetch('PATCH', 'profiles', { params: { id: `eq.${userId}` }, body: { role }, prefer: 'return=representation' });
+    if (!data || !data.length) throw new Error('Admin access required.');
+  },
+
+  async adminStats() {
+    const countFor = async (table, params) => {
+      const { headers } = await restFetch('GET', table, {
+        params: { ...params, select: 'id', limit: '1' },
+        headers: { Prefer: 'count=exact' },
+      });
+      const range = headers.get('content-range') || '0/0';
+      return parseInt(range.split('/').pop(), 10) || 0;
+    };
+    const [users, posts, deletedPosts, comments, anonymousPosts] = await Promise.all([
+      countFor('profiles', {}),
+      countFor('posts', { is_deleted: 'eq.false' }),
+      countFor('posts', { is_deleted: 'eq.true' }),
+      countFor('comments', { is_deleted: 'eq.false' }),
+      countFor('posts', { is_deleted: 'eq.false', author_id: 'is.null' }),
+    ]);
+    return { users, posts, deletedPosts, comments, anonymousPosts };
+  },
+
+  async adminListPosts() {
+    const { data: rows } = await restFetch('GET', 'posts', { params: { order: 'created_at.desc', limit: '200', select: '*' } });
+    const { data: commentRows } = await restFetch('GET', 'comments', { params: { select: 'post_id' } });
+    const counts = {};
+    (commentRows || []).forEach((c) => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
+    return (rows || []).map((row) => mapPostRow(row, counts[row.id] || 0));
+  },
+};
+
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
@@ -97,8 +518,7 @@ const state = {
 
 async function refreshMe() {
   try {
-    const { user } = await api.get('/api/me');
-    state.user = user;
+    state.user = await pulse.me();
   } catch (_) {
     state.user = null;
   }
@@ -162,7 +582,7 @@ function openAvatarModal() {
 
   document.getElementById('avatar-remove-btn').onclick = async () => {
     try {
-      await api.del('/api/me/avatar');
+      await pulse.setAvatar(null);
       state.user.avatar = null;
       renderAuthNav();
       modal.close();
@@ -174,7 +594,7 @@ function openAvatarModal() {
     e.preventDefault();
     if (!pendingDataUrl) { modal.close(); return; }
     try {
-      await api.post('/api/me/avatar', { avatarDataUrl: pendingDataUrl });
+      await pulse.setAvatar(pendingDataUrl);
       state.user.avatar = pendingDataUrl;
       renderAuthNav();
       modal.close();
@@ -186,8 +606,7 @@ function openAvatarModal() {
 }
 
 async function logout() {
-  try { await api.post('/api/logout'); } catch (_) { /* ignore */ }
-  localStorage.removeItem('pulse_token');
+  try { await pulse.logout(); } catch (_) { /* ignore */ }
   state.user = null;
   renderAuthNav();
   toast('Logged out.');
@@ -215,9 +634,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
   const errorEl = document.getElementById('auth-error');
   errorEl.hidden = true;
   try {
-    const path = state.authMode === 'login' ? '/api/login' : '/api/register';
-    const { user, token } = await api.post(path, { username, password });
-    localStorage.setItem('pulse_token', token);
+    const user = state.authMode === 'login' ? await pulse.login(username, password) : await pulse.register(username, password);
     state.user = user;
     renderAuthNav();
     document.getElementById('auth-modal').close();
@@ -247,7 +664,7 @@ document.getElementById('post-login-hint').addEventListener('click', () => {
 async function loadTags() {
   const el = document.getElementById('tag-cloud');
   try {
-    const { tags } = await api.get('/api/tags');
+    const tags = await pulse.listTags();
     if (!tags.length) { el.innerHTML = '<p class="muted small">No tags yet.</p>'; return; }
     el.innerHTML = tags.map((t) => `
       <button class="tag-chip${state.tag === t.tag ? ' is-active' : ''}" data-tag="${escapeHtml(t.tag)}" type="button">
@@ -358,11 +775,8 @@ function postCardHtml(post) {
 async function loadFeed(reset) {
   const list = document.getElementById('feed-list');
   if (reset) { state.offset = 0; list.innerHTML = '<p class="muted">Loading posts…</p>'; }
-  const params = new URLSearchParams({ sort: state.sort, limit: state.limit, offset: state.offset });
-  if (state.tag) params.set('tag', state.tag);
-  if (state.query) params.set('q', state.query);
   try {
-    const { posts } = await api.get(`/api/posts?${params.toString()}`);
+    const posts = await pulse.listPosts({ sort: state.sort, tag: state.tag, query: state.query, limit: state.limit, offset: state.offset });
     if (reset) list.innerHTML = '';
     if (!posts.length && reset) {
       list.innerHTML = '<p class="muted">No posts match yet. Be the first to submit one!</p>';
@@ -403,11 +817,9 @@ async function castVote(kind, id, value, cardEl) {
   const wasActive = upBtn && upBtn.classList.contains('is-active-up');
   const finalValue = (kind === 'post' && wasActive && value === 1) ? 0 : value;
   try {
-    const path = kind === 'post' ? `/api/posts/${id}/vote` : `/api/comments/${id}/vote`;
-    const { post, comment } = await api.post(path, { value: finalValue });
-    const item = post || comment;
+    const result = kind === 'post' ? await pulse.votePost(id, finalValue) : await pulse.voteComment(id, finalValue);
     const scoreEl = cardEl.querySelector('.vote-score, .comment-score');
-    if (scoreEl) scoreEl.textContent = item.score;
+    if (scoreEl) scoreEl.textContent = result.score;
     cardEl.querySelectorAll('.vote-btn, .comment-vote').forEach((b) => b.classList.remove('is-active-up', 'is-active-down'));
     if (finalValue === 1) cardEl.querySelector('[data-vote="1"]')?.classList.add('is-active-up');
     if (finalValue === -1) cardEl.querySelector('[data-vote="-1"]')?.classList.add('is-active-down');
@@ -419,7 +831,7 @@ async function castVote(kind, id, value, cardEl) {
 async function deletePost(id) {
   if (!confirm('Delete this post? This cannot be undone.')) return;
   try {
-    await api.del(`/api/posts/${id}`);
+    await pulse.deletePost(id);
     toast('Post deleted.');
     loadFeed(true);
   } catch (err) {
@@ -474,7 +886,7 @@ async function renderAdminView(tab) {
   const content = document.getElementById('admin-tab-content');
   try {
     if (tab === 'overview') {
-      const { stats } = await api.get('/api/admin/stats');
+      const stats = await pulse.adminStats();
       content.innerHTML = `
         <div class="admin-stats-grid">
           <div class="admin-stat-card"><div class="value">${stats.users}</div><div class="label">Registered users</div></div>
@@ -484,7 +896,7 @@ async function renderAdminView(tab) {
           <div class="admin-stat-card"><div class="value">${stats.deletedPosts}</div><div class="label">Deleted posts</div></div>
         </div>`;
     } else if (tab === 'users') {
-      const { users } = await api.get('/api/admin/users');
+      const users = await pulse.adminListUsers();
       content.innerHTML = `
         <table class="admin-table">
           <thead><tr><th></th><th>Username</th><th>Role</th><th>Joined</th><th></th></tr></thead>
@@ -507,14 +919,14 @@ async function renderAdminView(tab) {
       content.querySelectorAll('[data-toggle-role]').forEach((btn) => {
         btn.onclick = async () => {
           try {
-            await api.post(`/api/admin/users/${btn.dataset.toggleRole}/role`, { role: btn.dataset.role });
+            await pulse.adminSetUserRole(btn.dataset.toggleRole, btn.dataset.role);
             toast('Role updated.');
             renderAdminView('users');
           } catch (err) { toast(`Could not update role: ${err.message}`); }
         };
       });
     } else if (tab === 'posts') {
-      const { posts } = await api.get('/api/admin/posts');
+      const posts = await pulse.adminListPosts();
       content.innerHTML = `
         <table class="admin-table">
           <thead><tr><th>Title</th><th>Author</th><th>Score</th><th>Comments</th><th>Status</th><th></th></tr></thead>
@@ -540,13 +952,13 @@ async function renderAdminView(tab) {
       content.querySelectorAll('[data-admin-delete]').forEach((btn) => {
         btn.onclick = async () => {
           if (!confirm('Delete this post?')) return;
-          try { await api.del(`/api/posts/${btn.dataset.adminDelete}`); toast('Post deleted.'); renderAdminView('posts'); }
+          try { await pulse.deletePost(btn.dataset.adminDelete); toast('Post deleted.'); renderAdminView('posts'); }
           catch (err) { toast(`Could not delete: ${err.message}`); }
         };
       });
       content.querySelectorAll('[data-restore]').forEach((btn) => {
         btn.onclick = async () => {
-          try { await api.post(`/api/posts/${btn.dataset.restore}/restore`); toast('Post restored.'); renderAdminView('posts'); }
+          try { await pulse.restorePost(btn.dataset.restore); toast('Post restored.'); renderAdminView('posts'); }
           catch (err) { toast(`Could not restore: ${err.message}`); }
         };
       });
@@ -604,7 +1016,8 @@ async function openPost(id) {
   view.innerHTML = '<p class="muted">Loading…</p>';
   showPostView();
   try {
-    const { post } = await api.get(`/api/posts/${id}`);
+    const post = await pulse.getPost(id);
+    if (!post) throw new Error('Post not found.');
     const canModerate = state.user && (state.user.role === 'admin' || state.user.id === post.authorId);
     view.innerHTML = `
       <button class="btn ghost post-detail-back" id="back-to-feed" type="button">← Back to feed</button>
@@ -673,7 +1086,7 @@ function bindPostDetailEvents(postId, root) {
       delComment.onclick = async () => {
         if (!confirm('Delete this comment?')) return;
         try {
-          await api.del(`/api/comments/${commentId}`);
+          await pulse.deleteComment(commentId);
           toast('Comment deleted.');
           openPost(postId);
         } catch (err) { toast(`Could not delete: ${err.message}`); }
@@ -707,7 +1120,7 @@ function bindReplyForm(formEl, postId, parentId) {
     const body = editor.innerHTML.trim();
     if (!body && !attachments.length) { toast('Write a reply or attach a file.'); return; }
     try {
-      await api.post(`/api/posts/${postId}/comments`, { parentId, body, attachments });
+      await pulse.createComment(postId, parentId, body, attachments);
       toast('Reply posted.');
       openPost(postId);
     } catch (err) {
@@ -793,7 +1206,7 @@ document.getElementById('post-form').addEventListener('submit', async (e) => {
   const body = document.getElementById('post-body').innerHTML.trim();
   const tags = document.getElementById('post-tags').value.split(',').map((t) => t.trim()).filter(Boolean);
   try {
-    await api.post('/api/posts', { title, body, linkUrl, tags, attachments: state.pendingAttachments });
+    await pulse.createPost({ title, body, linkUrl, tags, attachments: state.pendingAttachments });
     document.getElementById('post-modal').close();
     toast('Post submitted.');
     state.sort = 'new';

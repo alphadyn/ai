@@ -2,21 +2,25 @@
 
 Pulse is a Reddit/Hacker-News-style social news aggregator. Anyone can post,
 anyone can comment, and registered users get persistent identity, voting
-history, and (for admins) moderation tools. The backend runs entirely on the
-Python standard library (`http.server`) and the frontend is vanilla
-HTML/CSS/JS — no build step, no third-party dependencies.
+history, and (for admins) moderation tools.
 
-**Storage is Supabase (hosted Postgres) only** — there is no local/embedded
-database fallback. The server requires `SUPABASE_URL` and `SUPABASE_SERVICE_KEY`
-to start (see **Supabase setup** below) and refuses to start without them.
+**Pulse is a fully static site** (`index.html` / `styles.css` / `app.js`) —
+there is no backend server to run. The browser talks directly to a Supabase
+project over HTTPS using the public "anon" key, the same pattern used by
+other Supabase-backed apps in this repo. Authentication is handled by
+Supabase Auth, and every authorization rule (who can post, vote, delete,
+moderate, etc.) is enforced by Postgres Row Level Security policies defined
+in [`supabase-schema.sql`](supabase-schema.sql) — not by client-side code, so
+it can't be bypassed by someone calling the API directly. This also means
+Pulse can be hosted anywhere that serves static files, including GitHub
+Pages.
 
 ## Features
 
 ### Accounts & roles
 - **Anonymous browsing and posting** — no account required to read, post, comment, or vote.
-- **Registered users** (`user` role) post and comment under a persistent username.
-- **Administrators** (`admin` role) can delete any post/comment and manage user roles from the API.
-- A seed administrator account is created automatically on first run (see **Security** below).
+- **Registered users** (`user` role) post and comment under a persistent username, managed via Supabase Auth.
+- **Administrators** (`admin` role) can delete/restore any post or comment and manage user roles.
 - **Profile pictures**: registered users can upload an avatar (PNG/JPEG/GIF/WEBP/SVG, up to 256KB) from the nav bar. It's shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
 
 ### Posts
@@ -25,7 +29,7 @@ to start (see **Supabase setup** below) and refuses to start without them.
 - Upvote / downvote with one vote per user (or per anonymous browser id) — score updates live.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
-- Post/attachment deletion restricted to the original author or an admin (soft delete).
+- Post deletion restricted to the original author or an admin (soft delete); only an admin can restore a deleted post.
 
 ### Discussions
 - Threaded comments with unlimited reply depth (each comment can reply to another comment).
@@ -38,117 +42,59 @@ to start (see **Supabase setup** below) and refuses to start without them.
 - **Overview** tab: site-wide stats (registered users, active/deleted posts, anonymous posts, comments).
 - **Users** tab: view every account and promote/demote between `user` and `admin`.
 - **Posts & moderation** tab: view every post (including soft-deleted ones), jump to any post, delete active posts, or restore deleted ones.
-- All admin endpoints (`/api/admin/*`, restoring/deleting others' content) are enforced server-side, not just hidden in the UI.
+- These aren't just hidden UI — the database itself rejects role changes and restores from anyone whose Postgres role isn't `admin` (see **How authorization works** below).
 
-## Supabase setup (required)
-
-Pulse persists everything to a Supabase Postgres project — there's no local
-database to fall back to, so this must be done before the server will start:
+## Setup (required before first use)
 
 1. Create a free project at [supabase.com](https://supabase.com).
-2. Open the SQL editor and run [`supabase-schema.sql`](supabase-schema.sql) — this creates all tables and enables Row Level Security with **no** public policies.
-3. In your Supabase project settings (Project Settings → API), copy the **Project URL** and the **`service_role` secret key** (not the public `anon` key).
-4. Copy `.env.example` to `.env` in this folder and fill in:
+2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security.
+3. **Turn off email confirmation**: Authentication → Providers → Email → disable **"Confirm email"**. Pulse signs people up with a synthetic `username@pulse.local` address (so nobody needs a real inbox just to use a demo forum) — with confirmation left on, nobody could ever confirm that address and sign-ups would be stuck forever.
+4. In Project Settings → API, copy the **Project URL** and the **public `anon` key** (not the `service_role` secret key — never put that in client-side code).
+5. Edit [`supabase-config.js`](supabase-config.js):
+   ```js
+   window.PULSE_SUPABASE = {
+     url: 'https://your-project.supabase.co',
+     anonKey: 'your-anon-public-key'
+   };
    ```
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_KEY=your-service-role-secret-key
-   ```
+6. Serve the folder with any static file server, e.g. `python3 -m http.server 8000` from inside `news_aggregator_app/`, then open `http://localhost:8000`. It also works out of the box on GitHub Pages or any other static host.
 
-**Why the service key and not the public anon key?** Other demo apps in this
-repo talk to Supabase directly from browser JavaScript using the public
-`anon` key, because their data isn't sensitive. Pulse stores password hashes
-and session tokens, so the browser must never hold Supabase credentials —
-all database access stays server-side through `server.py`, which enforces
-auth/ownership checks before ever touching the database. The schema enables
-RLS with zero policies, so even a leaked anon key can't read/write any table
-directly; only the secret service key (used only by this Python process) can,
-since it bypasses RLS by design. Never commit your real `.env` file (it's
-already git-ignored).
+### Making your first admin
 
-## Getting started
+New accounts always start with the `user` role — there's no seed admin,
+since a static site has no trusted place to create one automatically. After
+signing up your own account through the app, promote it in the Supabase SQL
+editor:
 
-```bash
-cd news_aggregator_app
-cp .env.example .env   # then fill in SUPABASE_URL / SUPABASE_SERVICE_KEY
-python3 server.py
+```sql
+update profiles set role = 'admin' where username = 'your-username';
 ```
 
-The server exits immediately with an error if Supabase isn't configured.
-Once it starts, open http://127.0.0.1:8000 in a browser. Set `PULSE_HOST` /
-`PULSE_PORT` environment variables to change the bind address/port.
+## How authorization works (no backend, so Postgres is the trust boundary)
 
-A seed administrator account is created the first time the server runs:
+Because there's no server to enforce rules, **Row Level Security policies
+and a couple of `SECURITY DEFINER` functions in `supabase-schema.sql` are the
+only thing standing between a visitor and the database** — the anon key is
+public and anyone can call the Supabase REST API directly with it, so every
+rule has to hold up even against a client that skips `app.js` entirely:
 
-| Username | Password       |
-|----------|----------------|
-| `admin`  | `ChangeMe123!` |
-
-**Change this password immediately** (register a new admin via the database or
-extend the API with a password-change endpoint before deploying anywhere
-other than your own machine).
+- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` a row (used for soft-delete); a Postgres trigger additionally blocks anyone but an admin from *restoring* (`is_deleted: false → ...`) a post.
+- **Voting**: the `upvotes`/`downvotes` columns are never writable directly by clients. Voting goes through `cast_post_vote()` / `cast_comment_vote()`, `SECURITY DEFINER` Postgres functions that atomically apply the vote-count delta — a client can't just `PATCH` a post to set an arbitrary score.
+- **Roles**: a user can update their own `profiles` row (e.g. their avatar), but a trigger silently reverts any change to the `role` column unless the request comes from an existing admin. A regular user calling the API directly cannot self-promote.
+- **Profiles are public** (username, avatar, role, join date) — like a forum member list — so every post/comment can show author badges. Nothing sensitive (no emails, password hashes, or session tokens) lives in a client-readable table; Supabase Auth keeps those internally.
 
 ## Security
 
-- **Passwords** are never stored in plaintext. Each password is hashed with
-  **PBKDF2-HMAC-SHA256** (260,000 iterations) using a unique random 16-byte
-  salt per user, and verified with a constant-time comparison.
-- **Session tokens** are generated with `secrets.token_urlsafe(32)` (256 bits
-  of entropy) and stored **hashed** (SHA-256) in the database — a stolen copy
-  of the database cannot be replayed as a live session. Tokens expire after
-  14 days.
-- **Transport encryption (TLS/HTTPS)**: run `./generate_cert.sh` to create a
-  local self-signed certificate (`server.pem` / `server.key`). If these files
-  are present, `server.py` automatically wraps its listening socket with
-  `ssl.SSLContext` (TLS 1.2+) and serves HTTPS instead of plain HTTP. For a
-  real deployment, replace the self-signed certificate with one from a
-  trusted CA (e.g. Let's Encrypt) — see the comments in `generate_cert.sh`.
-- **Input handling**: rich-text post/comment bodies are passed through a
-  whitelist HTML sanitizer (`sanitize_rich_text` in `security.py`) that strips
-  `<script>`/`<style>`/`<iframe>` tags, inline event handlers (`onclick`, …),
-  and `javascript:` URLs before they are stored or rendered, mitigating stored
-  XSS. All other user-supplied strings (usernames, titles, tags) are
-  HTML-escaped by the frontend before insertion into the DOM.
-- **Path traversal protection**: static file serving resolves the requested
-  path and rejects anything that would resolve outside the app directory.
-- **Authorization checks**: deleting a post/comment requires either being the
-  original author or having the `admin` role, enforced server-side (not just
-  hidden in the UI).
-- Response headers include `X-Content-Type-Options: nosniff` and
-  `Referrer-Policy: no-referrer` as defense-in-depth measures.
+- **Passwords** are handled entirely by Supabase Auth (industry-standard hashing, session/JWT issuance, refresh tokens) — Pulse's own code never sees or stores a raw password.
+- **Transport encryption**: all traffic goes over HTTPS to your Supabase project (Supabase provisions TLS by default) and to whatever static host you deploy Pulse's own files to (GitHub Pages, Netlify, etc. all serve over HTTPS).
+- **Input handling**: rich-text post/comment bodies are passed through a whitelist HTML sanitizer (`sanitizeRichText` in `app.js`) that strips `<script>`/`<style>`/`<iframe>` tags, inline event handlers (`onclick`, …), and `javascript:` URLs. This runs **both before submitting and again every time content is rendered**, so even content inserted by a client that bypassed the sanitizer on the way in is still neutralized on the way out.
+- **Authorization**: every write is checked in Postgres via RLS (see above), not just hidden in the UI.
+- **Storage limits**: `CHECK` constraints in the schema cap title length, tag count, and avatar size directly in the database, since the client can no longer be trusted as the only enforcement point.
 
-## API overview
-
-| Method | Path                             | Description                                   |
-|--------|----------------------------------|------------------------------------------------|
-| POST   | `/api/register`                  | Create an account, returns a session token      |
-| POST   | `/api/login`                     | Authenticate, returns a session token           |
-| POST   | `/api/logout`                    | Revoke the current session token                |
-| GET    | `/api/me`                        | Current authenticated user (if any)             |
-| GET    | `/api/posts?sort=&tag=&q=`       | List posts (hot/new/top, tag filter, search)    |
-| POST   | `/api/posts`                     | Create a post (auth optional — anonymous OK)    |
-| GET    | `/api/posts/:id`                 | Post detail with nested comment tree            |
-| DELETE | `/api/posts/:id`                 | Delete a post (author or admin only)            |
-| POST   | `/api/posts/:id/vote`            | Cast/change/retract a vote (`value`: 1, -1, 0)  |
-| GET    | `/api/tags`                      | Tag cloud with post counts                      |
-| POST   | `/api/posts/:id/comments`        | Add a comment or reply (`parentId` optional)    |
-| POST   | `/api/comments/:id/vote`         | Vote on a comment                               |
-| DELETE | `/api/comments/:id`              | Delete a comment (author or admin only)         |
-| GET    | `/api/admin/users`               | List all users (admin only)                     |
-| POST   | `/api/admin/users/:id/role`      | Change a user's role (admin only)               |
-| GET    | `/api/admin/stats`               | Site-wide counts for the admin overview (admin only) |
-| GET    | `/api/admin/posts`               | List every post including deleted ones (admin only)  |
-| POST   | `/api/posts/:id/restore`         | Restore a soft-deleted post (admin only)        |
-
-Authenticated requests send `Authorization: Bearer <token>`. Anonymous voting
-uses a random per-browser id sent as `X-Anon-Id` (generated and stored in
-`localStorage`) so anonymous visitors get one vote per post/comment.
+**Known limitation**: anonymous votes are keyed by a random id the browser generates and stores in `localStorage`, not a verified identity — like the original design, this stops casual double-voting in the same browser but isn't cryptographically tamper-proof against someone spoofing many different anonymous voter keys. This is an inherent trade-off of supporting fully anonymous voting with no server.
 
 ## Files
 
-- `server.py` — HTTP request routing, JSON API, static file serving, optional TLS, Supabase connection startup check.
-- `security.py` — shared password hashing, session tokens, HTML sanitization, and hot-ranking helpers.
-- `database_supabase.py` — the Supabase/Postgres storage backend (sole storage layer; requires `SUPABASE_URL`/`SUPABASE_SERVICE_KEY`).
-- `supabase-schema.sql` — Postgres table definitions + locked-down RLS.
-- `.env.example` — template for Supabase credentials (copy to `.env`, which is git-ignored).
-- `generate_cert.sh` — creates a local self-signed TLS certificate for HTTPS testing.
-- `index.html` / `styles.css` / `app.js` — the single-page frontend (feed, post detail, threaded comments, auth modals, rich-text/file-upload post composer, admin screen).
+- `index.html` / `styles.css` / `app.js` — the entire application (feed, post detail, threaded comments, auth modals, rich-text/file-upload post composer, admin screen, and all Supabase REST/Auth calls).
+- `supabase-config.js` — your project's public URL + anon key (safe to commit; it's meaningless without the RLS policies in your project).
+- `supabase-schema.sql` — table definitions, RLS policies, and the vote-casting RPC functions. Run this once per Supabase project.
