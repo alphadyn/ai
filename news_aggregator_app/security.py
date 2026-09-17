@@ -29,6 +29,9 @@ SEED_ADMIN_PASSWORD = "ChangeMe123!"  # documented in README; change immediately
 ALLOWED_TAGS = {"b", "strong", "i", "em", "u", "a", "p", "br", "ul", "ol", "li",
                  "blockquote", "code", "pre", "h3", "h4", "span"}
 
+MAX_AVATAR_BYTES = 256 * 1024  # 256KB cap on decoded avatar image data
+_AVATAR_DATA_URL_RE = re.compile(r"^data:(image/(?:png|jpeg|jpg|gif|webp|svg\+xml));base64,([A-Za-z0-9+/=]+)$")
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -94,6 +97,17 @@ def plain_excerpt(rich_html: str, limit: int = 240) -> str:
     text = re.sub(r"<[^>]+>", " ", rich_html or "")
     text = html.unescape(re.sub(r"\s+", " ", text)).strip()
     return text[:limit]
+
+
+def validate_avatar_data_url(data_url: str) -> str:
+    """Validate a profile picture is a reasonably small, well-formed image data URL."""
+    match = _AVATAR_DATA_URL_RE.match((data_url or "").strip())
+    if not match:
+        raise ValueError("Avatar must be a PNG, JPEG, GIF, WEBP, or SVG image.")
+    decoded_len = len(match.group(2)) * 3 // 4  # approximate decoded byte size from base64 length
+    if decoded_len > MAX_AVATAR_BYTES:
+        raise ValueError(f"Avatar image must be smaller than {MAX_AVATAR_BYTES // 1024}KB.")
+    return match.group(0)
 
 
 def hot_score(upvotes: int, downvotes: int, created_at: str) -> float:

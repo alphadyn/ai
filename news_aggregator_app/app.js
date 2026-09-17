@@ -45,6 +45,15 @@ function escapeHtml(str) {
   }[c]));
 }
 
+function avatarHtml(avatarDataUrl, name, sizeClass = '') {
+  const cls = `avatar ${sizeClass}`.trim();
+  if (avatarDataUrl) {
+    return `<img class="${cls}" src="${avatarDataUrl}" alt="${escapeHtml(name || 'avatar')}">`;
+  }
+  const initial = escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
+  return `<span class="${cls} avatar-placeholder" aria-hidden="true">${initial}</span>`;
+}
+
 function timeAgo(iso) {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   const steps = [
@@ -100,10 +109,12 @@ function renderAuthNav() {
   const nav = document.getElementById('auth-nav');
   if (state.user) {
     nav.innerHTML = `
+      <button class="nav-avatar-btn" id="avatar-nav-btn" type="button" title="Change profile picture">${avatarHtml(state.user.avatar, state.user.username)}</button>
       <span class="muted small">Hi, <strong>${escapeHtml(state.user.username)}</strong>${state.user.role === 'admin' ? ' <span title="Administrator">🛡️</span>' : ''}</span>
       ${state.user.role === 'admin' ? '<button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>' : ''}
       <button class="btn ghost" id="logout-btn" type="button">Log out</button>`;
     document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('avatar-nav-btn').addEventListener('click', openAvatarModal);
     const adminBtn = document.getElementById('admin-nav-btn');
     if (adminBtn) adminBtn.addEventListener('click', showAdminView);
   } else {
@@ -113,6 +124,65 @@ function renderAuthNav() {
     document.getElementById('login-btn').addEventListener('click', () => openAuthModal('login'));
     document.getElementById('register-btn').addEventListener('click', () => openAuthModal('register'));
   }
+}
+
+function openAvatarModal() {
+  if (!state.user) return;
+  const modal = document.getElementById('avatar-modal');
+  const img = document.getElementById('avatar-preview-img');
+  const placeholder = document.getElementById('avatar-preview-placeholder');
+  const fileInput = document.getElementById('avatar-file-input');
+  const errorEl = document.getElementById('avatar-error');
+  fileInput.value = '';
+  errorEl.hidden = true;
+  let pendingDataUrl = state.user.avatar || null;
+
+  function refreshPreview() {
+    if (pendingDataUrl) {
+      img.src = pendingDataUrl;
+      img.hidden = false;
+      placeholder.hidden = true;
+    } else {
+      img.hidden = true;
+      placeholder.hidden = false;
+      placeholder.textContent = (state.user.username || '?').trim().charAt(0).toUpperCase() || '?';
+    }
+  }
+  refreshPreview();
+
+  fileInput.onchange = async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { errorEl.textContent = 'Please choose an image file.'; errorEl.hidden = false; return; }
+    if (file.size > 256 * 1024) { errorEl.textContent = 'Image must be smaller than 256KB.'; errorEl.hidden = false; return; }
+    errorEl.hidden = true;
+    pendingDataUrl = await readFileAsDataUrl(file);
+    refreshPreview();
+  };
+
+  document.getElementById('avatar-remove-btn').onclick = async () => {
+    try {
+      await api.del('/api/me/avatar');
+      state.user.avatar = null;
+      renderAuthNav();
+      modal.close();
+      toast('Profile picture removed.');
+    } catch (err) { errorEl.textContent = err.message; errorEl.hidden = false; }
+  };
+
+  document.getElementById('avatar-form').onsubmit = async (e) => {
+    e.preventDefault();
+    if (!pendingDataUrl) { modal.close(); return; }
+    try {
+      await api.post('/api/me/avatar', { avatarDataUrl: pendingDataUrl });
+      state.user.avatar = pendingDataUrl;
+      renderAuthNav();
+      modal.close();
+      toast('Profile picture updated.');
+    } catch (err) { errorEl.textContent = err.message; errorEl.hidden = false; }
+  };
+
+  modal.showModal();
 }
 
 async function logout() {
@@ -270,7 +340,7 @@ function postCardHtml(post) {
     <div class="post-body-col">
       <h3 class="post-title"><a href="#" data-open="${post.id}">${escapeHtml(post.title)}</a></h3>
       <div class="post-meta">
-        <span>by ${escapeHtml(post.authorName)}</span>
+        <span class="author-line">${avatarHtml(post.authorAvatar, post.authorName, 'avatar-sm')} by ${escapeHtml(post.authorName)}</span>
         <span>${timeAgo(post.createdAt)}</span>
         ${post.linkUrl ? `<a href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener noreferrer">🔗 link</a>` : ''}
       </div>
@@ -417,10 +487,11 @@ async function renderAdminView(tab) {
       const { users } = await api.get('/api/admin/users');
       content.innerHTML = `
         <table class="admin-table">
-          <thead><tr><th>Username</th><th>Role</th><th>Joined</th><th></th></tr></thead>
+          <thead><tr><th></th><th>Username</th><th>Role</th><th>Joined</th><th></th></tr></thead>
           <tbody>
             ${users.map((u) => `
               <tr data-id="${u.id}">
+                <td>${avatarHtml(u.avatar, u.username, 'avatar-sm')}</td>
                 <td>${escapeHtml(u.username)}</td>
                 <td><span class="role-badge${u.role === 'admin' ? ' admin' : ''}">${u.role}</span></td>
                 <td>${timeAgo(u.created_at)}</td>
@@ -491,6 +562,7 @@ function commentHtml(comment) {
   return `
   <div class="comment${comment.isDeleted ? ' is-deleted' : ''}" data-id="${comment.id}">
     <div class="comment-header">
+      ${!comment.isDeleted ? avatarHtml(comment.authorAvatar, comment.authorName, 'avatar-sm') : ''}
       <span class="comment-author">${escapeHtml(comment.authorName)}</span>
       <span>${timeAgo(comment.createdAt)}</span>
       <span class="comment-score">${comment.score}</span>
@@ -546,7 +618,7 @@ async function openPost(id) {
           <div style="flex:1; min-width:0;">
             <h1 class="post-title">${escapeHtml(post.title)}</h1>
             <div class="post-meta">
-              <span>by ${escapeHtml(post.authorName)}</span>
+              <span class="author-line">${avatarHtml(post.authorAvatar, post.authorName, 'avatar-sm')} by ${escapeHtml(post.authorName)}</span>
               <span>${timeAgo(post.createdAt)}</span>
               ${post.linkUrl ? `<a href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener noreferrer">🔗 ${escapeHtml(post.linkUrl)}</a>` : ''}
             </div>

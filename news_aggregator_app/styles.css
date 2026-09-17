@@ -156,6 +156,17 @@ label input[type="text"], label input[type="url"], label input[type="password"],
 .role-badge.admin { color: var(--accent); border-color: var(--accent); }
 .deleted-badge { color: var(--danger); font-size: .74rem; }
 
+/* Avatars */
+.avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; vertical-align: middle; flex-shrink: 0; border: 1px solid var(--line); background: var(--panel-2); }
+.avatar-placeholder { display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; color: var(--muted); }
+.avatar-sm { width: 20px; height: 20px; }
+.avatar-lg { width: 64px; height: 64px; font-size: 1.4rem; }
+.nav-avatar-btn { display: inline-flex; align-items: center; gap: 0; background: none; border: none; padding: 0; cursor: pointer; border-radius: 50%; }
+.nav-avatar-btn .avatar { width: 26px; height: 26px; }
+.author-line { display: inline-flex; align-items: center; gap: 6px; }
+.avatar-preview-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.avatar-preview-row input[type="file"] { flex: 1; }
+
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: static; flex-direction: row; flex-wrap: wrap; }

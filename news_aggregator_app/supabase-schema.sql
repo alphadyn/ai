@@ -21,6 +21,7 @@ create table if not exists users (
   password_hash text not null,
   password_salt text not null,
   role text not null default 'user',
+  avatar_data_url text,
   created_at timestamptz not null default now()
 );
 

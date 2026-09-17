@@ -2,10 +2,10 @@
 """
 Pulse — a social news aggregator REST API & static file server.
 
-Runs on the Python standard library only (http.server + sqlite3, or
-optionally Supabase/Postgres — see README "Supabase setup"). Supports plain
-HTTP for local development and optional TLS (HTTPS) for production — see
-generate_cert.sh and the README for enabling encrypted transport.
+Runs on the Python standard library only (http.server) with Supabase/Postgres
+as the sole persistent storage backend — see README "Supabase setup". Supports
+plain HTTP for local development and optional TLS (HTTPS) for production —
+see generate_cert.sh and the README for enabling encrypted transport.
 """
 
 from __future__ import annotations
@@ -42,14 +42,16 @@ _load_dotenv(APP_DIR / ".env")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "").strip()
 
-if SUPABASE_URL and SUPABASE_SERVICE_KEY:
-    from database_supabase import SupabaseDatabaseManager
-    db = SupabaseDatabaseManager(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    print(f"Storage backend: Supabase ({SUPABASE_URL})")
-else:
-    from database import DatabaseManager
-    db = DatabaseManager()
-    print("Storage backend: local SQLite (pulse.db) — set SUPABASE_URL/SUPABASE_SERVICE_KEY to use Supabase instead.")
+if not (SUPABASE_URL and SUPABASE_SERVICE_KEY):
+    sys.exit(
+        "Missing Supabase configuration. Set SUPABASE_URL and SUPABASE_SERVICE_KEY "
+        "(e.g. in a .env file — see .env.example) before starting the server. "
+        "Run supabase-schema.sql against your project first. See README 'Supabase setup'."
+    )
+
+from database_supabase import SupabaseDatabaseManager
+db = SupabaseDatabaseManager(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+print(f"Storage backend: Supabase ({SUPABASE_URL})")
 
 MAX_BODY_BYTES = 25 * 1024 * 1024  # 25MB request cap (posts/comments may embed file attachments)
 
@@ -200,6 +202,13 @@ class PulseRequestHandler(BaseHTTPRequestHandler):
                     db.revoke_session(auth[len("Bearer "):].strip())
                 return self._send_json(200, {"ok": True})
 
+            if path == "/api/me/avatar":
+                user = self._current_user()
+                if not user:
+                    return self._error(401, "Log in to set a profile picture.")
+                db.set_avatar(user["id"], body.get("avatarDataUrl"))
+                return self._send_json(200, {"ok": True})
+
             if path == "/api/posts":
                 user = self._current_user()
                 post = db.create_post(
@@ -267,6 +276,12 @@ class PulseRequestHandler(BaseHTTPRequestHandler):
         path = parsed.path
         user = self._current_user()
         try:
+            if path == "/api/me/avatar":
+                if not user:
+                    return self._error(401, "Log in to manage your profile picture.")
+                db.set_avatar(user["id"], None)
+                return self._send_json(200, {"ok": True})
+
             if path.startswith("/api/posts/"):
                 post_id = path[len("/api/posts/"):].strip("/")
                 ok = db.delete_post(post_id, user)

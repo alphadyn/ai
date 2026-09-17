@@ -63,6 +63,27 @@
   </section>
 </main>
 
+<!-- Avatar modal -->
+<dialog id="avatar-modal" class="modal">
+  <form method="dialog" class="modal-card" id="avatar-form">
+    <header>
+      <h2>Profile picture</h2>
+      <button type="button" class="icon-btn" data-close-modal aria-label="Close">✕</button>
+    </header>
+    <p class="muted small">PNG, JPEG, GIF, WEBP, or SVG — up to 256KB. Shown as your icon next to your posts and comments.</p>
+    <div class="avatar-preview-row">
+      <img id="avatar-preview-img" class="avatar avatar-lg" alt="Avatar preview" hidden>
+      <div id="avatar-preview-placeholder" class="avatar avatar-lg avatar-placeholder"></div>
+      <input type="file" id="avatar-file-input" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml">
+    </div>
+    <p class="form-error" id="avatar-error" hidden></p>
+    <footer>
+      <button type="button" class="btn ghost" id="avatar-remove-btn">Remove picture</button>
+      <button type="submit" class="btn primary" id="avatar-save-btn">Save</button>
+    </footer>
+  </form>
+</dialog>
+
 <!-- Auth modal -->
 <dialog id="auth-modal" class="modal">
   <form method="dialog" class="modal-card" id="auth-form">

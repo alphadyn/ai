@@ -33,6 +33,7 @@ from security import (
     now_iso,
     plain_excerpt,
     sanitize_rich_text,
+    validate_avatar_data_url,
     verify_password,
     SEED_ADMIN_USERNAME,
     SEED_ADMIN_PASSWORD,
@@ -120,7 +121,7 @@ class SupabaseDatabaseManager:
             "role": "user",
             "created_at": now_iso(),
         }, extra_headers={"Prefer": "return=minimal"})
-        return {"id": user_id, "username": username, "role": "user"}
+        return {"id": user_id, "username": username, "role": "user", "avatar": None}
 
     def authenticate(self, username: str, password: str) -> Optional[Dict[str, Any]]:
         rows, _ = self._request("GET", "users", params={"username": f"eq.{username.strip()}", "select": "*"})
@@ -129,7 +130,7 @@ class SupabaseDatabaseManager:
         row = rows[0]
         if not verify_password(password, row["password_hash"], row["password_salt"]):
             return None
-        return {"id": row["id"], "username": row["username"], "role": row["role"]}
+        return {"id": row["id"], "username": row["username"], "role": row["role"], "avatar": row.get("avatar_data_url")}
 
     def create_session(self, user_id: str) -> str:
         token = generate_session_token()
@@ -158,18 +159,34 @@ class SupabaseDatabaseManager:
         if not users:
             return None
         u = users[0]
-        return {"id": u["id"], "username": u["username"], "role": u["role"]}
+        return {"id": u["id"], "username": u["username"], "role": u["role"], "avatar": u.get("avatar_data_url")}
 
     def revoke_session(self, token: str) -> None:
         self._request("DELETE", "sessions", params={"token_hash": f"eq.{hash_token(token)}"})
 
+    def set_avatar(self, user_id: str, avatar_data_url: Optional[str]) -> None:
+        clean = validate_avatar_data_url(avatar_data_url) if avatar_data_url else None
+        self._request("PATCH", "users", params={"id": f"eq.{user_id}"}, json_body={"avatar_data_url": clean},
+                      extra_headers={"Prefer": "return=minimal"})
+
+    def _avatar_map(self, author_ids: List[Optional[str]]) -> Dict[str, Optional[str]]:
+        ids = [a for a in set(author_ids) if a]
+        if not ids:
+            return {}
+        rows, _ = self._request("GET", "users", params={
+            "id": f"in.({','.join(ids)})", "select": "id,avatar_data_url",
+        })
+        return {r["id"]: r.get("avatar_data_url") for r in rows or []}
+
     # ---- Posts ---------------------------------------------------------------
 
-    def _post_to_dict(self, row: Dict[str, Any], comment_count: int = 0, my_vote: int = 0) -> Dict[str, Any]:
+    def _post_to_dict(self, row: Dict[str, Any], comment_count: int = 0, my_vote: int = 0,
+                       author_avatar: Optional[str] = None) -> Dict[str, Any]:
         return {
             "id": row["id"],
             "authorId": row.get("author_id"),
             "authorName": row.get("author_name", "Anonymous"),
+            "authorAvatar": author_avatar,
             "title": row["title"],
             "body": row.get("body", ""),
             "linkUrl": row.get("link_url"),
@@ -218,7 +235,8 @@ class SupabaseDatabaseManager:
                 "post_id": f"eq.{post_id}", "voter_key": f"eq.{voter_key}", "select": "value",
             })
             my_vote = votes[0]["value"] if votes else 0
-        return self._post_to_dict(rows[0], count, my_vote)
+        avatar = self._avatar_map([rows[0].get("author_id")]).get(rows[0].get("author_id"))
+        return self._post_to_dict(rows[0], count, my_vote, avatar)
 
     def list_posts(self, sort: str = "hot", tag: Optional[str] = None, query: Optional[str] = None,
                    limit: int = 50, offset: int = 0, voter_key: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -233,7 +251,11 @@ class SupabaseDatabaseManager:
             votes, _ = self._request("GET", "post_votes", params={"voter_key": f"eq.{voter_key}", "select": "post_id,value"})
             my_votes = {v["post_id"]: v["value"] for v in votes or []}
 
-        items = [self._post_to_dict(r, counts.get(r["id"], 0), my_votes.get(r["id"], 0)) for r in rows or []]
+        avatars = self._avatar_map([r.get("author_id") for r in rows or []])
+        items = [
+            self._post_to_dict(r, counts.get(r["id"], 0), my_votes.get(r["id"], 0), avatars.get(r.get("author_id")))
+            for r in rows or []
+        ]
 
         if tag:
             tag = tag.strip().lower()
@@ -320,13 +342,14 @@ class SupabaseDatabaseManager:
 
     # ---- Comments -------------------------------------------------------------
 
-    def _comment_to_dict(self, row: Dict[str, Any]) -> Dict[str, Any]:
+    def _comment_to_dict(self, row: Dict[str, Any], author_avatar: Optional[str] = None) -> Dict[str, Any]:
         return {
             "id": row["id"],
             "postId": row["post_id"],
             "parentId": row.get("parent_id"),
             "authorId": row.get("author_id"),
             "authorName": row.get("author_name", "Anonymous"),
+            "authorAvatar": author_avatar,
             "body": row.get("body", ""),
             "attachments": row.get("attachments") or [],
             "upvotes": row.get("upvotes", 0),
@@ -364,17 +387,22 @@ class SupabaseDatabaseManager:
 
     def get_comment(self, comment_id: str) -> Optional[Dict[str, Any]]:
         rows, _ = self._request("GET", "comments", params={"id": f"eq.{comment_id}", "select": "*"})
-        return self._comment_to_dict(rows[0]) if rows else None
+        if not rows:
+            return None
+        avatar = self._avatar_map([rows[0].get("author_id")]).get(rows[0].get("author_id"))
+        return self._comment_to_dict(rows[0], avatar)
 
     def get_comment_tree(self, post_id: str) -> List[Dict[str, Any]]:
         rows, _ = self._request("GET", "comments", params={"post_id": f"eq.{post_id}", "order": "created_at.asc", "select": "*"})
+        avatars = self._avatar_map([r.get("author_id") for r in rows or []])
         by_id: Dict[str, Dict[str, Any]] = {}
         roots: List[Dict[str, Any]] = []
         for row in rows or []:
-            item = self._comment_to_dict(row)
+            item = self._comment_to_dict(row, avatars.get(row.get("author_id")))
             if item["isDeleted"]:
                 item["body"] = ""
                 item["authorName"] = "[deleted]"
+                item["authorAvatar"] = None
                 item["attachments"] = []
             by_id[item["id"]] = item
         for item in by_id.values():
@@ -404,8 +432,10 @@ class SupabaseDatabaseManager:
     # ---- Admin --------------------------------------------------------------
 
     def list_users(self) -> List[Dict[str, Any]]:
-        rows, _ = self._request("GET", "users", params={"select": "id,username,role,created_at", "order": "created_at.asc"})
-        return rows or []
+        rows, _ = self._request("GET", "users", params={
+            "select": "id,username,role,avatar_data_url,created_at", "order": "created_at.asc",
+        })
+        return [{**r, "avatar": r.get("avatar_data_url")} for r in rows or []]
 
     def set_user_role(self, user_id: str, role: str) -> None:
         if role not in ("user", "admin"):
