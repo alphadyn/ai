@@ -46,8 +46,8 @@ Pages.
 
 ## Setup (required before first use)
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security.
+1. Create a free project at [supabase.com](https://supabase.com), or reuse an existing one — Pulse's tables (`profiles`, `posts`, `comments`, `post_votes`, `comment_votes`) are self-contained and won't collide with other apps' tables in the same project (e.g. Nexus CMS's `media_items`).
+2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security. **This script drops and recreates Pulse's tables every time it's run**, so re-running it later (e.g. after a schema update) wipes any posts/comments/accounts created so far — plan to redo the "first admin" step below afterward.
 3. **Turn off email confirmation**: Authentication → Providers → Email → disable **"Confirm email"**. Pulse signs people up with a synthetic `username@pulse.local` address (so nobody needs a real inbox just to use a demo forum) — with confirmation left on, nobody could ever confirm that address and sign-ups would be stuck forever.
 4. In Project Settings → API, copy the **Project URL** and the **public `anon` key** (not the `service_role` secret key — never put that in client-side code).
 5. Edit [`supabase-config.js`](supabase-config.js):
@@ -69,6 +69,10 @@ editor:
 ```sql
 update profiles set role = 'admin' where username = 'your-username';
 ```
+
+Re-running `supabase-schema.sql` later drops and recreates every Pulse table,
+so it also clears this role change along with all other data — repeat this
+step afterward if you do.
 
 ## How authorization works (no backend, so Postgres is the trust boundary)
 
