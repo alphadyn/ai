@@ -139,6 +139,13 @@ The pytest configuration lives in [pytest.ini](pytest.ini).
 
 This repository is designed as a collection of independent sample projects rather than a single monolithic application. Each project is self-contained and can be reused, adapted, or expanded on its own.
 
+## License
+
+The projects in this repository are licensed under the GNU General Public
+License, version 3 or any later version (GPL-3.0-or-later). See [LICENSE](LICENSE)
+for the license designation and official terms. Third-party dependencies,
+services, and assets remain subject to their own licenses and terms.
+
 ## Generation scripts
 
 Most project directories include a lightweight `generate_report.py` script that produces a simple HTML artifact such as `generated_report.html` when run with Python 3.
