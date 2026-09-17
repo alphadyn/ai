@@ -609,6 +609,9 @@ async function logout() {
   try { await pulse.logout(); } catch (_) { /* ignore */ }
   state.user = null;
   renderAuthNav();
+  showFeedView();
+  loadTags();
+  loadFeed(true);
   toast('Logged out.');
 }
 
