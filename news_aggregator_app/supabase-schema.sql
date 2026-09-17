@@ -79,7 +79,10 @@ $$;
 
 -- Prevent privilege escalation: only an admin (acting on someone else's row)
 -- may change a profile's role. A user updating their own avatar cannot also
--- sneak in role = 'admin'.
+-- sneak in role = 'admin'. auth.uid() is null for direct SQL (e.g. the
+-- Supabase SQL editor, used to bootstrap the first admin per the README) —
+-- only PostgREST-mediated requests carry a JWT, so that's the case this
+-- rule needs to restrict; direct SQL access is already a trusted context.
 create or replace function public.enforce_profile_role_immutable()
 returns trigger
 language plpgsql
@@ -87,7 +90,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if new.role is distinct from old.role and not public.is_admin() then
+  if new.role is distinct from old.role and auth.uid() is not null and not public.is_admin() then
     new.role := old.role;
   end if;
   return new;
