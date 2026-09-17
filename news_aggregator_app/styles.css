@@ -173,6 +173,14 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 .attachment-media { max-width: 100%; border-radius: var(--radius-sm); margin-top: 8px; display: block; border: 1px solid var(--line-soft); }
 
 .feed-more { text-align: center; margin-top: 18px; }
+.profile-results-panel { margin-bottom: 18px; }
+.search-section-heading { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.search-section-heading h2 { margin: 0; font-size: 1rem; }
+.profile-search-results { display: grid; gap: 8px; }
+.profile-search-result { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel); text-decoration: none; }
+.profile-search-result:hover { border-color: var(--accent); background: var(--panel-2); }
+.profile-search-result span { display: grid; min-width: 0; }
+.profile-search-result small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes rise-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -289,6 +297,12 @@ label input[type="file"] { padding: 8px 10px; cursor: pointer; }
 .nav-avatar-btn:hover { transform: scale(1.06); }
 .nav-avatar-btn .avatar { width: 27px; height: 27px; }
 .author-line { display: inline-flex; align-items: center; gap: 6px; }
+.profile-link { display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.profile-link:hover { color: var(--accent-2); }
+.comment .profile-link { color: var(--accent-2); font-weight: 700; }
+.profile-status { color: var(--text); font-size: 1rem; }
+.profile-url { margin: 0 0 18px; overflow-wrap: anywhere; }
+.profile-url a { color: var(--accent-2); }
 .avatar-preview-row { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .avatar-preview-row input[type="file"] { flex: 1; }
 

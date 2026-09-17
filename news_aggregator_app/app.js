@@ -331,6 +331,20 @@ const pulse = {
     return Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
   },
 
+  async searchProfiles(query, limit = 20) {
+    const cleanQuery = String(query || '').trim().replace(/[*,()]/g, '');
+    if (!cleanQuery) return [];
+    const { data } = await restFetch('GET', 'profiles', {
+      params: {
+        username: `ilike.*${cleanQuery}*`,
+        select: 'id,username,role,avatar_data_url,status,profile_url',
+        order: 'username.asc',
+        limit: String(limit),
+      },
+    });
+    return (data || []).map(toUser);
+  },
+
   async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
     const { data: rows } = await restFetch('GET', 'posts', { params: { select: '*' } });
     const posts = rows || [];
@@ -509,6 +523,26 @@ function avatarHtml(avatarDataUrl, name, sizeClass = '') {
   }
   const initial = escapeHtml((name || '?').trim().charAt(0).toUpperCase() || '?');
   return `<span class="${cls} avatar-placeholder" aria-hidden="true">${initial}</span>`;
+}
+
+function userUrl(id) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('user', id);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
+function profileLinkHtml(id, avatar, name, sizeClass = '') {
+  if (!id) return escapeHtml(name || 'Anonymous');
+  return `<a class="profile-link" href="${userUrl(id)}" data-profile="${escapeHtml(id)}">${avatarHtml(avatar, name, sizeClass)}<span>${escapeHtml(name || 'Anonymous')}</span></a>`;
+}
+
+function safeProfileUrl(value) {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
+  } catch (_) { return null; }
 }
 
 function timeAgo(iso) {
@@ -737,8 +771,27 @@ function renderActiveFilter() {
   document.getElementById('clear-filter-btn').addEventListener('click', () => {
     state.tag = null; state.query = null; state.offset = 0;
     document.getElementById('search-input').value = '';
+    renderProfileResults([]);
     renderActiveFilter(); loadTags(); loadFeed(true);
   });
+}
+
+function renderProfileResults(profiles) {
+  const el = document.getElementById('profile-results');
+  if (!profiles.length) { el.hidden = true; el.innerHTML = ''; return; }
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="search-section-heading">
+      <h2>People</h2>
+      <span class="muted small">${profiles.length} match${profiles.length === 1 ? '' : 'es'}</span>
+    </div>
+    <div class="profile-search-results">
+      ${profiles.map((profile) => `
+        <a class="profile-search-result" href="${userUrl(profile.id)}" data-profile="${escapeHtml(profile.id)}">
+          ${avatarHtml(profile.avatar, profile.username, 'avatar-sm')}
+          <span><strong>${escapeHtml(profile.username)}</strong>${profile.status ? `<small>${escapeHtml(profile.status)}</small>` : ''}</span>
+        </a>`).join('')}
+    </div>`;
 }
 
 document.getElementById('sort-tabs').addEventListener('click', (e) => {
@@ -751,11 +804,13 @@ document.getElementById('sort-tabs').addEventListener('click', (e) => {
   loadFeed(true);
 });
 
-document.getElementById('search-form').addEventListener('submit', (e) => {
+document.getElementById('search-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   state.query = document.getElementById('search-input').value.trim() || null;
   state.offset = 0;
   renderActiveFilter();
+  const profiles = state.query ? await pulse.searchProfiles(state.query) : [];
+  renderProfileResults(profiles);
   loadFeed(true);
   showFeedView();
 });
@@ -775,6 +830,7 @@ function postUrl(id) {
 function feedUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete('post');
+  url.searchParams.delete('user');
   url.hash = '';
   return `${url.pathname}${url.search}`;
 }
@@ -813,7 +869,7 @@ function postCardHtml(post) {
     <div class="post-body-col">
       <h3 class="post-title"><a href="${postUrl(post.id)}" data-open="${post.id}">${escapeHtml(post.title)}</a></h3>
       <div class="post-meta">
-        <span class="author-line">${avatarHtml(post.authorAvatar, post.authorName, 'avatar-sm')} by ${escapeHtml(post.authorName)}</span>
+        <span class="author-line">${profileLinkHtml(post.authorId, post.authorAvatar, post.authorName, 'avatar-sm')} <span>by</span></span>
         <span>${timeAgo(post.createdAt)}</span>
         ${post.linkUrl ? `<a href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener noreferrer">🔗 link</a>` : ''}
       </div>
@@ -866,6 +922,13 @@ function bindFeedEvents() {
     });
   });
 }
+
+document.addEventListener('click', (e) => {
+  const profileLink = e.target.closest('[data-profile]');
+  if (!profileLink) return;
+  e.preventDefault();
+  openPublicProfile(profileLink.dataset.profile);
+});
 
 async function castVote(kind, id, value, cardEl) {
   if (!cardEl) return;
@@ -923,6 +986,45 @@ function showProfileView() {
   document.getElementById('profile-view').hidden = false;
   document.getElementById('admin-view').hidden = true;
   renderProfileView();
+}
+
+function showPublicProfileView() {
+  document.getElementById('feed-view').hidden = true;
+  document.getElementById('post-view').hidden = true;
+  document.getElementById('profile-view').hidden = false;
+  document.getElementById('admin-view').hidden = true;
+}
+
+async function openPublicProfile(id, { updateUrl = true } = {}) {
+  if (updateUrl) history.pushState(null, '', userUrl(id));
+  const view = document.getElementById('profile-view');
+  showPublicProfileView();
+  view.innerHTML = '<p class="muted">Loading profile…</p>';
+  try {
+    const profile = await fetchProfile(id);
+    if (!profile) throw new Error('Profile not found.');
+    const user = toUser(profile);
+    const externalUrl = safeProfileUrl(user.profileUrl);
+    view.innerHTML = `
+      <button class="btn ghost profile-back" id="public-profile-back-btn" type="button">← Back to feed</button>
+      <section class="profile-panel public-profile">
+        <div class="profile-heading">
+          ${avatarHtml(user.avatar, user.username, 'avatar-lg')}
+          <div>
+            <p class="eyebrow">Community profile</p>
+            <h1>${escapeHtml(user.username)}</h1>
+            ${user.status ? `<p class="profile-status">${escapeHtml(user.status)}</p>` : '<p class="muted">No status yet.</p>'}
+          </div>
+        </div>
+        ${externalUrl ? `<p class="profile-url"><a href="${escapeHtml(externalUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(externalUrl)}</a></p>` : ''}
+        ${state.user && state.user.id === user.id ? '<button class="btn primary" id="edit-own-profile-btn" type="button">Edit profile</button>' : ''}
+      </section>`;
+    document.getElementById('public-profile-back-btn').onclick = showFeedView;
+    const editBtn = document.getElementById('edit-own-profile-btn');
+    if (editBtn) editBtn.onclick = showProfileView;
+  } catch (err) {
+    view.innerHTML = `<p class="form-error">Could not load profile: ${escapeHtml(err.message)}</p>`;
+  }
 }
 
 function renderProfileView() {
@@ -1050,8 +1152,8 @@ async function renderAdminView(tab) {
           <tbody>
             ${users.map((u) => `
               <tr data-id="${u.id}">
-                <td>${avatarHtml(u.avatar, u.username, 'avatar-sm')}</td>
-                <td>${escapeHtml(u.username)}</td>
+                <td><a class="profile-link" href="${userUrl(u.id)}" data-profile="${escapeHtml(u.id)}">${avatarHtml(u.avatar, u.username, 'avatar-sm')}</a></td>
+                <td><a class="profile-link" href="${userUrl(u.id)}" data-profile="${escapeHtml(u.id)}"><span>${escapeHtml(u.username)}</span></a></td>
                 <td><span class="role-badge${u.role === 'admin' ? ' admin' : ''}">${u.role}</span></td>
                 <td>${timeAgo(u.created_at)}</td>
                 <td>
@@ -1081,7 +1183,7 @@ async function renderAdminView(tab) {
             ${posts.map((p) => `
               <tr data-id="${p.id}">
                 <td><a href="${postUrl(p.id)}" data-open-admin-post="${p.id}">${escapeHtml(p.title)}</a></td>
-                <td>${escapeHtml(p.authorName)}</td>
+                <td>${profileLinkHtml(p.authorId, null, p.authorName)}</td>
                 <td>${p.score}</td>
                 <td>${p.commentCount}</td>
                 <td>${p.isDeleted ? '<span class="deleted-badge">deleted</span>' : 'active'}</td>
@@ -1121,8 +1223,7 @@ function commentHtml(comment) {
   return `
   <div class="comment${comment.isDeleted ? ' is-deleted' : ''}" data-id="${comment.id}">
     <div class="comment-header">
-      ${!comment.isDeleted ? avatarHtml(comment.authorAvatar, comment.authorName, 'avatar-sm') : ''}
-      <span class="comment-author">${escapeHtml(comment.authorName)}</span>
+      ${!comment.isDeleted ? profileLinkHtml(comment.authorId, comment.authorAvatar, comment.authorName, 'avatar-sm') : ''}
       <span>${timeAgo(comment.createdAt)}</span>
       <span class="comment-score">${comment.score}</span>
     </div>
@@ -1179,7 +1280,7 @@ async function openPost(id, { updateUrl = true } = {}) {
           <div style="flex:1; min-width:0;">
             <h1 class="post-title">${escapeHtml(post.title)}</h1>
             <div class="post-meta">
-              <span class="author-line">${avatarHtml(post.authorAvatar, post.authorName, 'avatar-sm')} by ${escapeHtml(post.authorName)}</span>
+              <span class="author-line">${profileLinkHtml(post.authorId, post.authorAvatar, post.authorName, 'avatar-sm')} <span>by</span></span>
               <span>${timeAgo(post.createdAt)}</span>
               ${post.linkUrl ? `<a href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener noreferrer">🔗 ${escapeHtml(post.linkUrl)}</a>` : ''}
             </div>
@@ -1376,6 +1477,7 @@ document.querySelector('.brand').addEventListener('click', (e) => {
   e.preventDefault();
   state.tag = null; state.query = null;
   document.getElementById('search-input').value = '';
+  renderProfileResults([]);
   renderActiveFilter();
   showFeedView();
   loadFeed(true);
@@ -1383,8 +1485,11 @@ document.querySelector('.brand').addEventListener('click', (e) => {
 
 window.addEventListener('popstate', () => {
   const postId = new URLSearchParams(window.location.search).get('post');
+  const userId = new URLSearchParams(window.location.search).get('user');
   if (postId) {
     openPost(postId, { updateUrl: false });
+  } else if (userId) {
+    openPublicProfile(userId, { updateUrl: false });
   } else {
     showFeedView();
     loadFeed(true);
@@ -1395,6 +1500,8 @@ window.addEventListener('popstate', () => {
   await refreshMe();
   loadTags();
   const postId = new URLSearchParams(window.location.search).get('post');
+  const userId = new URLSearchParams(window.location.search).get('user');
   if (postId) openPost(postId, { updateUrl: false });
+  else if (userId) openPublicProfile(userId, { updateUrl: false });
   else loadFeed(true);
 })();

@@ -22,6 +22,8 @@ Pages.
 - **Registered users** (`user` role) post and comment under a persistent username, managed via Supabase Auth.
 - **Administrators** (`admin` role) can delete/restore any post or comment and manage user roles.
 - **Profiles**: registered users can open their profile screen to edit their name, status, profile URL, and picture (PNG/JPEG/GIF/WEBP/SVG, up to 256KB). The picture is shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
+- Usernames and avatars link to public profile screens at `index.html?user=<user-id>`, so anyone can view a user's name, status, picture, and URL.
+- The search box also searches public profiles by username and links directly to matching profile screens.
 
 ### Posts
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).
