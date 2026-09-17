@@ -27,6 +27,7 @@ Pages.
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).
 - Up to 12 free-form tags per post for categorization and search.
 - Upvote / downvote with one vote per user (or per anonymous browser id) — score updates live.
+- Every post has a shareable URL in the form `index.html?post=<post-id>` that opens its detail view directly, including on static hosts.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
 - Post deletion restricted to the original author or an admin (soft delete); only an admin can restore a deleted post.

@@ -726,6 +726,21 @@ document.getElementById('search-form').addEventListener('submit', (e) => {
 /* Feed rendering                                                          */
 /* ---------------------------------------------------------------------- */
 
+function postUrl(id) {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.hash = '';
+  url.searchParams.set('post', id);
+  return `${url.pathname}?${url.searchParams.toString()}`;
+}
+
+function feedUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('post');
+  url.hash = '';
+  return `${url.pathname}${url.search}`;
+}
+
 function attachmentIsImage(att) {
   return (att.mimeType || '').startsWith('image/');
 }
@@ -758,7 +773,7 @@ function postCardHtml(post) {
       <button class="vote-btn down${post.myVote === -1 ? ' is-active-down' : ''}" data-vote="-1" aria-label="Downvote">▼</button>
     </div>
     <div class="post-body-col">
-      <h3 class="post-title"><a href="#" data-open="${post.id}">${escapeHtml(post.title)}</a></h3>
+      <h3 class="post-title"><a href="${postUrl(post.id)}" data-open="${post.id}">${escapeHtml(post.title)}</a></h3>
       <div class="post-meta">
         <span class="author-line">${avatarHtml(post.authorAvatar, post.authorName, 'avatar-sm')} by ${escapeHtml(post.authorName)}</span>
         <span>${timeAgo(post.createdAt)}</span>
@@ -852,7 +867,7 @@ function showFeedView() {
   document.getElementById('feed-view').hidden = false;
   document.getElementById('post-view').hidden = true;
   document.getElementById('admin-view').hidden = true;
-  history.replaceState(null, '', '#/');
+  history.replaceState(null, '', feedUrl());
 }
 
 function showPostView() {
@@ -936,7 +951,7 @@ async function renderAdminView(tab) {
           <tbody>
             ${posts.map((p) => `
               <tr data-id="${p.id}">
-                <td><a href="#" data-open-admin-post="${p.id}">${escapeHtml(p.title)}</a></td>
+                <td><a href="${postUrl(p.id)}" data-open-admin-post="${p.id}">${escapeHtml(p.title)}</a></td>
                 <td>${escapeHtml(p.authorName)}</td>
                 <td>${p.score}</td>
                 <td>${p.commentCount}</td>
@@ -1014,7 +1029,8 @@ function replyFormHtml(parentId) {
   </form>`;
 }
 
-async function openPost(id) {
+async function openPost(id, { updateUrl = true } = {}) {
+  if (updateUrl) history.pushState(null, '', postUrl(id));
   const view = document.getElementById('post-view');
   view.innerHTML = '<p class="muted">Loading…</p>';
   showPostView();
@@ -1236,8 +1252,20 @@ document.querySelector('.brand').addEventListener('click', (e) => {
   loadFeed(true);
 });
 
+window.addEventListener('popstate', () => {
+  const postId = new URLSearchParams(window.location.search).get('post');
+  if (postId) {
+    openPost(postId, { updateUrl: false });
+  } else {
+    showFeedView();
+    loadFeed(true);
+  }
+});
+
 (async function init() {
   await refreshMe();
   loadTags();
-  loadFeed(true);
+  const postId = new URLSearchParams(window.location.search).get('post');
+  if (postId) openPost(postId, { updateUrl: false });
+  else loadFeed(true);
 })();
