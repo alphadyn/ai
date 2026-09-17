@@ -1,4 +1,4 @@
 window.PULSE_SUPABASE = {
-  url: 'https://your-project.supabase.co',
-  anonKey: 'your-anon-public-key'
+  url: 'https://vftmcftccahjlxbxcnsf.supabase.co',
+  anonKey: 'sb_publishable_I8I-cRDhS60UoUgCvVvwnQ_MyKI9u14'
 };
