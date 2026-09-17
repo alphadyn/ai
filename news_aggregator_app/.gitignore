@@ -1,0 +1,6 @@
+pulse.db
+pulse.db-wal
+pulse.db-shm
+server.pem
+server.key
+.env
