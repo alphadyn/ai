@@ -44,8 +44,19 @@ create table if not exists profiles (
   username text unique not null,
   role text not null default 'user' check (role in ('user', 'admin')),
   avatar_data_url text check (avatar_data_url is null or char_length(avatar_data_url) <= 400000),
+  status text not null default '' check (char_length(status) <= 160),
+  profile_url text check (profile_url is null or char_length(profile_url) <= 2000),
   created_at timestamptz not null default now()
 );
+
+-- These statements also make the schema updateable for existing Pulse projects
+-- without requiring users to recreate their profiles table.
+alter table profiles add column if not exists status text not null default '';
+alter table profiles add column if not exists profile_url text;
+alter table profiles drop constraint if exists profiles_status_length;
+alter table profiles add constraint profiles_status_length check (char_length(status) <= 160);
+alter table profiles drop constraint if exists profiles_profile_url_length;
+alter table profiles add constraint profiles_profile_url_length check (profile_url is null or char_length(profile_url) <= 2000);
 
 -- Auto-create a profile row whenever someone signs up via Supabase Auth.
 create or replace function public.handle_new_user()

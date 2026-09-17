@@ -159,7 +159,14 @@ function hotScore(upvotes, downvotes, createdAt) {
 }
 
 function toUser(profile) {
-  return { id: profile.id, username: profile.username, role: profile.role, avatar: profile.avatar_data_url };
+  return {
+    id: profile.id,
+    username: profile.username,
+    role: profile.role,
+    avatar: profile.avatar_data_url,
+    status: profile.status || '',
+    profileUrl: profile.profile_url || '',
+  };
 }
 
 async function fetchProfile(userId) {
@@ -286,6 +293,35 @@ const pulse = {
       body: { avatar_data_url: avatarDataUrl },
       prefer: 'return=minimal',
     });
+  },
+
+  async updateProfile({ username, status, profileUrl, avatar }) {
+    const session = getSession();
+    if (!session || !session.user_id) throw new Error('Log in to edit your profile.');
+    username = (username || '').trim();
+    status = (status || '').trim();
+    profileUrl = (profileUrl || '').trim();
+    if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) {
+      throw new Error('Name must be 3-32 characters (letters, numbers, _ . -).');
+    }
+    if (status.length > 160) throw new Error('Status must be 160 characters or fewer.');
+    if (profileUrl) {
+      let parsedUrl;
+      try { parsedUrl = new URL(profileUrl); } catch (_) { throw new Error('Profile URL must be a valid URL.'); }
+      if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error('Profile URL must use http or https.');
+      if (profileUrl.length > 2000) throw new Error('Profile URL must be 2000 characters or fewer.');
+    }
+    if (avatar && (!/^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,/.test(avatar)
+      || (avatar.length * 3) / 4 > 256 * 1024)) {
+      throw new Error('Avatar must be a supported image smaller than 256KB.');
+    }
+    const { data } = await restFetch('PATCH', 'profiles', {
+      params: { id: `eq.${session.user_id}` },
+      body: { username, status, profile_url: profileUrl || null, avatar_data_url: avatar || null },
+      prefer: 'return=representation',
+    });
+    if (!data || !data.length) throw new Error('Profile could not be updated.');
+    return toUser(data[0]);
   },
 
   async listTags() {
@@ -529,12 +565,14 @@ function renderAuthNav() {
   const nav = document.getElementById('auth-nav');
   if (state.user) {
     nav.innerHTML = `
-      <button class="nav-avatar-btn" id="avatar-nav-btn" type="button" title="Change profile picture">${avatarHtml(state.user.avatar, state.user.username)}</button>
+      <button class="nav-avatar-btn" id="avatar-nav-btn" type="button" title="View profile">${avatarHtml(state.user.avatar, state.user.username)}</button>
       <span class="muted small">Hi, <strong>${escapeHtml(state.user.username)}</strong>${state.user.role === 'admin' ? ' <span title="Administrator">🛡️</span>' : ''}</span>
+      <button class="btn ghost" id="profile-nav-btn" type="button">Profile</button>
       ${state.user.role === 'admin' ? '<button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>' : ''}
       <button class="btn ghost" id="logout-btn" type="button">Log out</button>`;
     document.getElementById('logout-btn').addEventListener('click', logout);
-    document.getElementById('avatar-nav-btn').addEventListener('click', openAvatarModal);
+    document.getElementById('avatar-nav-btn').addEventListener('click', showProfileView);
+    document.getElementById('profile-nav-btn').addEventListener('click', showProfileView);
     const adminBtn = document.getElementById('admin-nav-btn');
     if (adminBtn) adminBtn.addEventListener('click', showAdminView);
   } else {
@@ -866,6 +904,7 @@ document.getElementById('load-more-btn').addEventListener('click', () => loadFee
 function showFeedView() {
   document.getElementById('feed-view').hidden = false;
   document.getElementById('post-view').hidden = true;
+  document.getElementById('profile-view').hidden = true;
   document.getElementById('admin-view').hidden = true;
   history.replaceState(null, '', feedUrl());
 }
@@ -873,13 +912,103 @@ function showFeedView() {
 function showPostView() {
   document.getElementById('feed-view').hidden = true;
   document.getElementById('post-view').hidden = false;
+  document.getElementById('profile-view').hidden = true;
   document.getElementById('admin-view').hidden = true;
+}
+
+function showProfileView() {
+  if (!state.user) { openAuthModal('login'); return; }
+  document.getElementById('feed-view').hidden = true;
+  document.getElementById('post-view').hidden = true;
+  document.getElementById('profile-view').hidden = false;
+  document.getElementById('admin-view').hidden = true;
+  renderProfileView();
+}
+
+function renderProfileView() {
+  const root = document.getElementById('profile-view');
+  const user = state.user;
+  root.innerHTML = `
+    <button class="btn ghost profile-back" id="profile-back-btn" type="button">← Back to feed</button>
+    <section class="profile-panel">
+      <div class="profile-heading">
+        ${avatarHtml(user.avatar, user.username, 'avatar-lg')}
+        <div>
+          <p class="eyebrow">About your profile</p>
+          <h1>Your profile</h1>
+          <p class="muted">This information appears alongside your posts and comments.</p>
+        </div>
+      </div>
+      <form id="profile-form" class="profile-form">
+        <label>Name
+          <input type="text" id="profile-name" value="${escapeHtml(user.username)}" required minlength="3" maxlength="32" autocomplete="nickname">
+        </label>
+        <label>Status <span class="muted small">(160 characters maximum)</span>
+          <textarea id="profile-status" maxlength="160" rows="3" placeholder="What are you working on?">${escapeHtml(user.status)}</textarea>
+        </label>
+        <label>URL
+          <input type="url" id="profile-url" value="${escapeHtml(user.profileUrl)}" maxlength="2000" placeholder="https://example.com/you">
+        </label>
+        <label>Profile picture
+          <input type="file" id="profile-avatar" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml">
+          <span class="muted small">PNG, JPEG, GIF, WEBP, or SVG up to 256KB.</span>
+        </label>
+        <div class="profile-avatar-preview" id="profile-avatar-preview">${avatarHtml(user.avatar, user.username, 'avatar-lg')}</div>
+        <button type="button" class="btn ghost profile-remove-avatar" id="profile-remove-avatar">Remove picture</button>
+        <p class="form-error" id="profile-error" hidden></p>
+        <footer>
+          <button type="submit" class="btn primary" id="profile-save-btn">Save profile</button>
+        </footer>
+      </form>
+    </section>`;
+
+  let pendingAvatar = user.avatar || null;
+  const preview = document.getElementById('profile-avatar-preview');
+  const avatarInput = document.getElementById('profile-avatar');
+  avatarInput.onchange = async () => {
+    const file = avatarInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast('Please choose an image file.'); avatarInput.value = ''; return; }
+    if (file.size > 256 * 1024) { toast('Image must be smaller than 256KB.'); avatarInput.value = ''; return; }
+    pendingAvatar = await readFileAsDataUrl(file);
+    preview.innerHTML = avatarHtml(pendingAvatar, user.username, 'avatar-lg');
+  };
+  document.getElementById('profile-remove-avatar').onclick = () => {
+    pendingAvatar = null;
+    avatarInput.value = '';
+    preview.innerHTML = avatarHtml(null, user.username, 'avatar-lg');
+  };
+  document.getElementById('profile-back-btn').onclick = showFeedView;
+  document.getElementById('profile-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById('profile-error');
+    const saveBtn = document.getElementById('profile-save-btn');
+    errorEl.hidden = true;
+    saveBtn.disabled = true;
+    try {
+      state.user = await pulse.updateProfile({
+        username: document.getElementById('profile-name').value,
+        status: document.getElementById('profile-status').value,
+        profileUrl: document.getElementById('profile-url').value,
+        avatar: pendingAvatar,
+      });
+      renderAuthNav();
+      renderProfileView();
+      toast('Profile updated.');
+    } catch (err) {
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+    } finally {
+      saveBtn.disabled = false;
+    }
+  };
 }
 
 function showAdminView() {
   if (!state.user || state.user.role !== 'admin') { toast('Admin access required.'); return; }
   document.getElementById('feed-view').hidden = true;
   document.getElementById('post-view').hidden = true;
+  document.getElementById('profile-view').hidden = true;
   document.getElementById('admin-view').hidden = false;
   renderAdminView('overview');
 }

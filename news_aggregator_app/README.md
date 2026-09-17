@@ -21,7 +21,7 @@ Pages.
 - **Anonymous browsing and posting** — no account required to read, post, comment, or vote.
 - **Registered users** (`user` role) post and comment under a persistent username, managed via Supabase Auth.
 - **Administrators** (`admin` role) can delete/restore any post or comment and manage user roles.
-- **Profile pictures**: registered users can upload an avatar (PNG/JPEG/GIF/WEBP/SVG, up to 256KB) from the nav bar. It's shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
+- **Profiles**: registered users can open their profile screen to edit their name, status, profile URL, and picture (PNG/JPEG/GIF/WEBP/SVG, up to 256KB). The picture is shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
 
 ### Posts
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).

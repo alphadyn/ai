@@ -181,6 +181,18 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 .post-detail-back { margin-bottom: 14px; }
 .post-detail { background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 22px; box-shadow: var(--shadow-sm); animation: rise-in .3s var(--ease); }
 .post-detail .post-title { font-size: 1.5rem; font-weight: 750; }
+.profile-back { margin-bottom: 14px; }
+.profile-panel { max-width: 680px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); animation: rise-in .3s var(--ease); }
+.profile-heading { display: flex; gap: 16px; align-items: center; margin-bottom: 24px; }
+.profile-heading h1 { margin: 0; font-size: 1.5rem; }
+.profile-heading p { margin: 2px 0 0; }
+.profile-heading .eyebrow { color: var(--accent); font-size: .74rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.profile-form { display: grid; gap: 16px; }
+.profile-form textarea { resize: vertical; min-height: 82px; }
+.profile-form label { display: grid; gap: 6px; }
+.profile-avatar-preview { min-height: 68px; display: flex; align-items: center; }
+.profile-remove-avatar { justify-self: start; }
+.profile-form footer { display: flex; justify-content: flex-end; }
 .comment-form { margin: 18px 0 22px; }
 .comment-thread { display: flex; flex-direction: column; gap: 14px; }
 .comment { border-left: 2px solid var(--line-soft); padding-left: 14px; transition: border-color .15s var(--ease); }
