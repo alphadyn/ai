@@ -30,6 +30,8 @@ python3 -m http.server 8000
 3. Update [supabase-config.js](supabase-config.js) with your project URL and anon key.
 4. Reload the app.
 
+If you point Postboard at a Supabase project that is shared with other apps, make sure none of them already use a table named `posts` — Postboard uses its own `postboard_posts` table to avoid any collision. Re-run [supabase-schema.sql](supabase-schema.sql) if you previously created a `posts` table for this app; it now creates `postboard_posts` instead.
+
 The demo uses public CRUD policies so it can run as a static frontend without auth. For production or private usage, replace those policies with authenticated, user-scoped access.
 
 Create a public Storage bucket named `postboard-attachments` in Supabase, or change `storageBucket` in [supabase-config.js](supabase-config.js) to match a bucket you already created. The app uploads attached files there and stores only the URL metadata in the posts table.

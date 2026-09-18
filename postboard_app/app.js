@@ -39,7 +39,7 @@ const elements = {
 };
 
 async function loadPosts() {
-  const response = await supabaseRequest('/rest/v1/posts?select=*&order=created_at.desc');
+  const response = await supabaseRequest('/rest/v1/postboard_posts?select=*&order=created_at.desc');
   if (!response.ok) {
     throw new Error(await getApiError(response, 'Could not load posts from Supabase.'));
   }
@@ -113,7 +113,7 @@ function chunkArray(items, size) {
 }
 
 async function savePosts() {
-  const existingResponse = await supabaseRequest('/rest/v1/posts?select=id');
+  const existingResponse = await supabaseRequest('/rest/v1/postboard_posts?select=id');
   if (!existingResponse.ok) {
     throw new Error(await getApiError(existingResponse, 'Could not read existing posts from Supabase.'));
   }
@@ -122,14 +122,14 @@ async function savePosts() {
   const removedIds = existingPosts.map((post) => post.id).filter((id) => !currentIds.has(id));
 
   if (removedIds.length) {
-    const response = await supabaseRequest(`/rest/v1/posts?id=in.(${removedIds.join(',')})`, { method: 'DELETE' });
+    const response = await supabaseRequest(`/rest/v1/postboard_posts?id=in.(${removedIds.join(',')})`, { method: 'DELETE' });
     if (!response.ok) throw new Error(await getApiError(response, 'Could not delete posts from Supabase.'));
   }
 
   if (state.posts.length) {
     const batches = chunkArray(state.posts.map(mapPostToSupabase), 10);
     for (const batch of batches) {
-      const response = await supabaseRequest('/rest/v1/posts?on_conflict=id', {
+      const response = await supabaseRequest('/rest/v1/postboard_posts?on_conflict=id', {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
         body: JSON.stringify(batch),
