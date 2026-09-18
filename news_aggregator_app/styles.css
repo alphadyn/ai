@@ -309,10 +309,20 @@ label input[type="file"] { padding: 8px 10px; cursor: pointer; }
 .avatar-preview-row input[type="file"] { flex: 1; }
 
 @media (max-width: 860px) {
+  .topbar-inner { flex-wrap: wrap; gap: 10px 14px; }
+  .search-form { order: 3; flex-basis: 100%; max-width: none; }
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: static; flex-direction: row; flex-wrap: wrap; }
   .panel { flex: 1; min-width: 220px; }
-  .search-form { display: none; }
+}
+
+@media (max-width: 420px) {
+  .topbar-inner { padding: 10px 14px; }
+  .brand { font-size: 1.1rem; }
+  .auth-nav { gap: 5px; }
+  .auth-nav .btn { padding: 7px 9px; font-size: .82rem; }
+  .search-form input { min-width: 0; padding-inline: 11px; }
+  .search-form button { padding-inline: 12px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
