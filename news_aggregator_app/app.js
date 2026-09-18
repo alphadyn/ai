@@ -596,6 +596,7 @@ const state = {
   limit: 30,
   pendingAttachments: [],
   authMode: 'login',
+  feedLoaded: false,
 };
 
 /* ---------------------------------------------------------------------- */
@@ -977,6 +978,7 @@ async function loadFeed(reset) {
   if (reset) { state.offset = 0; list.innerHTML = '<p class="muted">Loading posts…</p>'; }
   try {
     const posts = await pulse.listPosts({ sort: state.sort, tag: state.tag, query: state.query, limit: state.limit, offset: state.offset });
+    state.feedLoaded = true;
     if (reset) list.innerHTML = '';
     if (!posts.length && reset) {
       list.innerHTML = '<p class="muted">No posts match yet. Be the first to submit one!</p>';
@@ -1063,6 +1065,7 @@ function showFeedView() {
   document.getElementById('profile-view').hidden = true;
   document.getElementById('admin-view').hidden = true;
   history.replaceState(null, '', feedUrl());
+  if (!state.feedLoaded) loadFeed(true);
 }
 
 function showPostView() {
