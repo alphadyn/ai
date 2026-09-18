@@ -21,7 +21,7 @@ Pages.
 - **Anonymous browsing and posting** — no account required to read, post, comment, or vote.
 - **Registered users** (`user` role) post and comment under a persistent username, managed via Supabase Auth.
 - **Administrators** (`admin` role) can delete/restore any post or comment and manage user roles.
-- **Profiles**: registered users can open their profile screen to edit their name, status, profile URL, and picture (PNG/JPEG/GIF/WEBP/SVG, up to 256KB). The picture is shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
+- **Profiles**: registered users can open their profile screen to edit their username, display name, status, profile URL, and picture (PNG/JPEG/GIF/WEBP/SVG, up to 256KB). The picture is shown as a small icon next to their username, their posts, their comments, and in the admin Users table. Anonymous authors and users without an avatar get a generated initial icon instead.
 - Usernames and avatars link to public profile screens at `index.html?user=<user-id>`, so anyone can view a user's name, status, picture, and URL.
 - The search box also searches public profiles by username and links directly to matching profile screens.
 
@@ -51,6 +51,7 @@ Pages.
 
 1. Create a free project at [supabase.com](https://supabase.com), or reuse an existing one — Pulse's tables (`profiles`, `posts`, `comments`, `post_votes`, `comment_votes`) are self-contained and won't collide with other apps' tables in the same project (e.g. Nexus CMS's `media_items`).
 2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security. **This script drops and recreates Pulse's tables every time it's run**, so re-running it later (e.g. after a schema update) wipes any posts/comments/accounts created so far — plan to redo the "first admin" step below afterward.
+  If Pulse is already running and you only need to add the profile fields, run [`profile-fields-migration.sql`](profile-fields-migration.sql) instead. It preserves existing data and reloads the PostgREST schema cache, fixing errors such as `Could not find the 'profile_url' column of 'profiles' in the schema cache`.
 3. **Turn off email confirmation**: Authentication → Providers → Email → disable **"Confirm email"**. Pulse signs people up with a synthetic `username@pulse.local` address (so nobody needs a real inbox just to use a demo forum) — with confirmation left on, nobody could ever confirm that address and sign-ups would be stuck forever.
 4. In Project Settings → API, copy the **Project URL** and the **public `anon` key** (not the `service_role` secret key — never put that in client-side code).
 5. Edit [`supabase-config.js`](supabase-config.js):

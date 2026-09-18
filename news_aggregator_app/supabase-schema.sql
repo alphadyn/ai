@@ -42,6 +42,7 @@ create extension if not exists pgcrypto;
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
+  name text not null default '',
   role text not null default 'user' check (role in ('user', 'admin')),
   avatar_data_url text check (avatar_data_url is null or char_length(avatar_data_url) <= 400000),
   status text not null default '' check (char_length(status) <= 160),
@@ -53,6 +54,10 @@ create table if not exists profiles (
 -- without requiring users to recreate their profiles table.
 alter table profiles add column if not exists status text not null default '';
 alter table profiles add column if not exists profile_url text;
+alter table profiles add column if not exists name text not null default '';
+update profiles set name = username where name = '';
+alter table profiles drop constraint if exists profiles_name_length;
+alter table profiles add constraint profiles_name_length check (char_length(name) <= 80);
 alter table profiles drop constraint if exists profiles_status_length;
 alter table profiles add constraint profiles_status_length check (char_length(status) <= 160);
 alter table profiles drop constraint if exists profiles_profile_url_length;
@@ -66,8 +71,12 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, username)
-  values (new.id, coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)));
+  insert into public.profiles (id, username, name)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1)),
+    coalesce(new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'username', split_part(new.email, '@', 1))
+  );
   return new;
 end;
 $$;

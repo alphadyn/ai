@@ -162,6 +162,7 @@ function toUser(profile) {
   return {
     id: profile.id,
     username: profile.username,
+    name: profile.name || profile.username,
     role: profile.role,
     avatar: profile.avatar_data_url,
     status: profile.status || '',
@@ -295,15 +296,17 @@ const pulse = {
     });
   },
 
-  async updateProfile({ username, status, profileUrl, avatar }) {
+  async updateProfile({ username, name, status, profileUrl, avatar }) {
     const session = getSession();
     if (!session || !session.user_id) throw new Error('Log in to edit your profile.');
     username = (username || '').trim();
+    name = (name || '').trim();
     status = (status || '').trim();
     profileUrl = (profileUrl || '').trim();
     if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) {
-      throw new Error('Name must be 3-32 characters (letters, numbers, _ . -).');
+      throw new Error('Username must be 3-32 characters (letters, numbers, _ . -).');
     }
+    if (name.length > 80) throw new Error('Display name must be 80 characters or fewer.');
     if (status.length > 160) throw new Error('Status must be 160 characters or fewer.');
     if (profileUrl) {
       let parsedUrl;
@@ -317,7 +320,7 @@ const pulse = {
     }
     const { data } = await restFetch('PATCH', 'profiles', {
       params: { id: `eq.${session.user_id}` },
-      body: { username, status, profile_url: profileUrl || null, avatar_data_url: avatar || null },
+      body: { username, name, status, profile_url: profileUrl || null, avatar_data_url: avatar || null },
       prefer: 'return=representation',
     });
     if (!data || !data.length) throw new Error('Profile could not be updated.');
@@ -336,9 +339,9 @@ const pulse = {
     if (!cleanQuery) return [];
     const { data } = await restFetch('GET', 'profiles', {
       params: {
-        username: `ilike.*${cleanQuery}*`,
-        select: 'id,username,role,avatar_data_url,status,profile_url',
-        order: 'username.asc',
+        or: `(username.ilike.*${cleanQuery}*,name.ilike.*${cleanQuery}*)`,
+        select: 'id,username,name,role,avatar_data_url,status,profile_url',
+        order: 'name.asc',
         limit: String(limit),
       },
     });
@@ -403,7 +406,7 @@ const pulse = {
     const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
     const session = getSession();
     const authorId = session && session.user_id ? session.user_id : null;
-    const authorName = authorId && state.user ? state.user.username : 'Anonymous';
+    const authorName = authorId && state.user ? state.user.name : 'Anonymous';
     const { data } = await restFetch('POST', 'posts', {
       body: {
         author_id: authorId,
@@ -472,7 +475,7 @@ const pulse = {
 
   async adminListUsers() {
     const { data } = await restFetch('GET', 'profiles', { params: { select: '*', order: 'created_at.asc' } });
-    return (data || []).map((p) => ({ id: p.id, username: p.username, role: p.role, avatar: p.avatar_data_url, created_at: p.created_at }));
+    return (data || []).map((p) => ({ id: p.id, username: p.username, name: p.name || p.username, role: p.role, avatar: p.avatar_data_url, created_at: p.created_at }));
   },
 
   async adminSetUserRole(userId, role) {
@@ -600,7 +603,7 @@ function renderAuthNav() {
   if (state.user) {
     nav.innerHTML = `
       <button class="nav-avatar-btn" id="avatar-nav-btn" type="button" title="View profile">${avatarHtml(state.user.avatar, state.user.username)}</button>
-      <span class="muted small">Hi, <strong>${escapeHtml(state.user.username)}</strong>${state.user.role === 'admin' ? ' <span title="Administrator">🛡️</span>' : ''}</span>
+      <span class="muted small">Hi, <strong>${escapeHtml(state.user.name)}</strong>${state.user.role === 'admin' ? ' <span title="Administrator">🛡️</span>' : ''}</span>
       <button class="btn ghost" id="profile-nav-btn" type="button">Profile</button>
       ${state.user.role === 'admin' ? '<button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>' : ''}
       <button class="btn ghost" id="logout-btn" type="button">Log out</button>`;
@@ -789,7 +792,7 @@ function renderProfileResults(profiles) {
       ${profiles.map((profile) => `
         <a class="profile-search-result" href="${userUrl(profile.id)}" data-profile="${escapeHtml(profile.id)}">
           ${avatarHtml(profile.avatar, profile.username, 'avatar-sm')}
-          <span><strong>${escapeHtml(profile.username)}</strong>${profile.status ? `<small>${escapeHtml(profile.status)}</small>` : ''}</span>
+          <span><strong>${escapeHtml(profile.name)}</strong><small>@${escapeHtml(profile.username)}${profile.status ? ` · ${escapeHtml(profile.status)}` : ''}</small></span>
         </a>`).join('')}
     </div>`;
 }
@@ -1009,10 +1012,11 @@ async function openPublicProfile(id, { updateUrl = true } = {}) {
       <button class="btn ghost profile-back" id="public-profile-back-btn" type="button">← Back to feed</button>
       <section class="profile-panel public-profile">
         <div class="profile-heading">
-          ${avatarHtml(user.avatar, user.username, 'avatar-lg')}
+          ${avatarHtml(user.avatar, user.name, 'avatar-lg')}
           <div>
             <p class="eyebrow">Community profile</p>
-            <h1>${escapeHtml(user.username)}</h1>
+            <h1>${escapeHtml(user.name)}</h1>
+            <p class="muted profile-username">@${escapeHtml(user.username)}</p>
             ${user.status ? `<p class="profile-status">${escapeHtml(user.status)}</p>` : '<p class="muted">No status yet.</p>'}
           </div>
         </div>
@@ -1034,16 +1038,20 @@ function renderProfileView() {
     <button class="btn ghost profile-back" id="profile-back-btn" type="button">← Back to feed</button>
     <section class="profile-panel">
       <div class="profile-heading">
-        ${avatarHtml(user.avatar, user.username, 'avatar-lg')}
+        ${avatarHtml(user.avatar, user.name, 'avatar-lg')}
         <div>
           <p class="eyebrow">About your profile</p>
-          <h1>Your profile</h1>
+          <h1>${escapeHtml(user.name)}</h1>
+          <p class="muted profile-username">@${escapeHtml(user.username)}</p>
           <p class="muted">This information appears alongside your posts and comments.</p>
         </div>
       </div>
       <form id="profile-form" class="profile-form">
+        <label>Username <span class="muted small">(3-32 letters, numbers, _ . -)</span>
+          <input type="text" id="profile-username" value="${escapeHtml(user.username)}" required minlength="3" maxlength="32" autocomplete="username">
+        </label>
         <label>Name
-          <input type="text" id="profile-name" value="${escapeHtml(user.username)}" required minlength="3" maxlength="32" autocomplete="nickname">
+          <input type="text" id="profile-name" value="${escapeHtml(user.name === user.username ? '' : user.name)}" maxlength="80" autocomplete="name" placeholder="Optional">
         </label>
         <label>Status <span class="muted small">(160 characters maximum)</span>
           <textarea id="profile-status" maxlength="160" rows="3" placeholder="What are you working on?">${escapeHtml(user.status)}</textarea>
@@ -1089,7 +1097,8 @@ function renderProfileView() {
     saveBtn.disabled = true;
     try {
       state.user = await pulse.updateProfile({
-        username: document.getElementById('profile-name').value,
+        username: document.getElementById('profile-username').value,
+        name: document.getElementById('profile-name').value,
         status: document.getElementById('profile-status').value,
         profileUrl: document.getElementById('profile-url').value,
         avatar: pendingAvatar,
