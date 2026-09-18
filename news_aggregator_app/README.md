@@ -1,4 +1,4 @@
-# Pulse — Social News Aggregator
+# Pulse
 
 Pulse is a Reddit/Hacker-News-style social news aggregator. Anyone can post,
 anyone can comment, and registered users get persistent identity, voting
