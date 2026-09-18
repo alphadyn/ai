@@ -337,15 +337,28 @@ const pulse = {
   async searchProfiles(query, limit = 20) {
     const cleanQuery = String(query || '').trim().replace(/[*,()]/g, '');
     if (!cleanQuery) return [];
-    const { data } = await restFetch('GET', 'profiles', {
-      params: {
-        or: `(username.ilike.*${cleanQuery}*,name.ilike.*${cleanQuery}*)`,
-        select: 'id,username,name,role,avatar_data_url,status,profile_url',
-        order: 'name.asc',
-        limit: String(limit),
-      },
-    });
-    return (data || []).map(toUser);
+    try {
+      const { data } = await restFetch('GET', 'profiles', {
+        params: {
+          or: `(username.ilike.*${cleanQuery}*,name.ilike.*${cleanQuery}*)`,
+          select: 'id,username,name,role,avatar_data_url,status,profile_url',
+          order: 'name.asc',
+          limit: String(limit),
+        },
+      });
+      return (data || []).map(toUser);
+    } catch (_) {
+      // Keep username search working while an existing project refreshes its schema.
+      const { data } = await restFetch('GET', 'profiles', {
+        params: {
+          username: `ilike.*${cleanQuery}*`,
+          select: 'id,username,role,avatar_data_url',
+          order: 'username.asc',
+          limit: String(limit),
+        },
+      });
+      return (data || []).map(toUser);
+    }
   },
 
   async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
@@ -812,7 +825,10 @@ document.getElementById('search-form').addEventListener('submit', async (e) => {
   state.query = document.getElementById('search-input').value.trim() || null;
   state.offset = 0;
   renderActiveFilter();
-  const profiles = state.query ? await pulse.searchProfiles(state.query) : [];
+  let profiles = [];
+  if (state.query) {
+    try { profiles = await pulse.searchProfiles(state.query); } catch (_) { /* post search still works */ }
+  }
   renderProfileResults(profiles);
   loadFeed(true);
   showFeedView();
