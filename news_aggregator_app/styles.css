@@ -318,6 +318,9 @@ label input[type="file"] { padding: 8px 10px; cursor: pointer; }
 
 @media (max-width: 420px) {
   .topbar-inner { padding: 10px 14px; }
+  .layout { padding: 18px 14px 72px; }
+  .sidebar { flex-direction: column; }
+  .panel { width: 100%; min-width: 0; }
   .brand { font-size: 1.1rem; }
   .auth-nav { gap: 5px; }
   .auth-nav .btn { padding: 7px 9px; font-size: .82rem; }
