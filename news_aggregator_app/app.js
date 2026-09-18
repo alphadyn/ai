@@ -866,6 +866,10 @@ function postUrl(id) {
   return `${url.pathname}?${url.searchParams.toString()}`;
 }
 
+function absolutePostUrl(id) {
+  return new URL(postUrl(id), window.location.href).href;
+}
+
 function feedUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete('post');
@@ -876,6 +880,50 @@ function feedUrl() {
 
 function attachmentIsImage(att) {
   return (att.mimeType || '').startsWith('image/');
+}
+
+async function attachmentToFile(att) {
+  const res = await fetch(att.dataUrl);
+  const blob = await res.blob();
+  return new File([blob], att.name || 'pulse-image', { type: blob.type || att.mimeType || 'application/octet-stream' });
+}
+
+function postShareText(post) {
+  const excerpt = plainExcerpt(post.body, 360);
+  return [post.title, excerpt].filter(Boolean).join('\n\n');
+}
+
+async function sharePost(post) {
+  const url = absolutePostUrl(post.id);
+  const text = postShareText(post);
+  const shareData = { title: post.title, text, url };
+  try {
+    if (navigator.share) {
+      const imageAttachments = (post.attachments || []).filter(attachmentIsImage);
+      if (imageAttachments.length && navigator.canShare && typeof File !== 'undefined') {
+        try {
+          const files = await Promise.all(imageAttachments.map(attachmentToFile));
+          const shareDataWithFiles = { ...shareData, files };
+          if (navigator.canShare(shareDataWithFiles)) {
+            await navigator.share(shareDataWithFiles);
+            return;
+          }
+        } catch (_) { /* Fall back to sharing the post text and link. */ }
+      }
+      await navigator.share(shareData);
+      return;
+    }
+    await navigator.clipboard.writeText(`${text}\n\n${url}`);
+    toast('Post text and link copied.');
+  } catch (err) {
+    if (err.name !== 'AbortError') toast(`Could not share: ${err.message}`);
+  }
+}
+
+async function sharePostById(id) {
+  const post = await pulse.getPost(id);
+  if (!post) throw new Error('Post not found.');
+  await sharePost(post);
 }
 
 function renderAttachments(attachments) {
@@ -917,6 +965,7 @@ function postCardHtml(post) {
       ${tags ? `<div class="post-tags">${tags}</div>` : ''}
       <div class="post-actions">
         <button data-open="${post.id}" type="button">💬 ${post.commentCount} comments</button>
+        <button data-share-post="${post.id}" type="button">↗ Share</button>
         ${canModerate ? `<button class="danger" data-delete-post="${post.id}" type="button">🗑 Delete</button>` : ''}
       </div>
     </div>
@@ -953,6 +1002,11 @@ function bindFeedEvents() {
     });
     const del = card.querySelector('[data-delete-post]');
     if (del) del.onclick = () => deletePost(id);
+    const share = card.querySelector('[data-share-post]');
+    if (share) share.onclick = async () => {
+      try { await sharePostById(id); }
+      catch (err) { toast(`Could not share: ${err.message}`); }
+    };
     card.querySelectorAll('.tag-chip[data-tag]').forEach((chip) => {
       chip.onclick = () => {
         state.tag = chip.dataset.tag; state.offset = 0;
@@ -1331,7 +1385,10 @@ async function openPost(id, { updateUrl = true } = {}) {
             ${post.body ? `<div class="post-excerpt">${post.body}</div>` : ''}
             ${renderAttachments(post.attachments)}
             <div class="post-tags">${(post.tags || []).map((t) => `<span class="tag-chip">#${escapeHtml(t)}</span>`).join('')}</div>
-            ${canModerate ? `<div class="post-actions"><button class="danger" id="delete-post-detail" type="button">🗑 Delete post</button></div>` : ''}
+            <div class="post-actions">
+              <button id="share-post-detail" type="button">↗ Share</button>
+              ${canModerate ? `<button class="danger" id="delete-post-detail" type="button">🗑 Delete post</button>` : ''}
+            </div>
           </div>
         </div>
       </article>
@@ -1343,17 +1400,20 @@ async function openPost(id, { updateUrl = true } = {}) {
     `;
     document.getElementById('back-to-feed').onclick = showFeedView;
     bindRichTextToolbars(view);
-    bindPostDetailEvents(post.id, view);
+    bindPostDetailEvents(post, view);
   } catch (err) {
     view.innerHTML = `<p class="form-error">Could not load post: ${escapeHtml(err.message)}</p>`;
   }
 }
 
-function bindPostDetailEvents(postId, root) {
+function bindPostDetailEvents(post, root) {
+  const postId = post.id;
   const detail = root.querySelector('.post-detail');
   detail.querySelectorAll('[data-vote]').forEach((btn) => {
     btn.onclick = () => castVote('post', postId, Number(btn.dataset.vote), detail);
   });
+  const shareBtn = root.querySelector('#share-post-detail');
+  if (shareBtn) shareBtn.onclick = () => sharePost(post);
   const delBtn = root.querySelector('#delete-post-detail');
   if (delBtn) delBtn.onclick = async () => { await deletePost(postId); showFeedView(); };
 
