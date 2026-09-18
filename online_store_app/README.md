@@ -1,15 +1,14 @@
 # Atlas & Co. Online Store
 
-A branded static storefront with a front-facing shopping page, grouped product/service menu, searchable inventory, cart, checkout flow, advertising placements, encrypted browser cart storage, and payment-provider hooks for Apple Pay and credit cards.
+A branded static storefront with a front-facing shopping page, grouped product/service menu, cart, checkout flow, advertising placements, encrypted browser cart storage, and payment-provider hooks for Apple Pay and credit cards.
 
 ## Features
 
 - Branded storefront for Atlas & Co. with featured products and partner advertising placements
 - Main-page branded product and service highlights with direct cart actions
 - Dedicated shop screen for products and services grouped into responsive section tiles
-- Storewide search across item names, sections, brands, descriptions, tags, services, and inventory
+- Storewide search across item names, sections, brands, descriptions, tags, and services
 - Type, section, stock, and sort controls for products and services before adding them to the cart
-- In-stock filtering and an exportable inventory table
 - Cart drawer with quantity controls, subtotal, estimated tax, and checkout handoff
 - Browser cart persistence encrypted with Web Crypto AES-256-GCM before storage in `localStorage`
 - Payment integration points for Stripe Payment Request Button, Apple Pay-capable wallets, and credit-card processing
@@ -46,7 +45,7 @@ When those values are blank, the checkout remains in local demo mode and prepare
 
 ## Main files
 
-- [index.html](index.html) - storefront structure, separate shop screen, cart drawer, inventory, and checkout sections
+- [index.html](index.html) - storefront structure, separate shop screen, cart drawer, and checkout sections
 - [styles.css](styles.css) - responsive visual design and storefront layout
 - [app.js](app.js) - catalog data, search/filtering, encrypted cart persistence, cart totals, checkout, and payment hooks
 

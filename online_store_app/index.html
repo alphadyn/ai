@@ -7,10 +7,10 @@
   <title>Atlas & Co. Storefront</title>
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <script src="https://js.stripe.com/v3/" defer></script>
-  <script src="app.js?v=2" defer></script>
+  <script src="app.js?v=3" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -23,7 +23,6 @@
     </a>
     <nav class="top-nav" aria-label="Store navigation">
       <a href="#catalog">Shop</a>
-      <a href="#inventory">Inventory</a>
       <a href="#checkout">Checkout</a>
     </nav>
     <button class="icon-button cart-toggle" type="button" aria-label="Open cart">
@@ -95,7 +94,7 @@
       <div class="controls" aria-label="Catalog filters">
         <label class="search-box">
           <i data-lucide="search"></i>
-          <input id="searchInput" type="search" placeholder="Search products, services, brands, tags, or inventory" autocomplete="off">
+          <input id="searchInput" type="search" placeholder="Search products, services, brands, or tags" autocomplete="off">
         </label>
         <label class="sort-box">
           <span>Sort</span>
@@ -115,30 +114,6 @@
       <div class="filter-row type-filter" id="typeFilters" aria-label="Product and service filters"></div>
       <div class="filter-row section-filter" id="sectionFilters" aria-label="Section filters"></div>
       <div id="catalogGroups" class="catalog-groups"></div>
-    </section>
-
-    <section id="inventory" class="screen inventory-panel" aria-labelledby="inventory-heading" hidden>
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">Inventory</p>
-          <h2 id="inventory-heading">Live searchable inventory</h2>
-        </div>
-        <button class="ghost-button" id="exportInventory" type="button"><i data-lucide="download"></i>Export</button>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Section</th>
-              <th>Brand</th>
-              <th>Stock</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody id="inventoryRows"></tbody>
-        </table>
-      </div>
     </section>
 
     <section id="checkout" class="screen checkout-section" aria-labelledby="checkout-heading" hidden>

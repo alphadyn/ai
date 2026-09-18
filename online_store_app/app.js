@@ -36,7 +36,6 @@ const elements = {
   sectionFilters: document.querySelector('#sectionFilters'),
   homeHighlights: document.querySelector('#homeHighlights'),
   catalogGroups: document.querySelector('#catalogGroups'),
-  inventoryRows: document.querySelector('#inventoryRows'),
   resultSummary: document.querySelector('#resultSummary'),
   cartCount: document.querySelector('#cartCount'),
   cartDrawer: document.querySelector('#cartDrawer'),
@@ -206,18 +205,6 @@ function productTile(item) {
   `;
 }
 
-function renderInventory() {
-  elements.inventoryRows.innerHTML = filteredItems().map(item => `
-    <tr>
-      <td>${item.name}</td>
-      <td>${item.section}</td>
-      <td>${item.brand}${item.sponsored ? ' - Ad' : ''}</td>
-      <td>${item.stock}</td>
-      <td>${money.format(item.price)}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="5">No inventory matches these filters.</td></tr>';
-}
-
 function addToCart(id) {
   const item = products.find(product => product.id === id);
   if (!item || item.stock < 1) return;
@@ -288,14 +275,13 @@ function renderAll() {
   renderFilters();
   renderHighlights();
   renderCatalog();
-  renderInventory();
   renderCart();
   if (window.lucide) lucide.createIcons();
 }
 
 function setActiveScreen() {
   const requestedScreen = window.location.hash.replace('#', '') || 'home';
-  const validScreens = ['home', 'catalog', 'inventory', 'checkout'];
+  const validScreens = ['home', 'catalog', 'checkout'];
   const activeScreen = validScreens.includes(requestedScreen) ? requestedScreen : 'home';
   document.querySelectorAll('.screen').forEach(screen => {
     const isActive = screen.id === activeScreen;
@@ -311,17 +297,6 @@ function showToast(message) {
   elements.toast.classList.add('show');
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => elements.toast.classList.remove('show'), 2800);
-}
-
-function exportInventory() {
-  const payload = JSON.stringify(filteredItems(), null, 2);
-  const blob = new Blob([payload], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'atlas-store-inventory.json';
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 async function setupPayments() {
@@ -412,7 +387,6 @@ elements.stockOnly.addEventListener('change', event => {
   state.stockOnly = event.target.checked;
   renderAll();
 });
-document.querySelector('#exportInventory').addEventListener('click', exportInventory);
 elements.applePayDemo.addEventListener('click', () => showToast('Apple Pay is available only on supported Apple devices over HTTPS with a merchant/payment processor configured.'));
 elements.checkoutForm.addEventListener('submit', submitOrder);
 
