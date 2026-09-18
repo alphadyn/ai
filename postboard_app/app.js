@@ -238,8 +238,9 @@ function setMessageFromEditor() {
 }
 
 function formatDate(post) {
+  if (!post.date) return post.time || 'Unknown date';
   const date = new Date(`${post.date}T${post.time || '00:00'}`);
-  if (Number.isNaN(date.getTime())) return `${post.date} ${post.time || ''}`;
+  if (Number.isNaN(date.getTime())) return `${post.date} ${post.time || ''}`.trim();
   return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
