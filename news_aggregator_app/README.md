@@ -32,7 +32,7 @@ Pages.
 - Every post has a shareable URL in the form `index.html?post=<post-id>` that opens its detail view directly, including on static hosts.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
-- Post deletion restricted to the original author or an admin (soft delete); only an admin can restore a deleted post.
+- Post deletion restricted to the original author or an admin; deleting a post permanently removes its comments, votes, and attachments.
 
 ### Discussions
 - Threaded comments with unlimited reply depth (each comment can reply to another comment).
@@ -42,9 +42,9 @@ Pages.
 
 ### Admin screen
 - Visible only to users with the `admin` role (an "Admin" button appears in the top nav).
-- **Overview** tab: site-wide stats (registered users, active/deleted posts, anonymous posts, comments).
+- **Overview** tab: site-wide stats (registered users, active posts, legacy deleted posts, anonymous posts, comments).
 - **Users** tab: view every account and promote/demote between `user` and `admin`.
-- **Posts & moderation** tab: view every post (including soft-deleted ones), jump to any post, delete active posts, or restore deleted ones.
+- **Posts & moderation** tab: view every post, jump to any post, permanently delete posts, and clean up or restore older soft-deleted rows from previous schema versions.
 - These aren't just hidden UI — the database itself rejects role changes and restores from anyone whose Postgres role isn't `admin` (see **How authorization works** below).
 
 ## Setup (required before first use)
@@ -52,6 +52,7 @@ Pages.
 1. Create a free project at [supabase.com](https://supabase.com), or reuse an existing one — Pulse's tables (`profiles`, `posts`, `comments`, `post_votes`, `comment_votes`) are self-contained and won't collide with other apps' tables in the same project (e.g. Nexus CMS's `media_items`).
 2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security. **This script drops and recreates Pulse's tables every time it's run**, so re-running it later (e.g. after a schema update) wipes any posts/comments/accounts created so far — plan to redo the "first admin" step below afterward.
   If Pulse is already running and you only need to add the profile fields, run [`profile-fields-migration.sql`](profile-fields-migration.sql) instead. It preserves existing data and reloads the PostgREST schema cache, fixing errors such as `Could not find the 'profile_url' column of 'profiles' in the schema cache`.
+  If Pulse is already running and you only need to fix post deletion, run [`post-delete-migration.sql`](post-delete-migration.sql) instead. It preserves existing data while allowing permanent post deletes and blocking new soft-deleted post rows.
 3. **Turn off email confirmation**: Authentication → Providers → Email → disable **"Confirm email"**. Pulse signs people up with a synthetic `username@pulse.local` address (so nobody needs a real inbox just to use a demo forum) — with confirmation left on, nobody could ever confirm that address and sign-ups would be stuck forever.
 4. In Project Settings → API, copy the **Project URL** and the **public `anon` key** (not the `service_role` secret key — never put that in client-side code).
 5. Edit [`supabase-config.js`](supabase-config.js):
@@ -86,7 +87,7 @@ only thing standing between a visitor and the database** — the anon key is
 public and anyone can call the Supabase REST API directly with it, so every
 rule has to hold up even against a client that skips `app.js` entirely:
 
-- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` a row (used for soft-delete); a Postgres trigger additionally blocks anyone but an admin from *restoring* (`is_deleted: false → ...`) a post.
+- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` or `DELETE` their post; deleting a post uses a real `DELETE`, so Postgres cascades its comments and votes. A trigger blocks new post soft-deletes by rejecting direct `is_deleted: false → true` patches, while still allowing admins to restore older soft-deleted rows from previous schema versions.
 - **Voting**: the `upvotes`/`downvotes` columns are never writable directly by clients. Voting goes through `cast_post_vote()` / `cast_comment_vote()`, `SECURITY DEFINER` Postgres functions that atomically apply the vote-count delta — a client can't just `PATCH` a post to set an arbitrary score.
 - **Roles**: a user can update their own `profiles` row (e.g. their avatar), but a trigger silently reverts any change to the `role` column unless the request comes from an existing admin. A regular user calling the API directly cannot self-promote.
 - **Profiles are public** (username, avatar, role, join date) — like a forum member list — so every post/comment can show author badges. Nothing sensitive (no emails, password hashes, or session tokens) lives in a client-readable table; Supabase Auth keeps those internally.

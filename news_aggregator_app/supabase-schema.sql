@@ -142,10 +142,10 @@ create table if not exists posts (
 
 create index if not exists idx_posts_created on posts(created_at);
 
--- Only an admin may restore a deleted post; the owner (or an admin) may
--- soft-delete it. All other columns may only be changed by the owner/admin
--- (enforced by the RLS update policy below); this trigger adds the
--- restore-is-admin-only business rule on top of that.
+-- Post deletion is a real DELETE so comments, votes, and attachment payloads
+-- cascade away with the post row. Older projects may still have soft-deleted
+-- rows, so admins can restore those legacy rows, but nobody may create new
+-- soft-deleted posts by PATCHing is_deleted directly.
 create or replace function public.enforce_post_delete_rules()
 returns trigger
 language plpgsql
@@ -155,9 +155,7 @@ as $$
 begin
   if new.is_deleted is distinct from old.is_deleted then
     if new.is_deleted = true then
-      if not (old.author_id = auth.uid() or public.is_admin()) then
-        raise exception 'Not authorized to delete this post.';
-      end if;
+      raise exception 'Delete posts with DELETE so related data is removed.';
     else
       if not public.is_admin() then
         raise exception 'Admin access required to restore a post.';
@@ -310,6 +308,10 @@ create policy "anyone can create posts" on posts
 drop policy if exists "owner or admin can update posts" on posts;
 create policy "owner or admin can update posts" on posts
   for update using (author_id = auth.uid() or public.is_admin());
+
+drop policy if exists "owner or admin can delete posts" on posts;
+create policy "owner or admin can delete posts" on posts
+  for delete using (author_id = auth.uid() or public.is_admin());
 
 -- post_votes: publicly readable (needed for "my vote" indicator); no direct
 -- insert/update/delete policies — all mutation must go through the

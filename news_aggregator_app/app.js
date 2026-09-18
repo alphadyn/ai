@@ -444,7 +444,7 @@ const pulse = {
   },
 
   async deletePost(id) {
-    const { data } = await restFetch('PATCH', 'posts', { params: { id: `eq.${id}` }, body: { is_deleted: true }, prefer: 'return=representation' });
+    const { data } = await restFetch('DELETE', 'posts', { params: { id: `eq.${id}` }, prefer: 'return=representation' });
     if (!data || !data.length) throw new Error('Not authorized to delete this post.');
   },
 
@@ -1233,9 +1233,8 @@ async function renderAdminView(tab) {
                 <td>${p.commentCount}</td>
                 <td>${p.isDeleted ? '<span class="deleted-badge">deleted</span>' : 'active'}</td>
                 <td>
-                  ${p.isDeleted
-                    ? `<button class="btn ghost small" data-restore="${p.id}" type="button">Restore</button>`
-                    : `<button class="btn ghost small" data-admin-delete="${p.id}" type="button">Delete</button>`}
+                  <button class="btn ghost small" data-admin-delete="${p.id}" type="button">${p.isDeleted ? 'Delete permanently' : 'Delete'}</button>
+                  ${p.isDeleted ? `<button class="btn ghost small" data-restore="${p.id}" type="button">Restore</button>` : ''}
                 </td>
               </tr>`).join('')}
           </tbody>
@@ -1245,7 +1244,7 @@ async function renderAdminView(tab) {
       });
       content.querySelectorAll('[data-admin-delete]').forEach((btn) => {
         btn.onclick = async () => {
-          if (!confirm('Delete this post?')) return;
+          if (!confirm('Delete this post? This will also remove its comments and votes.')) return;
           try { await pulse.deletePost(btn.dataset.adminDelete); toast('Post deleted.'); renderAdminView('posts'); }
           catch (err) { toast(`Could not delete: ${err.message}`); }
         };
