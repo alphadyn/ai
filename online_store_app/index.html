@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A branded online store with catalog search, cart, checkout, encrypted cart storage, and payment provider hooks.">
+  <title>Atlas & Co. Storefront</title>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+  <script src="https://js.stripe.com/v3/" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Atlas and Co. home">
+      <span class="brand-mark">A</span>
+      <span>
+        <strong>Atlas &amp; Co.</strong>
+        <small>Goods, gear, and services</small>
+      </span>
+    </a>
+    <nav class="top-nav" aria-label="Store navigation">
+      <a href="#shop">Products</a>
+      <a href="#services">Services</a>
+      <a href="#inventory">Inventory</a>
+      <a href="#checkout">Checkout</a>
+    </nav>
+    <button class="icon-button cart-toggle" type="button" aria-label="Open cart">
+      <i data-lucide="shopping-bag"></i>
+      <span id="cartCount">0</span>
+    </button>
+  </header>
+
+  <main id="top">
+    <section class="storefront" aria-labelledby="store-title">
+      <div class="store-copy">
+        <p class="eyebrow">Fall marketplace</p>
+        <h1 id="store-title">Useful things, organized for real life.</h1>
+        <p>Shop durable home goods, everyday tech, specialty services, and sponsored partner drops from one searchable catalog.</p>
+        <div class="hero-actions">
+          <a class="primary-link" href="#shop">Shop catalog</a>
+          <a class="secondary-link" href="#checkout">Start checkout</a>
+        </div>
+      </div>
+      <div class="hero-product" aria-label="Featured product">
+        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80" alt="Curated home goods on a warm modern table">
+        <div class="feature-strip">
+          <span>Encrypted cart</span>
+          <span>Apple Pay ready</span>
+          <span>Card processor ready</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="ad-band" aria-label="Sponsored brand advertising">
+      <article>
+        <span>Sponsored</span>
+        <strong>Nomad Desk Lab</strong>
+        <p>Modular desk kits ship free this week with any workspace setup service.</p>
+      </article>
+      <article>
+        <span>Brand spotlight</span>
+        <strong>Signal House Audio</strong>
+        <p>Studio-grade listening gear with same-day digital gift delivery.</p>
+      </article>
+      <article>
+        <span>Partner offer</span>
+        <strong>Bright Pantry</strong>
+        <p>Bundle kitchen essentials and pantry planning in one appointment.</p>
+      </article>
+    </section>
+
+    <section class="controls" aria-label="Catalog filters">
+      <label class="search-box">
+        <i data-lucide="search"></i>
+        <input id="searchInput" type="search" placeholder="Search products, services, brands, tags, or inventory" autocomplete="off">
+      </label>
+      <div class="filter-row" id="sectionFilters" aria-label="Section filters"></div>
+      <label class="stock-filter">
+        <input id="stockOnly" type="checkbox">
+        <span>In stock only</span>
+      </label>
+    </section>
+
+    <section id="shop" class="catalog-section" aria-labelledby="products-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Products</p>
+          <h2 id="products-heading">Browse by section</h2>
+        </div>
+        <p id="resultSummary">Showing all items</p>
+      </div>
+      <div id="catalogGroups" class="catalog-groups"></div>
+    </section>
+
+    <section id="services" class="service-band" aria-labelledby="services-heading">
+      <div>
+        <p class="eyebrow">Services</p>
+        <h2 id="services-heading">Book help with the purchase.</h2>
+      </div>
+      <div id="serviceTiles" class="service-tiles"></div>
+    </section>
+
+    <section id="inventory" class="inventory-panel" aria-labelledby="inventory-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Inventory</p>
+          <h2 id="inventory-heading">Live searchable inventory</h2>
+        </div>
+        <button class="ghost-button" id="exportInventory" type="button"><i data-lucide="download"></i>Export</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Section</th>
+              <th>Brand</th>
+              <th>Stock</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="checkout" class="checkout-section" aria-labelledby="checkout-heading">
+      <div>
+        <p class="eyebrow">Checkout</p>
+        <h2 id="checkout-heading">Pay securely.</h2>
+        <p>Orders are prepared locally, encrypted before browser storage, and sent to your configured payment endpoint over HTTPS. Card numbers are handled by the payment provider, not this app.</p>
+      </div>
+      <form id="checkoutForm" class="checkout-form">
+        <label>Full name<input name="name" required autocomplete="name"></label>
+        <label>Email<input name="email" type="email" required autocomplete="email"></label>
+        <label>Shipping address<textarea name="address" required autocomplete="shipping street-address"></textarea></label>
+        <div class="payment-box">
+          <div>
+            <strong>Payment method</strong>
+            <p id="paymentStatus">Apple Pay and credit-card processing activate when a Stripe publishable key and PaymentIntent endpoint are configured.</p>
+          </div>
+          <div id="paymentRequestButton" class="wallet-slot" hidden></div>
+          <button class="apple-pay-button" id="applePayDemo" type="button">Apple Pay</button>
+          <div id="cardElement" class="card-element">Secure card field mounts here</div>
+        </div>
+        <button class="checkout-button" type="submit"><i data-lucide="lock-keyhole"></i>Place encrypted order</button>
+      </form>
+    </section>
+  </main>
+
+  <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping cart" aria-hidden="true">
+    <div class="cart-header">
+      <div>
+        <p class="eyebrow">Cart</p>
+        <h2>Your order</h2>
+      </div>
+      <button class="icon-button close-cart" type="button" aria-label="Close cart"><i data-lucide="x"></i></button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div><span>Subtotal</span><strong id="cartSubtotal">$0.00</strong></div>
+      <div><span>Estimated tax</span><strong id="cartTax">$0.00</strong></div>
+      <div class="total"><span>Total</span><strong id="cartTotal">$0.00</strong></div>
+      <a class="primary-link full" href="#checkout">Checkout</a>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
