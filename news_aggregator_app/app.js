@@ -787,27 +787,41 @@ function renderActiveFilter() {
   document.getElementById('clear-filter-btn').addEventListener('click', () => {
     state.tag = null; state.query = null; state.offset = 0;
     document.getElementById('search-input').value = '';
-    renderProfileResults([]);
+    renderSearchResults([], []);
     renderActiveFilter(); loadTags(); loadFeed(true);
   });
 }
 
-function renderProfileResults(profiles) {
+function renderSearchResults(profiles, tags) {
   const el = document.getElementById('profile-results');
-  if (!profiles.length) { el.hidden = true; el.innerHTML = ''; return; }
+  if (!profiles.length && !tags.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML = `
-    <div class="search-section-heading">
-      <h2>People</h2>
-      <span class="muted small">${profiles.length} match${profiles.length === 1 ? '' : 'es'}</span>
-    </div>
-    <div class="profile-search-results">
-      ${profiles.map((profile) => `
-        <a class="profile-search-result" href="${userUrl(profile.id)}" data-profile="${escapeHtml(profile.id)}">
-          ${avatarHtml(profile.avatar, profile.username, 'avatar-sm')}
-          <span><strong>${escapeHtml(profile.name)}</strong><small>@${escapeHtml(profile.username)}${profile.status ? ` · ${escapeHtml(profile.status)}` : ''}</small></span>
-        </a>`).join('')}
-    </div>`;
+    ${profiles.length ? `<section class="search-result-section">
+      <div class="search-section-heading"><h2>People</h2><span class="muted small">${profiles.length} match${profiles.length === 1 ? '' : 'es'}</span></div>
+      <div class="profile-search-results">
+        ${profiles.map((profile) => `
+          <a class="profile-search-result" href="${userUrl(profile.id)}" data-profile="${escapeHtml(profile.id)}">
+            ${avatarHtml(profile.avatar, profile.name, 'avatar-sm')}
+            <span><strong>${escapeHtml(profile.name)}</strong><small>@${escapeHtml(profile.username)}${profile.status ? ` · ${escapeHtml(profile.status)}` : ''}</small></span>
+          </a>`).join('')}
+      </div>
+    </section>` : ''}
+    ${tags.length ? `<section class="search-result-section">
+      <div class="search-section-heading"><h2>Tags</h2><span class="muted small">${tags.length} match${tags.length === 1 ? '' : 'es'}</span></div>
+      <div class="search-tag-results">
+        ${tags.map((item) => `<button class="tag-chip" data-search-tag="${escapeHtml(item.tag)}" type="button">#${escapeHtml(item.tag)} <span class="count">${item.count}</span></button>`).join('')}
+      </div>
+    </section>` : ''}`;
+  el.querySelectorAll('[data-search-tag]').forEach((tagButton) => {
+    tagButton.onclick = () => {
+      state.tag = tagButton.dataset.searchTag;
+      state.offset = 0;
+      renderActiveFilter();
+      loadTags();
+      loadFeed(true);
+    };
+  });
 }
 
 document.getElementById('sort-tabs').addEventListener('click', (e) => {
@@ -826,10 +840,16 @@ document.getElementById('search-form').addEventListener('submit', async (e) => {
   state.offset = 0;
   renderActiveFilter();
   let profiles = [];
+  let tags = [];
   if (state.query) {
-    try { profiles = await pulse.searchProfiles(state.query); } catch (_) { /* post search still works */ }
+    const results = await Promise.allSettled([pulse.searchProfiles(state.query), pulse.listTags()]);
+    if (results[0].status === 'fulfilled') profiles = results[0].value;
+    if (results[1].status === 'fulfilled') {
+      const query = state.query.toLowerCase().replace(/^#/, '');
+      tags = results[1].value.filter((item) => item.tag.toLowerCase().includes(query));
+    }
   }
-  renderProfileResults(profiles);
+  renderSearchResults(profiles, tags);
   loadFeed(true);
   showFeedView();
 });
@@ -1502,7 +1522,7 @@ document.querySelector('.brand').addEventListener('click', (e) => {
   e.preventDefault();
   state.tag = null; state.query = null;
   document.getElementById('search-input').value = '';
-  renderProfileResults([]);
+  renderSearchResults([], []);
   renderActiveFilter();
   showFeedView();
   loadFeed(true);

@@ -174,9 +174,11 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 
 .feed-more { text-align: center; margin-top: 18px; }
 .profile-results-panel { margin-bottom: 18px; }
+.search-result-section + .search-result-section { margin-top: 16px; }
 .search-section-heading { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .search-section-heading h2 { margin: 0; font-size: 1rem; }
 .profile-search-results { display: grid; gap: 8px; }
+.search-tag-results { display: flex; flex-wrap: wrap; gap: 8px; }
 .profile-search-result { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel); text-decoration: none; }
 .profile-search-result:hover { border-color: var(--accent); background: var(--panel-2); }
 .profile-search-result span { display: grid; min-width: 0; }
