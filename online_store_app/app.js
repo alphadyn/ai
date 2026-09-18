@@ -20,6 +20,8 @@ const products = [
 const state = {
   query: '',
   section: 'All',
+  type: 'All',
+  sort: 'featured',
   stockOnly: false,
   cart: new Map(),
   stripe: null,
@@ -28,10 +30,12 @@ const state = {
 
 const elements = {
   searchInput: document.querySelector('#searchInput'),
+  sortSelect: document.querySelector('#sortSelect'),
   stockOnly: document.querySelector('#stockOnly'),
+  typeFilters: document.querySelector('#typeFilters'),
   sectionFilters: document.querySelector('#sectionFilters'),
+  homeHighlights: document.querySelector('#homeHighlights'),
   catalogGroups: document.querySelector('#catalogGroups'),
-  serviceTiles: document.querySelector('#serviceTiles'),
   inventoryRows: document.querySelector('#inventoryRows'),
   resultSummary: document.querySelector('#resultSummary'),
   cartCount: document.querySelector('#cartCount'),
@@ -113,25 +117,47 @@ function base64ToArray(value) {
 function matchesFilters(item) {
   const haystack = [item.name, item.section, item.brand, item.type, item.description, ...item.tags].join(' ').toLowerCase();
   const sectionMatch = state.section === 'All' || item.section === state.section;
+  const typeMatch = state.type === 'All' || item.type === state.type;
   const stockMatch = !state.stockOnly || item.stock > 0;
-  return sectionMatch && stockMatch && haystack.includes(state.query.toLowerCase());
+  return sectionMatch && typeMatch && stockMatch && haystack.includes(state.query.toLowerCase());
 }
 
 function filteredItems() {
-  return products.filter(matchesFilters);
+  return sortedItems(products.filter(matchesFilters));
+}
+
+function sortedItems(items) {
+  const withIndex = items.map(item => ({ item, index: products.findIndex(product => product.id === item.id) }));
+  withIndex.sort((left, right) => {
+    if (state.sort === 'name-asc') return left.item.name.localeCompare(right.item.name);
+    if (state.sort === 'price-asc') return left.item.price - right.item.price;
+    if (state.sort === 'price-desc') return right.item.price - left.item.price;
+    if (state.sort === 'stock-desc') return right.item.stock - left.item.stock;
+    return left.index - right.index;
+  });
+  return withIndex.map(entry => entry.item);
 }
 
 function renderFilters() {
-  const sections = ['All', ...new Set(products.map(item => item.section))];
+  const typeOptions = [
+    { label: 'All', value: 'All' },
+    { label: 'Products', value: 'product' },
+    { label: 'Services', value: 'service' }
+  ];
+  elements.typeFilters.innerHTML = typeOptions.map(option => `
+    <button class="chip ${state.type === option.value ? 'active' : ''}" type="button" data-type="${option.value}">${option.label}</button>
+  `).join('');
+  const sections = ['All', ...new Set(products.filter(item => state.type === 'All' || item.type === state.type).map(item => item.section))];
+  if (!sections.includes(state.section)) state.section = 'All';
   elements.sectionFilters.innerHTML = sections.map(section => `
     <button class="chip ${state.section === section ? 'active' : ''}" type="button" data-section="${section}">${section}</button>
   `).join('');
 }
 
 function renderCatalog() {
-  const items = filteredItems().filter(item => item.type === 'product');
+  const items = filteredItems();
   const groups = [...new Set(items.map(item => item.section))];
-  elements.resultSummary.textContent = `Showing ${filteredItems().length} item${filteredItems().length === 1 ? '' : 's'}`;
+  elements.resultSummary.textContent = `Showing ${items.length} item${items.length === 1 ? '' : 's'}`;
   elements.catalogGroups.innerHTML = groups.map(section => {
     const sectionItems = items.filter(item => item.section === section);
     return `
@@ -140,12 +166,26 @@ function renderCatalog() {
         <div class="tile-grid">${sectionItems.map(productTile).join('')}</div>
       </div>
     `;
-  }).join('') || '<p class="empty-cart">No products match these filters.</p>';
+  }).join('') || '<p class="empty-cart">No products or services match these filters.</p>';
 }
 
-function renderServices() {
-  const services = filteredItems().filter(item => item.type === 'service');
-  elements.serviceTiles.innerHTML = services.map(productTile).join('') || '<p class="empty-cart">No services match these filters.</p>';
+function renderHighlights() {
+  const highlightIds = ['sonic-dock', 'linen-throw', 'desk-plan', 'pantry-consult'];
+  const highlights = highlightIds.map(id => products.find(item => item.id === id)).filter(Boolean);
+  elements.homeHighlights.innerHTML = highlights.map(item => `
+    <article class="highlight-tile">
+      <img src="${item.image}" alt="${item.name}">
+      <div>
+        <span>${item.type === 'service' ? 'Service' : 'Product'} by ${item.brand}</span>
+        <h3>${item.name}</h3>
+        <p>${item.description}</p>
+      </div>
+      <div class="tile-footer">
+        <span class="price">${money.format(item.price)}</span>
+        <button class="add-button" type="button" data-add="${item.id}" ${item.stock < 1 ? 'disabled' : ''}>${item.type === 'service' ? 'Book' : 'Add'}</button>
+      </div>
+    </article>
+  `).join('');
 }
 
 function productTile(item) {
@@ -246,11 +286,24 @@ function closeCart() {
 
 function renderAll() {
   renderFilters();
+  renderHighlights();
   renderCatalog();
-  renderServices();
   renderInventory();
   renderCart();
   if (window.lucide) lucide.createIcons();
+}
+
+function setActiveScreen() {
+  const requestedScreen = window.location.hash.replace('#', '') || 'home';
+  const validScreens = ['home', 'catalog', 'inventory', 'checkout'];
+  const activeScreen = validScreens.includes(requestedScreen) ? requestedScreen : 'home';
+  document.querySelectorAll('.screen').forEach(screen => {
+    const isActive = screen.id === activeScreen;
+    screen.classList.toggle('active', isActive);
+    screen.hidden = !isActive;
+  });
+  closeCart();
+  document.querySelector('main').scrollIntoView({ block: 'start' });
 }
 
 function showToast(message) {
@@ -330,8 +383,14 @@ document.addEventListener('click', event => {
   const addButton = event.target.closest('[data-add]');
   const quantityButton = event.target.closest('[data-qty]');
   const sectionButton = event.target.closest('[data-section]');
+  const typeButton = event.target.closest('[data-type]');
   if (addButton) addToCart(addButton.dataset.add);
   if (quantityButton) updateQuantity(quantityButton.dataset.qty, Number(quantityButton.dataset.delta));
+  if (typeButton) {
+    state.type = typeButton.dataset.type;
+    state.section = 'All';
+    renderAll();
+  }
   if (sectionButton) {
     state.section = sectionButton.dataset.section;
     renderAll();
@@ -345,6 +404,10 @@ elements.searchInput.addEventListener('input', event => {
   state.query = event.target.value.trim();
   renderAll();
 });
+elements.sortSelect.addEventListener('change', event => {
+  state.sort = event.target.value;
+  renderAll();
+});
 elements.stockOnly.addEventListener('change', event => {
   state.stockOnly = event.target.checked;
   renderAll();
@@ -356,5 +419,7 @@ elements.checkoutForm.addEventListener('submit', submitOrder);
 secureStore.loadCart().then(savedCart => {
   state.cart = savedCart;
   renderAll();
+  setActiveScreen();
   setupPayments();
 });
+window.addEventListener('hashchange', setActiveScreen);

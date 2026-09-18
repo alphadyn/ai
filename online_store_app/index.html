@@ -7,14 +7,14 @@
   <title>Atlas & Co. Storefront</title>
   <link rel="preconnect" href="https://images.unsplash.com">
   <link rel="preconnect" href="https://unpkg.com">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
   <script src="https://js.stripe.com/v3/" defer></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=2" defer></script>
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="#top" aria-label="Atlas and Co. home">
+    <a class="brand" href="#home" aria-label="Atlas and Co. home">
       <span class="brand-mark">A</span>
       <span>
         <strong>Atlas &amp; Co.</strong>
@@ -22,8 +22,7 @@
       </span>
     </a>
     <nav class="top-nav" aria-label="Store navigation">
-      <a href="#shop">Products</a>
-      <a href="#services">Services</a>
+      <a href="#catalog">Shop</a>
       <a href="#inventory">Inventory</a>
       <a href="#checkout">Checkout</a>
     </nav>
@@ -34,76 +33,91 @@
   </header>
 
   <main id="top">
-    <section class="storefront" aria-labelledby="store-title">
-      <div class="store-copy">
-        <p class="eyebrow">Fall marketplace</p>
-        <h1 id="store-title">Useful things, organized for real life.</h1>
-        <p>Shop durable home goods, everyday tech, specialty services, and sponsored partner drops from one searchable catalog.</p>
-        <div class="hero-actions">
-          <a class="primary-link" href="#shop">Shop catalog</a>
-          <a class="secondary-link" href="#checkout">Start checkout</a>
+    <section id="home" class="screen active">
+      <div class="storefront" aria-labelledby="store-title">
+        <div class="store-copy">
+          <p class="eyebrow">Fall marketplace</p>
+          <h1 id="store-title">Useful things, organized for real life.</h1>
+          <p>Shop durable home goods, everyday tech, specialty services, and sponsored partner drops from one searchable catalog.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#catalog">Shop catalog</a>
+            <a class="secondary-link" href="#checkout">Start checkout</a>
+          </div>
+        </div>
+        <div class="hero-product" aria-label="Featured product">
+          <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80" alt="Curated home goods on a warm modern table">
+          <div class="feature-strip">
+            <span>Encrypted cart</span>
+            <span>Apple Pay ready</span>
+            <span>Card processor ready</span>
+          </div>
         </div>
       </div>
-      <div class="hero-product" aria-label="Featured product">
-        <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80" alt="Curated home goods on a warm modern table">
-        <div class="feature-strip">
-          <span>Encrypted cart</span>
-          <span>Apple Pay ready</span>
-          <span>Card processor ready</span>
-        </div>
+
+      <div class="ad-band" aria-label="Sponsored brand advertising">
+        <article>
+          <span>Sponsored</span>
+          <strong>Nomad Desk Lab</strong>
+          <p>Modular desk kits ship free this week with any workspace setup service.</p>
+        </article>
+        <article>
+          <span>Brand spotlight</span>
+          <strong>Signal House Audio</strong>
+          <p>Studio-grade listening gear with same-day digital gift delivery.</p>
+        </article>
+        <article>
+          <span>Partner offer</span>
+          <strong>Bright Pantry</strong>
+          <p>Bundle kitchen essentials and pantry planning in one appointment.</p>
+        </article>
       </div>
+
+      <section class="home-highlights" aria-labelledby="highlights-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Featured brands</p>
+            <h2 id="highlights-heading">Branded picks ready to buy.</h2>
+          </div>
+          <a class="secondary-link" href="#catalog">View all</a>
+        </div>
+        <div id="homeHighlights" class="highlight-grid"></div>
+      </section>
     </section>
 
-    <section class="ad-band" aria-label="Sponsored brand advertising">
-      <article>
-        <span>Sponsored</span>
-        <strong>Nomad Desk Lab</strong>
-        <p>Modular desk kits ship free this week with any workspace setup service.</p>
-      </article>
-      <article>
-        <span>Brand spotlight</span>
-        <strong>Signal House Audio</strong>
-        <p>Studio-grade listening gear with same-day digital gift delivery.</p>
-      </article>
-      <article>
-        <span>Partner offer</span>
-        <strong>Bright Pantry</strong>
-        <p>Bundle kitchen essentials and pantry planning in one appointment.</p>
-      </article>
-    </section>
-
-    <section class="controls" aria-label="Catalog filters">
-      <label class="search-box">
-        <i data-lucide="search"></i>
-        <input id="searchInput" type="search" placeholder="Search products, services, brands, tags, or inventory" autocomplete="off">
-      </label>
-      <div class="filter-row" id="sectionFilters" aria-label="Section filters"></div>
-      <label class="stock-filter">
-        <input id="stockOnly" type="checkbox">
-        <span>In stock only</span>
-      </label>
-    </section>
-
-    <section id="shop" class="catalog-section" aria-labelledby="products-heading">
+    <section id="catalog" class="screen catalog-section" aria-labelledby="products-heading" hidden>
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Products</p>
-          <h2 id="products-heading">Browse by section</h2>
+          <p class="eyebrow">Shop</p>
+          <h2 id="products-heading">Products and services</h2>
         </div>
         <p id="resultSummary">Showing all items</p>
       </div>
+      <div class="controls" aria-label="Catalog filters">
+        <label class="search-box">
+          <i data-lucide="search"></i>
+          <input id="searchInput" type="search" placeholder="Search products, services, brands, tags, or inventory" autocomplete="off">
+        </label>
+        <label class="sort-box">
+          <span>Sort</span>
+          <select id="sortSelect">
+            <option value="featured">Featured</option>
+            <option value="name-asc">Name A-Z</option>
+            <option value="price-asc">Price low to high</option>
+            <option value="price-desc">Price high to low</option>
+            <option value="stock-desc">Most available</option>
+          </select>
+        </label>
+        <label class="stock-filter">
+          <input id="stockOnly" type="checkbox">
+          <span>In stock only</span>
+        </label>
+      </div>
+      <div class="filter-row type-filter" id="typeFilters" aria-label="Product and service filters"></div>
+      <div class="filter-row section-filter" id="sectionFilters" aria-label="Section filters"></div>
       <div id="catalogGroups" class="catalog-groups"></div>
     </section>
 
-    <section id="services" class="service-band" aria-labelledby="services-heading">
-      <div>
-        <p class="eyebrow">Services</p>
-        <h2 id="services-heading">Book help with the purchase.</h2>
-      </div>
-      <div id="serviceTiles" class="service-tiles"></div>
-    </section>
-
-    <section id="inventory" class="inventory-panel" aria-labelledby="inventory-heading">
+    <section id="inventory" class="screen inventory-panel" aria-labelledby="inventory-heading" hidden>
       <div class="section-heading">
         <div>
           <p class="eyebrow">Inventory</p>
@@ -127,7 +141,7 @@
       </div>
     </section>
 
-    <section id="checkout" class="checkout-section" aria-labelledby="checkout-heading">
+    <section id="checkout" class="screen checkout-section" aria-labelledby="checkout-heading" hidden>
       <div>
         <p class="eyebrow">Checkout</p>
         <h2 id="checkout-heading">Pay securely.</h2>
