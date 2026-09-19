@@ -55,6 +55,8 @@ function saveSession(data) {
     refresh_token: data.refresh_token,
     expires_at: Date.now() + (data.expires_in || 3600) * 1000,
     user_id: (data.user && data.user.id) || null,
+    email: (data.user && data.user.email) || null,
+    username: ((data.user && data.user.user_metadata && data.user.user_metadata.username) || ((data.user && data.user.email) ? data.user.email.split('@')[0] : null) || null),
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
@@ -255,6 +257,32 @@ async function fetchProfile(userId) {
   return (data && data[0]) || null;
 }
 
+async function ensureProfileRow(userId, fallbackUsername) {
+  let profile = await fetchProfile(userId);
+  if (profile) return profile;
+
+  const username = (fallbackUsername || `user-${String(userId).slice(0, 8)}`).trim();
+  const seed = {
+    id: userId,
+    username,
+    name: username,
+    role: 'user',
+    avatar_data_url: null,
+    status: '',
+    profile_url: null,
+  };
+
+  try {
+    const { data } = await restFetch('POST', 'profiles', {
+      body: seed,
+      prefer: 'return=representation',
+    });
+    return (data && data[0]) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function fetchAvatars(ids) {
   const unique = [...new Set(ids.filter(Boolean))];
   if (!unique.length) return {};
@@ -356,7 +384,10 @@ const pulse = {
     if (!session || !session.user_id) return null;
     const token = await getAccessToken();
     if (!token) return null;
-    const profile = await fetchProfile(session.user_id);
+    let profile = await fetchProfile(session.user_id);
+    if (!profile) {
+      profile = await ensureProfileRow(session.user_id, session.username || (session.email ? session.email.split('@')[0] : null));
+    }
     return profile ? toUser(profile) : null;
   },
 
@@ -369,6 +400,7 @@ const pulse = {
       }
       if ((avatarDataUrl.length * 3) / 4 > 256 * 1024) throw new Error('Avatar image must be smaller than 256KB.');
     }
+    await ensureProfileRow(session.user_id, session.username || (session.email ? session.email.split('@')[0] : null));
     await restFetch('PATCH', 'profiles', {
       params: { id: `eq.${session.user_id}` },
       body: { avatar_data_url: avatarDataUrl },
@@ -398,12 +430,18 @@ const pulse = {
       || (avatar.length * 3) / 4 > 256 * 1024)) {
       throw new Error('Avatar must be a supported image smaller than 256KB.');
     }
+    const existing = await ensureProfileRow(session.user_id, session.username || (session.email ? session.email.split('@')[0] : null));
     const { data } = await restFetch('PATCH', 'profiles', {
       params: { id: `eq.${session.user_id}` },
       body: { username, name, status, profile_url: profileUrl || null, avatar_data_url: avatar || null },
       prefer: 'return=representation',
     });
-    if (!data || !data.length) throw new Error('Profile could not be updated.');
+    if (!data || !data.length) {
+      if (existing) {
+        return toUser(existing);
+      }
+      throw new Error('Profile could not be updated.');
+    }
     return toUser(data[0]);
   },
 
