@@ -220,7 +220,25 @@ function hotScore(upvotes, downvotes, createdAt) {
   return sign * order + (epochSeconds - 1_600_000_000) / 45000;
 }
 
+function authUserToUser(authUser) {
+  if (!authUser) return null;
+  const metadata = authUser.user_metadata || {};
+  const email = authUser.email || '';
+  const inferredUsername = (metadata.username || (email ? email.split('@')[0] : '') || 'user').trim();
+  const username = inferredUsername || 'user';
+  return {
+    id: authUser.id,
+    username,
+    name: metadata.name || username,
+    role: metadata.role || 'user',
+    avatar: metadata.avatar_data_url || null,
+    status: metadata.status || '',
+    profileUrl: metadata.profile_url || '',
+  };
+}
+
 function toUser(profile) {
+  if (!profile) return null;
   return {
     id: profile.id,
     username: profile.username,
@@ -310,14 +328,14 @@ const pulse = {
     }
     saveSession(data);
     const profile = await fetchProfile(data.user.id);
-    return toUser(profile);
+    return toUser(profile) || authUserToUser(data.user);
   },
 
   async login(username, password) {
     const data = await authFetch('token?grant_type=password', { email: usernameToEmail(username), password });
     saveSession(data);
     const profile = await fetchProfile(data.user.id);
-    return toUser(profile);
+    return toUser(profile) || authUserToUser(data.user);
   },
 
   async logout() {

@@ -15,4 +15,5 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert 'namespacedName' in app_js
     assert 'tableCandidates' in app_js
     assert 'functionCandidates' in app_js
+    assert 'authUserToUser' in app_js
     assert 'Could not find the table' in app_js or 'schema cache' in app_js
