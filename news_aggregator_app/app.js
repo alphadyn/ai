@@ -8,6 +8,14 @@
 const CONFIG = window.PULSE_SUPABASE || {};
 const EMAIL_DOMAIN = 'pulse.local';
 const SESSION_KEY = 'pulse_session';
+const TABLE_PREFIX = 'pulse_';
+
+function namespacedName(name, kind = 'table') {
+  const value = String(name || '').trim();
+  if (!value) return value;
+  const prefix = kind === 'rpc' ? 'pulse_' : 'pulse_';
+  return value.startsWith(prefix) ? value : `${prefix}${value}`;
+}
 
 function usernameToEmail(username) {
   return `${username.trim().toLowerCase()}@${EMAIL_DOMAIN}`;
@@ -82,8 +90,9 @@ async function authFetch(path, body) {
 
 async function restFetch(method, table, { params, body, prefer, headers } = {}) {
   const token = await getAccessToken();
+  const targetTable = namespacedName(table);
   const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-  const res = await fetch(`${CONFIG.url}/rest/v1/${table}${qs}`, {
+  const res = await fetch(`${CONFIG.url}/rest/v1/${targetTable}${qs}`, {
     method,
     headers: {
       apikey: CONFIG.anonKey,
@@ -104,7 +113,8 @@ async function restFetch(method, table, { params, body, prefer, headers } = {}) 
 
 async function rpcFetch(name, args) {
   const token = await getAccessToken();
-  const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${name}`, {
+  const targetName = namespacedName(name, 'rpc');
+  const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${targetName}`, {
     method: 'POST',
     headers: {
       apikey: CONFIG.anonKey,

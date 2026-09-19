@@ -50,7 +50,7 @@ Pages.
 
 ## Setup (required before first use)
 
-1. Create a free project at [supabase.com](https://supabase.com), or reuse an existing one — Pulse's tables (`profiles`, `posts`, `comments`, `post_votes`, `comment_votes`) are self-contained and won't collide with other apps' tables in the same project (e.g. Nexus CMS's `media_items`).
+1. Create a free project at [supabase.com](https://supabase.com), or reuse an existing one — Pulse's tables are namespaced as `pulse_profiles`, `pulse_posts`, `pulse_comments`, `pulse_post_votes`, and `pulse_comment_votes` so they won't collide with other apps' tables in the same project (e.g. Nexus CMS's `media_items`).
 2. Open the SQL editor and run the entire [`supabase-schema.sql`](supabase-schema.sql) file — this creates the `profiles`/`posts`/`comments`/vote tables, the voting RPC functions, and locks everything down with Row Level Security. **This script drops and recreates Pulse's tables every time it's run**, so re-running it later (e.g. after a schema update) wipes any posts/comments/accounts created so far — plan to redo the "first admin" step below afterward.
   If Pulse is already running and you only need to add the profile fields, run [`profile-fields-migration.sql`](profile-fields-migration.sql) instead. It preserves existing data and reloads the PostgREST schema cache, fixing errors such as `Could not find the 'profile_url' column of 'profiles' in the schema cache`.
   If Pulse is already running and you only need to fix post deletion, run [`post-delete-migration.sql`](post-delete-migration.sql) instead. It preserves existing data while allowing permanent post deletes and blocking new soft-deleted post rows.
@@ -73,7 +73,7 @@ signing up your own account through the app, promote it in the Supabase SQL
 editor:
 
 ```sql
-update profiles set role = 'admin' where username = 'your-username';
+update public.pulse_profiles set role = 'admin' where username = 'your-username';
 ```
 
 Re-running `supabase-schema.sql` later drops and recreates every Pulse table,

@@ -1,0 +1,16 @@
+from pathlib import Path
+
+
+def test_pulse_uses_namespaced_supabase_objects():
+    schema = (Path(__file__).with_name('supabase-schema.sql')).read_text()
+    app_js = Path(__file__).with_name('app.js').read_text()
+
+    assert 'public.pulse_profiles' in schema
+    assert 'public.pulse_posts' in schema
+    assert 'public.pulse_comments' in schema
+    assert 'public.pulse_cast_post_vote' in schema
+    assert 'public.pulse_cast_comment_vote' in schema
+    assert 'pulse_on_auth_user_created' in schema
+
+    assert 'namespacedName' in app_js
+    assert 'pulse_' in app_js
