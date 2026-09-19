@@ -1491,11 +1491,6 @@ function renderProfileView() {
 
 async function showAdminView() {
   if (!state.user) { toast('Admin access required.'); return; }
-  if (state.user.role !== 'admin') {
-    if (!await pulse.isAdmin()) { toast('Admin access required.'); return; }
-    state.user.role = 'admin';
-    renderAuthNav();
-  }
   document.getElementById('feed-view').hidden = true;
   document.getElementById('post-view').hidden = true;
   document.getElementById('profile-view').hidden = true;

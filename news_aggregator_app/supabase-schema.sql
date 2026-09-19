@@ -102,6 +102,8 @@ as $$
   or exists (select 1 from public.pulse_profiles where id = auth.uid() and role = 'admin');
 $$;
 
+grant execute on function public.pulse_is_admin() to anon, authenticated;
+
 -- Prevent privilege escalation: only an admin (acting on someone else's row)
 -- may change a profile's role. A user updating their own avatar cannot also
 -- sneak in role = 'admin'. auth.uid() is null for direct SQL (e.g. the
