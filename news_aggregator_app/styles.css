@@ -172,6 +172,24 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 .attachment-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--panel-3); }
 .attachment-media { max-width: 100%; border-radius: var(--radius-sm); margin-top: 8px; display: block; border: 1px solid var(--line-soft); }
 
+.attachment-carousel { display: grid; gap: 10px; margin-top: 10px; }
+.attachment-carousel-track { position: relative; min-height: 220px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel-2); }
+.attachment-slide { display: none; width: 100%; min-height: 220px; align-items: center; justify-content: center; padding: 12px; }
+.attachment-slide.is-active { display: flex; }
+.attachment-slide .attachment-media { width: 100%; max-height: 360px; object-fit: contain; margin-top: 0; }
+.attachment-slide .attachment-chip { margin: 0; }
+.attachment-carousel-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.attachment-carousel-btn {
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--text); width: 32px; height: 32px;
+  cursor: pointer; font-size: .8rem; transition: all .15s var(--ease);
+}
+.attachment-carousel-btn:hover { border-color: var(--accent); color: var(--accent); }
+.attachment-carousel-dots { display: flex; align-items: center; justify-content: center; flex: 1; gap: 8px; }
+.attachment-dot {
+  width: 9px; height: 9px; border-radius: 999px; border: none; background: rgba(255,255,255,.25); cursor: pointer; padding: 0;
+}
+.attachment-dot.is-active { background: var(--accent); }
+
 .feed-more { text-align: center; margin-top: 18px; }
 .profile-results-panel { margin-bottom: 18px; }
 .search-result-section + .search-result-section { margin-top: 16px; }

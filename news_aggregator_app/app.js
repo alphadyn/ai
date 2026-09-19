@@ -1059,20 +1059,68 @@ async function sharePostById(id) {
   await sharePost(post);
 }
 
+function renderAttachmentItem(att) {
+  if (attachmentIsImage(att)) {
+    return `<img class="attachment-media" src="${att.dataUrl}" alt="${escapeHtml(att.name || 'attachment')}" loading="lazy">`;
+  }
+  if ((att.mimeType || '').startsWith('audio/')) {
+    return `<audio class="attachment-media" controls src="${att.dataUrl}"></audio>`;
+  }
+  if ((att.mimeType || '').startsWith('video/')) {
+    return `<video class="attachment-media" controls src="${att.dataUrl}"></video>`;
+  }
+  return `<a class="attachment-chip" href="${att.dataUrl}" download="${escapeHtml(att.name || 'file')}">📎 ${escapeHtml(att.name || 'file')}</a>`;
+}
+
 function renderAttachments(attachments) {
   if (!attachments || !attachments.length) return '';
-  return attachments.map((att) => {
-    if (attachmentIsImage(att)) {
-      return `<img class="attachment-media" src="${att.dataUrl}" alt="${escapeHtml(att.name || 'attachment')}" loading="lazy">`;
-    }
-    if ((att.mimeType || '').startsWith('audio/')) {
-      return `<audio class="attachment-media" controls src="${att.dataUrl}"></audio>`;
-    }
-    if ((att.mimeType || '').startsWith('video/')) {
-      return `<video class="attachment-media" controls src="${att.dataUrl}"></video>`;
-    }
-    return `<a class="attachment-chip" href="${att.dataUrl}" download="${escapeHtml(att.name || 'file')}">📎 ${escapeHtml(att.name || 'file')}</a>`;
-  }).join('');
+  if (attachments.length === 1) return renderAttachmentItem(attachments[0]);
+
+  const slides = attachments.map((att, index) => `
+    <div class="attachment-slide${index === 0 ? ' is-active' : ''}">
+      ${renderAttachmentItem(att)}
+    </div>
+  `).join('');
+
+  const dots = attachments.map((att, index) => `
+    <button type="button" class="attachment-dot${index === 0 ? ' is-active' : ''}" data-carousel-dot="${index}" aria-label="View attachment ${index + 1}"></button>
+  `).join('');
+
+  return `
+    <div class="attachment-carousel" data-carousel>
+      <div class="attachment-carousel-track">
+        ${slides}
+      </div>
+      <div class="attachment-carousel-controls">
+        <button type="button" class="attachment-carousel-btn" data-carousel-prev aria-label="Previous attachment">◀</button>
+        <div class="attachment-carousel-dots">${dots}</div>
+        <button type="button" class="attachment-carousel-btn" data-carousel-next aria-label="Next attachment">▶</button>
+      </div>
+    </div>
+  `;
+}
+
+function bindAttachmentCarousels() {
+  document.querySelectorAll('[data-carousel]').forEach((carousel) => {
+    const slides = [...carousel.querySelectorAll('.attachment-slide')];
+    const dots = [...carousel.querySelectorAll('[data-carousel-dot]')];
+    const prevBtn = carousel.querySelector('[data-carousel-prev]');
+    const nextBtn = carousel.querySelector('[data-carousel-next]');
+    if (!slides.length) return;
+
+    const update = (index) => {
+      const total = slides.length;
+      const activeIndex = (index + total) % total;
+      slides.forEach((slide, idx) => slide.classList.toggle('is-active', idx === activeIndex));
+      dots.forEach((dot, idx) => dot.classList.toggle('is-active', idx === activeIndex));
+    };
+
+    prevBtn?.addEventListener('click', () => update(slides.findIndex((slide) => slide.classList.contains('is-active')) - 1));
+    nextBtn?.addEventListener('click', () => update(slides.findIndex((slide) => slide.classList.contains('is-active')) + 1));
+    dots.forEach((dot) => {
+      dot.addEventListener('click', () => update(Number(dot.dataset.carouselDot)));
+    });
+  });
 }
 
 function postCardHtml(post) {
@@ -1120,6 +1168,7 @@ async function loadFeed(reset) {
     document.getElementById('load-more-btn').hidden = posts.length < state.limit;
     state.offset += posts.length;
     bindFeedEvents();
+    bindAttachmentCarousels();
   } catch (err) {
     list.innerHTML = `<p class="form-error">Failed to load posts: ${escapeHtml(err.message)}</p>`;
   }
@@ -1562,6 +1611,7 @@ async function openPost(id, { updateUrl = true } = {}) {
       </div>
     `;
     document.getElementById('back-to-feed').onclick = showFeedView;
+    bindAttachmentCarousels();
     bindRichTextToolbars(view);
     bindPostDetailEvents(post, view);
   } catch (err) {
