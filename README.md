@@ -2,6 +2,21 @@
 
 This repository contains a collection of small web apps, reports, demos, and utility scripts built for experimentation, portfolio work, and technical prototyping. The projects span marketing sites, dashboards, data visualizations, legal tooling, browser utilities, and Python-based automation.
 
+## Featured apps
+
+The current top-of-page index is ordered as follows:
+
+1. Pulse — Social
+2. Nexus — Workspace
+3. S&P Analysis — Finance
+4. Atlas Store — Commerce
+5. Meetings — Communication
+6. Photo Gallery — Gallery
+7. Postboard App — Productivity
+8. Earth 3D Explorer — 3D
+
+The full repository index below includes the complete catalog of projects, not just the featured set.
+
 ## Repository layout
 
 ### Web apps and interactive demos
