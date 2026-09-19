@@ -46,11 +46,19 @@ function usernameToEmail(username) {
   return `${username.trim().toLowerCase()}@${EMAIL_DOMAIN}`;
 }
 
+function normalizeRole(value) {
+  const text = String(value ?? 'user').trim().toLowerCase();
+  return text === 'admin' ? 'admin' : 'user';
+}
+
 function getSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (_) { return null; }
 }
 
 function saveSession(data) {
+  const user = data && data.user ? data.user : {};
+  const metadata = user.user_metadata || {};
+  const appMetadata = user.app_metadata || {};
   const session = {
     access_token: data.access_token,
     refresh_token: data.refresh_token,
@@ -58,6 +66,7 @@ function saveSession(data) {
     user_id: (data.user && data.user.id) || null,
     email: (data.user && data.user.email) || null,
     username: ((data.user && data.user.user_metadata && data.user.user_metadata.username) || ((data.user && data.user.email) ? data.user.email.split('@')[0] : null) || null),
+    role: normalizeRole(metadata.role || metadata.user_role || appMetadata.role || appMetadata.user_role || 'user'),
   };
   localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   return session;
@@ -218,6 +227,7 @@ function hotScore(upvotes, downvotes, createdAt) {
 function authUserToUser(authUser) {
   if (!authUser) return null;
   const metadata = authUser.user_metadata || {};
+  const appMetadata = authUser.app_metadata || {};
   const email = authUser.email || '';
   const inferredUsername = (metadata.username || (email ? email.split('@')[0] : '') || 'user').trim();
   const username = inferredUsername || 'user';
@@ -225,7 +235,7 @@ function authUserToUser(authUser) {
     id: authUser.id,
     username,
     name: metadata.name || username,
-    role: metadata.role || 'user',
+    role: normalizeRole(metadata.role || metadata.user_role || appMetadata.role || appMetadata.user_role || 'user'),
     avatar: metadata.avatar_data_url || null,
     status: metadata.status || '',
     profileUrl: metadata.profile_url || '',
@@ -238,7 +248,7 @@ function toUser(profile) {
     id: profile.id,
     username: profile.username,
     name: profile.name || profile.username,
-    role: profile.role,
+    role: normalizeRole(profile.role),
     avatar: profile.avatar_data_url,
     status: profile.status || '',
     profileUrl: profile.profile_url || '',
@@ -351,14 +361,18 @@ const pulse = {
     }
     saveSession(data);
     const profile = await fetchProfile(data.user.id);
-    return toUser(profile) || authUserToUser(data.user);
+    if (profile) return toUser(profile);
+    const ensured = await ensureProfileRow(data.user.id, username);
+    return toUser(ensured) || authUserToUser(data.user);
   },
 
   async login(username, password) {
     const data = await authFetch('token?grant_type=password', { email: usernameToEmail(username), password });
     saveSession(data);
     const profile = await fetchProfile(data.user.id);
-    return toUser(profile) || authUserToUser(data.user);
+    if (profile) return toUser(profile);
+    const ensured = await ensureProfileRow(data.user.id, username);
+    return toUser(ensured) || authUserToUser(data.user);
   },
 
   async logout() {
@@ -383,7 +397,15 @@ const pulse = {
     if (!profile) {
       profile = await ensureProfileRow(session.user_id, session.username || (session.email ? session.email.split('@')[0] : null));
     }
-    return profile ? toUser(profile) : null;
+    if (profile) return toUser(profile);
+    if (session.role === 'admin') {
+      return authUserToUser({
+        id: session.user_id,
+        email: session.email || `${session.username || 'user'}@${EMAIL_DOMAIN}`,
+        user_metadata: { username: session.username || 'user', role: 'admin' },
+      });
+    }
+    return null;
   },
 
   async setAvatar(avatarDataUrl) {
