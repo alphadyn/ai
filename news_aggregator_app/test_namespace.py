@@ -25,6 +25,8 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert 'role: normalizeRole(profile.role)' in app_js
     assert "rpcFetch('is_admin', {})" in app_js
     assert "state.user.role = 'admin'" in app_js
+    assert '<button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>' in app_js
+    assert 'if (!await pulse.isAdmin()) { toast(\'Admin access required.\'); return; }' in app_js
     assert "prefer: 'return=minimal'" in app_js
     assert 'const updated = await fetchProfile(session.user_id)' in app_js
     assert 'user-${String(userId).slice(0, 8)}' in app_js

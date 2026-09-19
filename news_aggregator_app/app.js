@@ -819,7 +819,7 @@ function renderAuthNav() {
       <button class="nav-avatar-btn" id="avatar-nav-btn" type="button" title="View profile">${avatarHtml(state.user.avatar, state.user.username)}</button>
       <span class="muted small">Hi, <strong>${escapeHtml(state.user.name)}</strong>${state.user.role === 'admin' ? ' <span title="Administrator">🛡️</span>' : ''}</span>
       <button class="btn ghost" id="profile-nav-btn" type="button">Profile</button>
-      ${state.user.role === 'admin' ? '<button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>' : ''}
+      <button class="btn ghost" id="admin-nav-btn" type="button">Admin</button>
       <button class="btn ghost" id="logout-btn" type="button">Log out</button>`;
     document.getElementById('logout-btn').addEventListener('click', logout);
     document.getElementById('avatar-nav-btn').addEventListener('click', showProfileView);
@@ -1488,8 +1488,13 @@ function renderProfileView() {
   };
 }
 
-function showAdminView() {
-  if (!state.user || state.user.role !== 'admin') { toast('Admin access required.'); return; }
+async function showAdminView() {
+  if (!state.user) { toast('Admin access required.'); return; }
+  if (state.user.role !== 'admin') {
+    if (!await pulse.isAdmin()) { toast('Admin access required.'); return; }
+    state.user.role = 'admin';
+    renderAuthNav();
+  }
   document.getElementById('feed-view').hidden = true;
   document.getElementById('post-view').hidden = true;
   document.getElementById('profile-view').hidden = true;
