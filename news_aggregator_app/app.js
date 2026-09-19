@@ -1176,8 +1176,10 @@ function renderAttachments(attachments) {
   `;
 }
 
-function bindAttachmentCarousels() {
-  document.querySelectorAll('[data-carousel]').forEach((carousel) => {
+function bindAttachmentCarousels(root = document) {
+  root.querySelectorAll('[data-carousel]').forEach((carousel) => {
+    if (carousel.dataset.carouselBound) return; // avoid re-attaching listeners to carousels bound by a previous render
+    carousel.dataset.carouselBound = '1';
     const slides = [...carousel.querySelectorAll('.attachment-slide')];
     const dots = [...carousel.querySelectorAll('[data-carousel-dot]')];
     const prevBtn = carousel.querySelector('[data-carousel-prev]');
