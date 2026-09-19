@@ -411,6 +411,7 @@ const pulse = {
   async isAdmin() {
     const session = getSession();
     if (!session || !session.user_id) return false;
+    if (session.role === 'admin') return true;
     try {
       return await rpcFetch('is_admin', {}) === true;
     } catch (_) {

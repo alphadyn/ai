@@ -92,7 +92,14 @@ stable
 security definer
 set search_path = public
 as $$
-  select exists (select 1 from public.pulse_profiles where id = auth.uid() and role = 'admin');
+  select coalesce(
+    auth.jwt()->'app_metadata'->>'role',
+    auth.jwt()->'app_metadata'->>'user_role',
+    auth.jwt()->'user_metadata'->>'role',
+    auth.jwt()->'user_metadata'->>'user_role',
+    ''
+  ) = 'admin'
+  or exists (select 1 from public.pulse_profiles where id = auth.uid() and role = 'admin');
 $$;
 
 -- Prevent privilege escalation: only an admin (acting on someone else's row)
