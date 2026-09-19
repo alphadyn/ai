@@ -31,6 +31,11 @@ create trigger posts_delete_guard
 
 drop policy if exists "owner or admin can delete posts" on public.posts;
 create policy "owner or admin can delete posts" on public.posts
-  for delete using (author_id = auth.uid() or public.is_admin());
+  for delete using (author_id is null or author_id = auth.uid() or public.is_admin());
+
+drop policy if exists "owner or admin can update posts" on public.posts;
+create policy "owner or admin can update posts" on public.posts
+  for update using (author_id is null or author_id = auth.uid() or public.is_admin())
+  with check (author_id is null or author_id = auth.uid() or public.is_admin());
 
 notify pgrst, 'reload schema';

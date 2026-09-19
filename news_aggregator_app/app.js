@@ -435,6 +435,26 @@ const pulse = {
     return mapPostRow(data[0], 0, 0, state.user ? state.user.avatar : null);
   },
 
+  async updatePost(id, { title, body, linkUrl, tags, attachments }) {
+    title = (title || '').trim();
+    if (!title) throw new Error('Title is required.');
+    if (title.length > 300) throw new Error('Title is too long.');
+    const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
+    const { data } = await restFetch('PATCH', 'posts', {
+      params: { id: `eq.${id}` },
+      body: {
+        title,
+        body: sanitizeRichText(body || ''),
+        link_url: (linkUrl || '').trim().slice(0, 2000) || null,
+        tags: cleanTags,
+        attachments: attachments || [],
+      },
+      prefer: 'return=representation',
+    });
+    if (!data || !data.length) throw new Error('Not authorized to edit this post.');
+    return mapPostRow(data[0], 0, 0, state.user ? state.user.avatar : null);
+  },
+
   async votePost(id, value) {
     const voterKey = await currentVoterKey();
     await rpcFetch('cast_post_vote', { p_post_id: id, p_voter_key: voterKey, p_value: value });
@@ -595,6 +615,7 @@ const state = {
   offset: 0,
   limit: 30,
   pendingAttachments: [],
+  editingPostId: null,
   authMode: 'login',
   feedLoaded: false,
 };
@@ -946,7 +967,7 @@ function renderAttachments(attachments) {
 function postCardHtml(post) {
   const excerpt = post.body ? post.body : '';
   const tags = (post.tags || []).map((t) => `<button class="tag-chip" data-tag="${escapeHtml(t)}" type="button">#${escapeHtml(t)}</button>`).join('');
-  const canModerate = state.user && (state.user.role === 'admin' || state.user.id === post.authorId);
+  const canEdit = !post.authorId || (state.user && (state.user.role === 'admin' || state.user.id === post.authorId));
   return `
   <article class="post-card" data-id="${post.id}">
     <div class="vote-col">
@@ -967,7 +988,7 @@ function postCardHtml(post) {
       <div class="post-actions">
         <button data-open="${post.id}" type="button">💬 ${post.commentCount} comments</button>
         <button data-share-post="${post.id}" type="button">↗ Share</button>
-        ${canModerate ? `<button class="danger" data-delete-post="${post.id}" type="button">🗑 Delete</button>` : ''}
+        ${canEdit ? `<button data-edit-post="${post.id}" type="button">✎ Edit</button><button class="danger" data-delete-post="${post.id}" type="button">🗑 Delete</button>` : ''}
       </div>
     </div>
   </article>`;
@@ -1004,6 +1025,8 @@ function bindFeedEvents() {
     });
     const del = card.querySelector('[data-delete-post]');
     if (del) del.onclick = () => deletePost(id);
+    const edit = card.querySelector('[data-edit-post]');
+    if (edit) edit.onclick = () => openEditPost(id);
     const share = card.querySelector('[data-share-post]');
     if (share) share.onclick = async () => {
       try { await sharePostById(id); }
@@ -1050,6 +1073,29 @@ async function deletePost(id) {
     loadFeed(true);
   } catch (err) {
     toast(`Could not delete: ${err.message}`);
+  }
+}
+
+async function openEditPost(id) {
+  try {
+    const post = await pulse.getPost(id);
+    if (!post) throw new Error('Post not found.');
+    state.editingPostId = post.id;
+    state.pendingAttachments = [...(post.attachments || [])];
+    document.getElementById('post-form').reset();
+    document.getElementById('post-modal-title').textContent = 'Edit post';
+    document.getElementById('post-submit').textContent = 'Save changes';
+    document.getElementById('post-modal-sub').textContent = post.authorId ? `Editing ${post.authorName}'s post.` : 'Editing an anonymous post.';
+    document.getElementById('post-title').value = post.title;
+    document.getElementById('post-link').value = post.linkUrl || '';
+    document.getElementById('post-body').innerHTML = post.body || '';
+    document.getElementById('post-tags').value = (post.tags || []).join(', ');
+    document.getElementById('post-attachment-preview').innerHTML = '';
+    renderAttachmentPreview(document.getElementById('post-attachment-preview'), state.pendingAttachments);
+    document.getElementById('post-error').hidden = true;
+    document.getElementById('post-modal').showModal();
+  } catch (err) {
+    toast(`Could not edit: ${err.message}`);
   }
 }
 
@@ -1368,7 +1414,7 @@ async function openPost(id, { updateUrl = true } = {}) {
   try {
     const post = await pulse.getPost(id);
     if (!post) throw new Error('Post not found.');
-    const canModerate = state.user && (state.user.role === 'admin' || state.user.id === post.authorId);
+    const canEdit = !post.authorId || (state.user && (state.user.role === 'admin' || state.user.id === post.authorId));
     view.innerHTML = `
       <button class="btn ghost post-detail-back" id="back-to-feed" type="button">← Back to feed</button>
       <article class="post-detail" data-id="${post.id}">
@@ -1390,7 +1436,7 @@ async function openPost(id, { updateUrl = true } = {}) {
             <div class="post-tags">${(post.tags || []).map((t) => `<span class="tag-chip">#${escapeHtml(t)}</span>`).join('')}</div>
             <div class="post-actions">
               <button id="share-post-detail" type="button">↗ Share</button>
-              ${canModerate ? `<button class="danger" id="delete-post-detail" type="button">🗑 Delete post</button>` : ''}
+              ${canEdit ? `<button id="edit-post-detail" type="button">✎ Edit post</button><button class="danger" id="delete-post-detail" type="button">🗑 Delete post</button>` : ''}
             </div>
           </div>
         </div>
@@ -1419,6 +1465,8 @@ function bindPostDetailEvents(post, root) {
   if (shareBtn) shareBtn.onclick = () => sharePost(post);
   const delBtn = root.querySelector('#delete-post-detail');
   if (delBtn) delBtn.onclick = async () => { await deletePost(postId); showFeedView(); };
+  const editBtn = root.querySelector('#edit-post-detail');
+  if (editBtn) editBtn.onclick = () => openEditPost(postId);
 
   bindReplyForm(root.querySelector('.comment-form .reply-form'), postId, null);
 
@@ -1529,8 +1577,11 @@ function bindRichTextToolbars(root) {
 /* ---------------------------------------------------------------------- */
 
 document.getElementById('submit-post-btn').addEventListener('click', () => {
+  state.editingPostId = null;
   state.pendingAttachments = [];
   document.getElementById('post-form').reset();
+  document.getElementById('post-modal-title').textContent = 'Submit a post';
+  document.getElementById('post-submit').textContent = 'Post';
   document.getElementById('post-body').innerHTML = '';
   document.getElementById('post-attachment-preview').innerHTML = '';
   document.getElementById('post-error').hidden = true;
@@ -1562,9 +1613,12 @@ document.getElementById('post-form').addEventListener('submit', async (e) => {
   const body = document.getElementById('post-body').innerHTML.trim();
   const tags = document.getElementById('post-tags').value.split(',').map((t) => t.trim()).filter(Boolean);
   try {
-    await pulse.createPost({ title, body, linkUrl, tags, attachments: state.pendingAttachments });
+    const editing = Boolean(state.editingPostId);
+    if (editing) await pulse.updatePost(state.editingPostId, { title, body, linkUrl, tags, attachments: state.pendingAttachments });
+    else await pulse.createPost({ title, body, linkUrl, tags, attachments: state.pendingAttachments });
     document.getElementById('post-modal').close();
-    toast('Post submitted.');
+    state.editingPostId = null;
+    toast(editing ? 'Post updated.' : 'Post submitted.');
     state.sort = 'new';
     document.querySelectorAll('.sort-tab').forEach((t) => t.classList.toggle('is-active', t.dataset.sort === 'new'));
     loadTags();

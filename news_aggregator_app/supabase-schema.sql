@@ -307,11 +307,12 @@ create policy "anyone can create posts" on posts
 
 drop policy if exists "owner or admin can update posts" on posts;
 create policy "owner or admin can update posts" on posts
-  for update using (author_id = auth.uid() or public.is_admin());
+  for update using (author_id is null or author_id = auth.uid() or public.is_admin())
+  with check (author_id is null or author_id = auth.uid() or public.is_admin());
 
 drop policy if exists "owner or admin can delete posts" on posts;
 create policy "owner or admin can delete posts" on posts
-  for delete using (author_id = auth.uid() or public.is_admin());
+  for delete using (author_id is null or author_id = auth.uid() or public.is_admin());
 
 -- post_votes: publicly readable (needed for "my vote" indicator); no direct
 -- insert/update/delete policies — all mutation must go through the

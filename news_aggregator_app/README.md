@@ -33,7 +33,7 @@ Pages.
 - Share posts directly to supported apps such as Messages/RCS with the post title/body as the highlighted shared text and image attachments included for preview when the share target supports file sharing.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
-- Post deletion restricted to the original author or an admin; deleting a post permanently removes its comments, votes, and attachments.
+- Registered users can edit or delete their own posts, while anonymous posts can be edited or deleted by anyone. Admins can edit or delete any post; deleting a post permanently removes its comments, votes, and attachments.
 
 ### Discussions
 - Threaded comments with unlimited reply depth (each comment can reply to another comment).
@@ -88,7 +88,7 @@ only thing standing between a visitor and the database** — the anon key is
 public and anyone can call the Supabase REST API directly with it, so every
 rule has to hold up even against a client that skips `app.js` entirely:
 
-- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` or `DELETE` their post; deleting a post uses a real `DELETE`, so Postgres cascades its comments and votes. A trigger blocks new post soft-deletes by rejecting direct `is_deleted: false → true` patches, while still allowing admins to restore older soft-deleted rows from previous schema versions.
+- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` or `DELETE` a registered user's post; anonymous posts may be updated or deleted by anyone. Deleting a post uses a real `DELETE`, so Postgres cascades its comments and votes. A trigger blocks new post soft-deletes by rejecting direct `is_deleted: false → true` patches, while still allowing admins to restore older soft-deleted rows from previous schema versions.
 - **Voting**: the `upvotes`/`downvotes` columns are never writable directly by clients. Voting goes through `cast_post_vote()` / `cast_comment_vote()`, `SECURITY DEFINER` Postgres functions that atomically apply the vote-count delta — a client can't just `PATCH` a post to set an arbitrary score.
 - **Roles**: a user can update their own `profiles` row (e.g. their avatar), but a trigger silently reverts any change to the `role` column unless the request comes from an existing admin. A regular user calling the API directly cannot self-promote.
 - **Profiles are public** (username, avatar, role, join date) — like a forum member list — so every post/comment can show author badges. Nothing sensitive (no emails, password hashes, or session tokens) lives in a client-readable table; Supabase Auth keeps those internally.
