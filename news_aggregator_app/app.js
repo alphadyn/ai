@@ -9,6 +9,9 @@ const CONFIG = window.PULSE_SUPABASE || {};
 const EMAIL_DOMAIN = 'pulse.local';
 const SESSION_KEY = 'pulse_session';
 const TABLE_PREFIX = 'pulse_';
+const MAX_POST_ATTACHMENTS = 4;
+const MAX_ATTACHMENT_TOTAL_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 1.5 * 1024 * 1024;
 
 function namespacedName(name, kind = 'table') {
   const value = String(name || '').trim();
@@ -545,6 +548,7 @@ const pulse = {
     if (!title) throw new Error('Title is required.');
     if (title.length > 300) throw new Error('Title is too long.');
     const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
+    const safeAttachments = validateAttachments(attachments);
     const session = getSession();
     const authorId = session && session.user_id ? session.user_id : null;
     const authorName = authorId && state.user ? state.user.name : 'Anonymous';
@@ -556,7 +560,7 @@ const pulse = {
         body: sanitizeRichText(body || ''),
         link_url: (linkUrl || '').trim().slice(0, 2000) || null,
         tags: cleanTags,
-        attachments: attachments || [],
+        attachments: safeAttachments,
       },
       prefer: 'return=representation',
     });
@@ -568,6 +572,7 @@ const pulse = {
     if (!title) throw new Error('Title is required.');
     if (title.length > 300) throw new Error('Title is too long.');
     const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
+    const safeAttachments = validateAttachments(attachments);
     const { data } = await restFetch('PATCH', 'posts', {
       params: { id: `eq.${id}` },
       body: {
@@ -575,7 +580,7 @@ const pulse = {
         body: sanitizeRichText(body || ''),
         link_url: (linkUrl || '').trim().slice(0, 2000) || null,
         tags: cleanTags,
-        attachments: attachments || [],
+        attachments: safeAttachments,
       },
       prefer: 'return=representation',
     });
@@ -1690,12 +1695,20 @@ function bindReplyForm(formEl, postId, parentId) {
 
   if (fileInput) {
     fileInput.addEventListener('change', async () => {
-      for (const file of fileInput.files) {
-        const dataUrl = await readFileAsDataUrl(file);
-        attachments.push({ name: file.name, mimeType: file.type, size: file.size, dataUrl });
+      try {
+        const nextFiles = Array.from(fileInput.files || []);
+        if (attachments.length + nextFiles.length > MAX_POST_ATTACHMENTS) {
+          throw new Error(`Please attach no more than ${MAX_POST_ATTACHMENTS} files per post.`);
+        }
+        for (const file of nextFiles) {
+          const dataUrl = await readAttachmentDataUrl(file);
+          attachments.push({ name: file.name, mimeType: file.type, size: file.size, dataUrl });
+        }
+        fileInput.value = '';
+        renderAttachmentPreview(preview, attachments);
+      } catch (err) {
+        toast(err.message);
       }
-      fileInput.value = '';
-      renderAttachmentPreview(preview, attachments);
     });
   }
   if (cancelBtn) cancelBtn.onclick = () => { formEl.remove(); };
@@ -1733,6 +1746,54 @@ function readFileAsDataUrl(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+async function readAttachmentDataUrl(file) {
+  if (!file || !file.type || !file.type.startsWith('image/')) return readFileAsDataUrl(file);
+
+  const fileSizeBytes = Number(file.size || 0);
+  if (fileSizeBytes <= MAX_ATTACHMENT_BYTES) return readFileAsDataUrl(file);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      try {
+        const maxDimension = 1600;
+        const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL(file.type.includes('png') ? 'image/png' : 'image/jpeg', 0.72);
+        URL.revokeObjectURL(objectUrl);
+        resolve(dataUrl);
+      } catch (err) {
+        URL.revokeObjectURL(objectUrl);
+        reject(err);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Could not read image attachment.'));
+    };
+    img.src = objectUrl;
+  });
+}
+
+function validateAttachments(attachments) {
+  const safeAttachments = (attachments || []).filter(Boolean);
+  if (safeAttachments.length > MAX_POST_ATTACHMENTS) {
+    throw new Error(`Please attach no more than ${MAX_POST_ATTACHMENTS} files per post.`);
+  }
+
+  const totalBytes = safeAttachments.reduce((sum, att) => sum + (Number(att.size || 0) || Math.max(0, Math.round((String(att.dataUrl || '').length * 3) / 4))), 0);
+  if (totalBytes > MAX_ATTACHMENT_TOTAL_BYTES) {
+    throw new Error('Attached files are too large for a single post. Please use fewer or smaller images.');
+  }
+
+  return safeAttachments;
 }
 
 function bindRichTextToolbars(root) {
@@ -1777,12 +1838,20 @@ document.getElementById('submit-post-btn').addEventListener('click', () => {
 bindRichTextToolbars(document);
 
 document.getElementById('post-files').addEventListener('change', async (e) => {
-  for (const file of e.target.files) {
-    const dataUrl = await readFileAsDataUrl(file);
-    state.pendingAttachments.push({ name: file.name, mimeType: file.type, size: file.size, dataUrl });
+  try {
+    const files = Array.from(e.target.files || []);
+    if (state.pendingAttachments.length + files.length > MAX_POST_ATTACHMENTS) {
+      throw new Error(`Please attach no more than ${MAX_POST_ATTACHMENTS} files per post.`);
+    }
+    for (const file of files) {
+      const dataUrl = await readAttachmentDataUrl(file);
+      state.pendingAttachments.push({ name: file.name, mimeType: file.type, size: file.size, dataUrl });
+    }
+    e.target.value = '';
+    renderAttachmentPreview(document.getElementById('post-attachment-preview'), state.pendingAttachments);
+  } catch (err) {
+    toast(err.message);
   }
-  e.target.value = '';
-  renderAttachmentPreview(document.getElementById('post-attachment-preview'), state.pendingAttachments);
 });
 
 document.getElementById('post-form').addEventListener('submit', async (e) => {
