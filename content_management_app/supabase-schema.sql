@@ -1,4 +1,4 @@
-create table if not exists public.media_items (
+create table if not exists public.nexus_media_items (
   id text primary key,
   title text not null,
   filename text not null,
@@ -24,27 +24,27 @@ insert into storage.buckets (id, name, public)
 values ('nexus-media', 'nexus-media', true)
 on conflict (id) do update set public = true;
 
-create index if not exists media_items_type_idx on public.media_items(type);
-create index if not exists media_items_category_idx on public.media_items(category);
-create index if not exists media_items_status_idx on public.media_items(status);
-create index if not exists media_items_date_idx on public.media_items(date desc);
-create index if not exists media_items_starred_idx on public.media_items(starred);
+create index if not exists nexus_media_items_type_idx on public.nexus_media_items(type);
+create index if not exists nexus_media_items_category_idx on public.nexus_media_items(category);
+create index if not exists nexus_media_items_status_idx on public.nexus_media_items(status);
+create index if not exists nexus_media_items_date_idx on public.nexus_media_items(date desc);
+create index if not exists nexus_media_items_starred_idx on public.nexus_media_items(starred);
 
-alter table public.media_items enable row level security;
+alter table public.nexus_media_items enable row level security;
 
-drop policy if exists "Nexus CMS can read media items" on public.media_items;
-drop policy if exists "Nexus CMS can create media items" on public.media_items;
-drop policy if exists "Nexus CMS can update media items" on public.media_items;
-drop policy if exists "Nexus CMS can delete media items" on public.media_items;
+drop policy if exists "Nexus CMS can read media items" on public.nexus_media_items;
+drop policy if exists "Nexus CMS can create media items" on public.nexus_media_items;
+drop policy if exists "Nexus CMS can update media items" on public.nexus_media_items;
+drop policy if exists "Nexus CMS can delete media items" on public.nexus_media_items;
 
 create policy "Nexus CMS can read media items"
-  on public.media_items for select to anon using (true);
+  on public.nexus_media_items for select to anon using (true);
 create policy "Nexus CMS can create media items"
-  on public.media_items for insert to anon with check (true);
+  on public.nexus_media_items for insert to anon with check (true);
 create policy "Nexus CMS can update media items"
-  on public.media_items for update to anon using (true) with check (true);
+  on public.nexus_media_items for update to anon using (true) with check (true);
 create policy "Nexus CMS can delete media items"
-  on public.media_items for delete to anon using (true);
+  on public.nexus_media_items for delete to anon using (true);
 
 drop policy if exists "Nexus CMS can upload media" on storage.objects;
 drop policy if exists "Nexus CMS can update media" on storage.objects;

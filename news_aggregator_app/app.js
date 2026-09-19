@@ -20,15 +20,13 @@ function namespacedName(name, kind = 'table') {
 function tableCandidates(name) {
   const value = String(name || '').trim();
   if (!value) return [value];
-  const names = [namespacedName(value), value];
-  return [...new Set(names)];
+  return [namespacedName(value)];
 }
 
 function functionCandidates(name) {
   const value = String(name || '').trim();
   if (!value) return [value];
-  const names = [namespacedName(value, 'rpc'), value];
-  return [...new Set(names)];
+  return [namespacedName(value, 'rpc')];
 }
 
 function isMissingSchemaObjectError(message, candidate) {
@@ -135,16 +133,12 @@ async function restFetch(method, table, { params, body, prefer, headers } = {}) 
       const data = parseResponseBody(await res.text());
       if (!res.ok) {
         const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-        if (isMissingSchemaObjectError(message, targetTable) && targetTable !== tableCandidates(table).at(-1)) {
-          lastError = new Error(message);
-          continue;
-        }
         throw new Error(message);
       }
       return { data, headers: res.headers };
     } catch (err) {
       lastError = err;
-      if (!isMissingSchemaObjectError(err.message, targetTable) || targetTable === tableCandidates(table).at(-1)) throw err;
+      throw err;
     }
   }
 
@@ -169,16 +163,12 @@ async function rpcFetch(name, args) {
       const data = parseResponseBody(await res.text());
       if (!res.ok) {
         const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-        if (isMissingSchemaObjectError(message, targetName) && targetName !== functionCandidates(name).at(-1)) {
-          lastError = new Error(message);
-          continue;
-        }
         throw new Error(message);
       }
       return data;
     } catch (err) {
       lastError = err;
-      if (!isMissingSchemaObjectError(err.message, targetName) || targetName === functionCandidates(name).at(-1)) throw err;
+      throw err;
     }
   }
 
@@ -262,25 +252,28 @@ async function ensureProfileRow(userId, fallbackUsername) {
   if (profile) return profile;
 
   const username = (fallbackUsername || `user-${String(userId).slice(0, 8)}`).trim();
-  const seed = {
-    id: userId,
-    username,
-    name: username,
-    role: 'user',
-    avatar_data_url: null,
-    status: '',
-    profile_url: null,
-  };
-
-  try {
-    const { data } = await restFetch('POST', 'profiles', {
-      body: seed,
-      prefer: 'return=representation',
-    });
-    return (data && data[0]) || null;
-  } catch (_) {
-    return null;
+  const candidates = [username, `user-${String(userId).slice(0, 8)}`];
+  for (const candidate of [...new Set(candidates)]) {
+    try {
+      const { data } = await restFetch('POST', 'profiles', {
+        body: {
+          id: userId,
+          username: candidate,
+          name: candidate,
+          role: 'user',
+          avatar_data_url: null,
+          status: '',
+          profile_url: null,
+        },
+        prefer: 'return=representation',
+      });
+      profile = (data && data[0]) || null;
+      if (profile) return profile;
+    } catch (_) {
+      // Retry with an id-derived username when the requested username is taken.
+    }
   }
+  return null;
 }
 
 async function fetchAvatars(ids) {

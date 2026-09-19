@@ -70,10 +70,10 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 - **Undo Stack**: Toast notification with instant "Undo" button to restore accidentally deleted files.
 
 ### 7. Persistent Supabase Database Storage & Data Portability
-- **Exclusive Persistent Database Storage (`media_items`)**: All data storage, edits, metadata, tags, and media assets are saved to the configured Supabase table through PostgREST. Browser local storage and IndexedDB are not used for CMS records.
+- **Exclusive Persistent Database Storage (`nexus_media_items`)**: All data storage, edits, metadata, tags, and media assets are saved to the configured Supabase table through PostgREST. Browser local storage and IndexedDB are not used for CMS records.
 - **Database Status Indicator**: Live status badge in the UI displaying Supabase connectivity and record counts.
 - **Export & Import Backup Tools**: One-click JSON backup export and import to transfer or restore data from Supabase.
-- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in the `media_items` table.
+- **Preloaded Sample Data**: Includes sample vector image, audio track with synthesized melody, Markdown architecture doc, JavaScript visualizer script, and video motion demo stored in the `nexus_media_items` table.
 
 ### 8. Direct Entry URLs & Deep Linking
 - **Direct Web URLs**: Every entry has a direct URL (e.g. `http://localhost:8000/?item=sample_img_1`) that can be copied and opened in any browser to launch the media viewer.
@@ -86,10 +86,10 @@ A modern, full-featured web-based Content Management System (CMS) for uploading,
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/rest/v1/media_items` | Retrieve media items through Supabase PostgREST |
-| `POST` | `/rest/v1/media_items?on_conflict=id` | Insert or update media items |
-| `DELETE` | `/rest/v1/media_items?id=eq.<id>` | Delete a media item |
-| `DELETE` | `/rest/v1/media_items?id=not.is.null` | Clear all media items |
+| `GET` | `/rest/v1/nexus_media_items` | Retrieve media items through Supabase PostgREST |
+| `POST` | `/rest/v1/nexus_media_items?on_conflict=id` | Insert or update media items |
+| `DELETE` | `/rest/v1/nexus_media_items?id=eq.<id>` | Delete a media item |
+| `DELETE` | `/rest/v1/nexus_media_items?id=not.is.null` | Clear all media items |
 
 ---
 
@@ -116,7 +116,7 @@ Configure Supabase:
 1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
 2. Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 
-The schema creates the public `nexus-media` Storage bucket and its policies. Binary uploads, including videos, are stored there; the `media_items` table stores their durable public URLs.
+The schema creates the public `nexus-media` Storage bucket and its policies. Binary uploads, including videos, are stored there; the `nexus_media_items` table stores their durable public URLs.
 
 If uploads report `NoSuchBucket`, the schema has not been applied to the configured Supabase project. Run it in the SQL Editor, then retry the upload.
 

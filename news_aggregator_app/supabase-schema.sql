@@ -19,33 +19,17 @@
 -- Re-running it deletes all existing Pulse data in this project.
 
 drop trigger if exists pulse_on_auth_user_created on auth.users;
-drop trigger if exists on_auth_user_created on auth.users;
-drop function if exists public.handle_new_user() cascade;
 drop function if exists public.pulse_handle_new_user() cascade;
-drop function if exists public.is_admin() cascade;
 drop function if exists public.pulse_is_admin() cascade;
-drop function if exists public.enforce_profile_role_immutable() cascade;
 drop function if exists public.pulse_enforce_profile_role_immutable() cascade;
-drop function if exists public.enforce_post_delete_rules() cascade;
 drop function if exists public.pulse_enforce_post_delete_rules() cascade;
-drop function if exists public.cast_post_vote(uuid, text, int) cascade;
 drop function if exists public.pulse_cast_post_vote(uuid, text, int) cascade;
-drop function if exists public.cast_comment_vote(uuid, text, int) cascade;
 drop function if exists public.pulse_cast_comment_vote(uuid, text, int) cascade;
-drop function if exists public.cast_post_vote(text, text, int) cascade;
-drop function if exists public.pulse_cast_post_vote(text, text, int) cascade;
-drop function if exists public.cast_comment_vote(text, text, int) cascade;
-drop function if exists public.pulse_cast_comment_vote(text, text, int) cascade;
 
-drop table if exists public.comment_votes cascade;
 drop table if exists public.pulse_comment_votes cascade;
-drop table if exists public.comments cascade;
 drop table if exists public.pulse_comments cascade;
-drop table if exists public.post_votes cascade;
 drop table if exists public.pulse_post_votes cascade;
-drop table if exists public.posts cascade;
 drop table if exists public.pulse_posts cascade;
-drop table if exists public.profiles cascade;
 drop table if exists public.pulse_profiles cascade;
 
 create extension if not exists pgcrypto;

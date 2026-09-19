@@ -17,7 +17,7 @@
 
   const db = {
     isConnected: false,
-    dbName: 'Supabase media_items',
+    dbName: 'Supabase nexus_media_items',
     connectionError: '',
 
     async request(path, options = {}) {
@@ -106,7 +106,7 @@
 
     async checkHealth() {
       try {
-        const res = await this.request('/rest/v1/media_items?select=id&limit=1');
+        const res = await this.request('/rest/v1/nexus_media_items?select=id&limit=1');
         this.isConnected = res.ok;
         this.connectionError = res.ok ? '' : `Supabase returned HTTP ${res.status}`;
         if (!res.ok) {
@@ -131,7 +131,7 @@
 
     async getAll() {
       try {
-        const res = await this.request('/rest/v1/media_items?select=*&order=date.desc');
+        const res = await this.request('/rest/v1/nexus_media_items?select=*&order=date.desc');
         if (res.ok) {
           return (await res.json()).map((row) => this.mapRow(row));
         }
@@ -143,7 +143,7 @@
 
     async getById(id) {
       try {
-        const res = await this.request(`/rest/v1/media_items?id=eq.${encodeURIComponent(id)}&select=*`);
+        const res = await this.request(`/rest/v1/nexus_media_items?id=eq.${encodeURIComponent(id)}&select=*`);
         if (res.ok) return this.mapRow((await res.json())[0]);
       } catch (err) {
         console.error('Failed to get item from Supabase:', err);
@@ -157,7 +157,7 @@
         if (file) {
           persistedItem.dataUrl = await this.uploadMedia(file, item.id, item.filename);
         }
-        const res = await this.request('/rest/v1/media_items?on_conflict=id', {
+        const res = await this.request('/rest/v1/nexus_media_items?on_conflict=id', {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
           body: JSON.stringify(this.mapItem(persistedItem))
@@ -180,7 +180,7 @@
 
     async putMany(items) {
       try {
-        const res = await this.request('/rest/v1/media_items?on_conflict=id', {
+        const res = await this.request('/rest/v1/nexus_media_items?on_conflict=id', {
           method: 'POST',
           headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
           body: JSON.stringify(items.map((item) => this.mapItem(item)))
@@ -195,7 +195,7 @@
 
     async delete(id) {
       try {
-        const res = await this.request(`/rest/v1/media_items?id=eq.${encodeURIComponent(id)}`, {
+        const res = await this.request(`/rest/v1/nexus_media_items?id=eq.${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
         if (res.ok) return true;
@@ -209,7 +209,7 @@
     async deleteMany(ids) {
       try {
         const filter = ids.map((id) => encodeURIComponent(id)).join(',');
-        const res = await this.request(`/rest/v1/media_items?id=in.(${filter})`, { method: 'DELETE' });
+        const res = await this.request(`/rest/v1/nexus_media_items?id=in.(${filter})`, { method: 'DELETE' });
         if (res.ok) return true;
       } catch (err) {
         console.error('Failed to batch delete from Supabase:', err);
@@ -220,7 +220,7 @@
 
     async clear() {
       try {
-        const res = await this.request('/rest/v1/media_items?id=not.is.null', { method: 'DELETE' });
+        const res = await this.request('/rest/v1/nexus_media_items?id=not.is.null', { method: 'DELETE' });
         if (res.ok) return true;
       } catch (err) {
         console.error('Failed to clear Supabase database:', err);
