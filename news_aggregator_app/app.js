@@ -431,18 +431,19 @@ const pulse = {
       throw new Error('Avatar must be a supported image smaller than 256KB.');
     }
     const existing = await ensureProfileRow(session.user_id, session.username || (session.email ? session.email.split('@')[0] : null));
-    const { data } = await restFetch('PATCH', 'profiles', {
+    if (!existing) throw new Error('Profile could not be created. Refresh the page and try again.');
+    await restFetch('PATCH', 'profiles', {
       params: { id: `eq.${session.user_id}` },
       body: { username, name, status, profile_url: profileUrl || null, avatar_data_url: avatar || null },
-      prefer: 'return=representation',
+      prefer: 'return=minimal',
     });
-    if (!data || !data.length) {
-      if (existing) {
-        return toUser(existing);
-      }
-      throw new Error('Profile could not be updated.');
+    const updated = await fetchProfile(session.user_id);
+    if (!updated || updated.username !== username || updated.name !== name
+      || updated.status !== status || (updated.profile_url || '') !== (profileUrl || '')
+      || (updated.avatar_data_url || null) !== (avatar || null)) {
+      throw new Error('Profile could not be updated. Check that the profile schema and permissions are current.');
     }
-    return toUser(data[0]);
+    return toUser(updated);
   },
 
   async listTags() {

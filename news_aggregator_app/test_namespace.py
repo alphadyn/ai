@@ -20,3 +20,5 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert 'authUserToUser' in app_js
     assert 'Could not find the table' in app_js or 'schema cache' in app_js
     assert 'ensureProfileRow(id, state.user.username)' in app_js
+    assert "prefer: 'return=minimal'" in app_js
+    assert 'const updated = await fetchProfile(session.user_id)' in app_js
