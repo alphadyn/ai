@@ -408,6 +408,16 @@ const pulse = {
     return null;
   },
 
+  async isAdmin() {
+    const session = getSession();
+    if (!session || !session.user_id) return false;
+    try {
+      return await rpcFetch('is_admin', {}) === true;
+    } catch (_) {
+      return false;
+    }
+  },
+
   async setAvatar(avatarDataUrl) {
     const session = getSession();
     if (!session || !session.user_id) throw new Error('Log in to set a profile picture.');
@@ -793,6 +803,9 @@ const state = {
 async function refreshMe() {
   try {
     state.user = await pulse.me();
+    if (state.user && state.user.role !== 'admin' && await pulse.isAdmin()) {
+      state.user.role = 'admin';
+    }
   } catch (_) {
     state.user = null;
   }
@@ -915,6 +928,9 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
   try {
     const user = state.authMode === 'login' ? await pulse.login(username, password) : await pulse.register(username, password);
     state.user = user;
+    if (state.user && state.user.role !== 'admin' && await pulse.isAdmin()) {
+      state.user.role = 'admin';
+    }
     renderAuthNav();
     document.getElementById('auth-modal').close();
     toast(state.authMode === 'login' ? `Welcome back, ${user.username}.` : `Account created. Welcome, ${user.username}.`);
