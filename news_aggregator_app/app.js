@@ -650,6 +650,17 @@ const pulse = {
     if (!data || !data.length) throw new Error('Admin access required.');
   },
 
+  async adminSetPostAuthor(postId, authorId) {
+    if (!authorId) throw new Error('A user must be selected before changing ownership.');
+    const { data } = await restFetch('PATCH', 'posts', {
+      params: { id: `eq.${postId}` },
+      body: { author_id: authorId },
+      prefer: 'return=representation',
+    });
+    if (!data || !data.length) throw new Error('Admin access required to change post ownership.');
+    return data[0];
+  },
+
   async adminStats() {
     const countFor = async (table, params) => {
       const { headers } = await restFetch('GET', table, {
@@ -1508,15 +1519,24 @@ async function renderAdminView(tab) {
         };
       });
     } else if (tab === 'posts') {
-      const posts = await pulse.adminListPosts();
+      const [posts, users] = await Promise.all([pulse.adminListPosts(), pulse.adminListUsers()]);
       content.innerHTML = `
         <table class="admin-table">
-          <thead><tr><th>Title</th><th>Author</th><th>Score</th><th>Comments</th><th>Status</th><th></th></tr></thead>
+          <thead><tr><th>Title</th><th>Author</th><th>Owner</th><th>Score</th><th>Comments</th><th>Status</th><th></th></tr></thead>
           <tbody>
             ${posts.map((p) => `
               <tr data-id="${p.id}">
                 <td><a href="${postUrl(p.id)}" data-open-admin-post="${p.id}">${escapeHtml(p.title)}</a></td>
                 <td>${profileLinkHtml(p.authorId, null, p.authorName)}</td>
+                <td>
+                  <div style="display:flex; gap:8px; align-items:center; min-width: 220px;">
+                    <select data-post-owner-select="${p.id}" aria-label="Change post owner for ${escapeHtml(p.title)}">
+                      <option value="">Anonymous</option>
+                      ${users.map((u) => `<option value="${u.id}" ${u.id === p.authorId ? 'selected' : ''}>${escapeHtml(u.username)}</option>`).join('')}
+                    </select>
+                    <button class="btn ghost small" data-admin-change-owner="${p.id}" type="button">Save</button>
+                  </div>
+                </td>
                 <td>${p.score}</td>
                 <td>${p.commentCount}</td>
                 <td>${p.isDeleted ? '<span class="deleted-badge">deleted</span>' : 'active'}</td>
@@ -1529,6 +1549,19 @@ async function renderAdminView(tab) {
         </table>`;
       content.querySelectorAll('[data-open-admin-post]').forEach((link) => {
         link.onclick = (e) => { e.preventDefault(); openPost(link.dataset.openAdminPost); };
+      });
+      content.querySelectorAll('[data-admin-change-owner]').forEach((btn) => {
+        btn.onclick = async () => {
+          const select = content.querySelector(`[data-post-owner-select="${btn.dataset.adminChangeOwner}"]`);
+          const ownerId = select ? select.value : '';
+          try {
+            await pulse.adminSetPostAuthor(btn.dataset.adminChangeOwner, ownerId || null);
+            toast('Post ownership updated.');
+            renderAdminView('posts');
+          } catch (err) {
+            toast(`Could not update owner: ${err.message}`);
+          }
+        };
       });
       content.querySelectorAll('[data-admin-delete]').forEach((btn) => {
         btn.onclick = async () => {
