@@ -33,7 +33,7 @@ Pages.
 - Share posts directly to supported apps such as Messages/RCS with the post title/body as the highlighted shared text and image attachments included for preview when the share target supports file sharing.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
-- Registered users can edit or delete their own posts, while anonymous posts can be edited or deleted by anyone. Admins can edit or delete any post; deleting a post permanently removes its comments, votes, and attachments.
+- Registered users can edit or delete their own posts, while anonymous posts can be edited or deleted by any signed-in user. Admins can edit or delete any post; deleting a post permanently removes its comments, votes, and attachments.
 
 ### Discussions
 - Threaded comments with unlimited reply depth (each comment can reply to another comment).
@@ -55,6 +55,7 @@ Pages.
   If the app reports that a profile could not be created, run [`profile-row-migration.sql`](profile-row-migration.sql) once. It preserves existing data, adds the current profile columns, restores the own-profile insert policy, and reloads the PostgREST schema cache.
   If Pulse is already running and you only need to add the profile fields, run [`profile-fields-migration.sql`](profile-fields-migration.sql) instead. It preserves existing data and reloads the PostgREST schema cache, fixing errors such as `Could not find the 'profile_url' column of 'profiles' in the schema cache`.
   If Pulse is already running and you only need to fix post deletion, run [`post-delete-migration.sql`](post-delete-migration.sql) instead. It preserves existing data while allowing permanent post deletes and blocking new soft-deleted post rows.
+  If Pulse is already running and anonymous visitors can still edit/delete anonymous posts, run [`anon-post-permissions-migration.sql`](anon-post-permissions-migration.sql). It preserves existing data and restricts editing/deleting anonymous posts to signed-in users (registered or admin) only.
   If an administrator can log in but the Admin screen still says `Admin access required.`, run [`admin-role-migration.sql`](admin-role-migration.sql). It preserves existing data and updates the admin helper used by the app and RLS policies.
 3. **Turn off email confirmation**: Authentication → Providers → Email → disable **"Confirm email"**. Pulse signs people up with a synthetic `username@pulse.local` address (so nobody needs a real inbox just to use a demo forum) — with confirmation left on, nobody could ever confirm that address and sign-ups would be stuck forever.
 4. In Project Settings → API, copy the **Project URL** and the **public `anon` key** (not the `service_role` secret key — never put that in client-side code).
@@ -90,7 +91,7 @@ only thing standing between a visitor and the database** — the anon key is
 public and anyone can call the Supabase REST API directly with it, so every
 rule has to hold up even against a client that skips `app.js` entirely:
 
-- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` or `DELETE` a registered user's post; anonymous posts may be updated or deleted by anyone. Deleting a post uses a real `DELETE`, so Postgres cascades its comments and votes. A trigger blocks new post soft-deletes by rejecting direct `is_deleted: false → true` patches, while still allowing admins to restore older soft-deleted rows from previous schema versions.
+- **Posts/comments**: anyone can `INSERT` a row where `author_id` is either their own user id or `null` (anonymous). Only the original author or an admin can `UPDATE` or `DELETE` a registered user's post; anonymous posts may be updated or deleted by any signed-in user (registered or admin), but not by anonymous visitors. Deleting a post uses a real `DELETE`, so Postgres cascades its comments and votes. A trigger blocks new post soft-deletes by rejecting direct `is_deleted: false → true` patches, while still allowing admins to restore older soft-deleted rows from previous schema versions.
 - **Voting**: the `upvotes`/`downvotes` columns are never writable directly by clients. Voting goes through `cast_post_vote()` / `cast_comment_vote()`, `SECURITY DEFINER` Postgres functions that atomically apply the vote-count delta — a client can't just `PATCH` a post to set an arbitrary score.
 - **Roles**: a user can update their own `profiles` row (e.g. their avatar), but a trigger silently reverts any change to the `role` column unless the request comes from an existing admin. A regular user calling the API directly cannot self-promote.
 - **Profiles are public** (username, avatar, role, join date) — like a forum member list — so every post/comment can show author badges. Nothing sensitive (no emails, password hashes, or session tokens) lives in a client-readable table; Supabase Auth keeps those internally.

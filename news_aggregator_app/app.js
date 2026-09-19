@@ -1204,7 +1204,7 @@ function bindAttachmentCarousels(root = document) {
 function postCardHtml(post) {
   const excerpt = post.body ? post.body : '';
   const tags = (post.tags || []).map((t) => `<button class="tag-chip" data-tag="${escapeHtml(t)}" type="button">#${escapeHtml(t)}</button>`).join('');
-  const canEdit = !post.authorId || (state.user && (state.user.role === 'admin' || state.user.id === post.authorId));
+  const canEdit = Boolean(state.user) && (state.user.role === 'admin' || !post.authorId || state.user.id === post.authorId);
   return `
   <article class="post-card" data-id="${post.id}">
     <div class="vote-col">
@@ -1702,7 +1702,7 @@ async function openPost(id, { updateUrl = true } = {}) {
   try {
     const post = await pulse.getPost(id);
     if (!post) throw new Error('Post not found.');
-    const canEdit = !post.authorId || (state.user && (state.user.role === 'admin' || state.user.id === post.authorId));
+    const canEdit = Boolean(state.user) && (state.user.role === 'admin' || !post.authorId || state.user.id === post.authorId);
     view.innerHTML = `
       <button class="btn ghost post-detail-back" id="back-to-feed" type="button">← Back to feed</button>
       <article class="post-detail" data-id="${post.id}">

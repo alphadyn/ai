@@ -316,14 +316,26 @@ drop policy if exists "anyone can create posts" on public.pulse_posts;
 create policy "anyone can create posts" on public.pulse_posts
   for insert with check (author_id is null or author_id = auth.uid());
 
+-- Anonymous posts (author_id is null) have no owner, so any signed-in user
+-- (or an admin) may edit/delete them, but anonymous visitors (auth.uid() is
+-- null) may not touch anyone's posts, including other anonymous ones.
 drop policy if exists "owner or admin can update posts" on public.pulse_posts;
 create policy "owner or admin can update posts" on public.pulse_posts
-  for update using (author_id is null or author_id = auth.uid() or public.pulse_is_admin())
-  with check (author_id is null or author_id = auth.uid() or public.pulse_is_admin());
+  for update using (
+    (auth.uid() is not null and (author_id = auth.uid() or author_id is null))
+    or public.pulse_is_admin()
+  )
+  with check (
+    (auth.uid() is not null and (author_id = auth.uid() or author_id is null))
+    or public.pulse_is_admin()
+  );
 
 drop policy if exists "owner or admin can delete posts" on public.pulse_posts;
 create policy "owner or admin can delete posts" on public.pulse_posts
-  for delete using (author_id is null or author_id = auth.uid() or public.pulse_is_admin());
+  for delete using (
+    (auth.uid() is not null and (author_id = auth.uid() or author_id is null))
+    or public.pulse_is_admin()
+  );
 
 -- post_votes: publicly readable (needed for "my vote" indicator); no direct
 -- insert/update/delete policies — all mutation must go through the
