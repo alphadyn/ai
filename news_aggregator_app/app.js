@@ -439,7 +439,14 @@ const pulse = {
   },
 
   async listTags() {
-    const { data } = await restFetch('GET', 'posts', { params: { is_deleted: 'eq.false', select: 'tags' } });
+    const { data } = await restFetch('GET', 'posts', {
+      params: {
+        is_deleted: 'eq.false',
+        select: 'tags',
+        order: 'created_at.desc',
+        limit: '200',
+      },
+    });
     const counts = {};
     (data || []).forEach((row) => { (row.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; }); });
     return Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
@@ -473,9 +480,17 @@ const pulse = {
   },
 
   async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
-    const { data: rows } = await restFetch('GET', 'posts', { params: { select: '*' } });
+    const pageLimit = Math.min(Math.max(30, limit) + offset + 50, 300);
+    const { data: rows } = await restFetch('GET', 'posts', {
+      params: {
+        is_deleted: 'eq.false',
+        select: '*',
+        order: 'created_at.desc',
+        limit: String(pageLimit),
+      },
+    });
     const posts = rows || [];
-    const { data: commentRows } = await restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id' } });
+    const { data: commentRows } = await restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id', limit: '500' } });
     const counts = {};
     (commentRows || []).forEach((c) => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
 
@@ -510,7 +525,9 @@ const pulse = {
     if (!rows || !rows.length) return null;
     const row = rows[0];
 
-    const { data: allComments } = await restFetch('GET', 'comments', { params: { post_id: `eq.${id}`, order: 'created_at.asc', select: '*' } });
+    const { data: allComments } = await restFetch('GET', 'comments', {
+      params: { post_id: `eq.${id}`, order: 'created_at.asc', select: '*', limit: '200' },
+    });
     const commentCount = (allComments || []).filter((c) => !c.is_deleted).length;
 
     const voterKey = await currentVoterKey();
