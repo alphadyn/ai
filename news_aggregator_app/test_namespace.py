@@ -30,6 +30,9 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert "state.user.role === 'admin' ? '<button class=\"btn ghost\" id=\"admin-nav-btn\" type=\"button\">Admin</button>' : ''" in app_js
     assert 'async function hasAdminAccess()' in app_js
     assert "if (!await hasAdminAccess()) { toast('Admin access required.'); return; }" in app_js
+    assert 'authRevision: 0' in app_js
+    assert 'resetAdminAccess()' in app_js
+    assert 'function shouldKeepAdminRender(authRevision)' in app_js
     assert "auth.jwt()->'app_metadata'->>'role'" in schema
     assert "grant execute on function public.pulse_is_admin()" in schema
     assert "auth.jwt()->'app_metadata'->>'role'" in admin_migration

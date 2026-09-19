@@ -794,6 +794,7 @@ const state = {
   pendingAttachments: [],
   editingPostId: null,
   authMode: 'login',
+  authRevision: 0,
   feedLoaded: false,
 };
 
@@ -897,7 +898,9 @@ function openAvatarModal() {
 
 async function logout() {
   try { await pulse.logout(); } catch (_) { /* ignore */ }
+  state.authRevision += 1;
   state.user = null;
+  resetAdminAccess();
   renderAuthNav();
   showFeedView();
   loadTags();
@@ -928,6 +931,7 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
   errorEl.hidden = true;
   try {
     const user = state.authMode === 'login' ? await pulse.login(username, password) : await pulse.register(username, password);
+    state.authRevision += 1;
     state.user = user;
     if (state.user && state.user.role !== 'admin' && await pulse.isAdmin()) {
       state.user.role = 'admin';
@@ -1507,6 +1511,16 @@ async function showAdminView() {
   renderAdminView('overview');
 }
 
+function resetAdminAccess() {
+  const adminView = document.getElementById('admin-view');
+  adminView.hidden = true;
+  adminView.innerHTML = '';
+}
+
+function shouldKeepAdminRender(authRevision) {
+  return authRevision === state.authRevision && Boolean(state.user) && !document.getElementById('admin-view').hidden;
+}
+
 async function renderAdminView(tab) {
   const root = document.getElementById('admin-view');
   root.innerHTML = `
@@ -1525,9 +1539,11 @@ async function renderAdminView(tab) {
   });
 
   const content = document.getElementById('admin-tab-content');
+  const authRevision = state.authRevision;
   try {
     if (tab === 'overview') {
       const stats = await pulse.adminStats();
+      if (!shouldKeepAdminRender(authRevision)) return;
       content.innerHTML = `
         <div class="admin-stats-grid">
           <div class="admin-stat-card"><div class="value">${stats.users}</div><div class="label">Registered users</div></div>
@@ -1538,6 +1554,7 @@ async function renderAdminView(tab) {
         </div>`;
     } else if (tab === 'users') {
       const users = await pulse.adminListUsers();
+      if (!shouldKeepAdminRender(authRevision)) return;
       content.innerHTML = `
         <table class="admin-table">
           <thead><tr><th></th><th>Username</th><th>Role</th><th>Joined</th><th></th></tr></thead>
@@ -1568,6 +1585,7 @@ async function renderAdminView(tab) {
       });
     } else if (tab === 'posts') {
       const [posts, users] = await Promise.all([pulse.adminListPosts(), pulse.adminListUsers()]);
+      if (!shouldKeepAdminRender(authRevision)) return;
       content.innerHTML = `
         <table class="admin-table">
           <thead><tr><th>Title</th><th>Author</th><th>Owner</th><th>Score</th><th>Comments</th><th>Status</th><th></th></tr></thead>
@@ -1626,6 +1644,7 @@ async function renderAdminView(tab) {
       });
     }
   } catch (err) {
+    if (!shouldKeepAdminRender(authRevision)) return;
     content.innerHTML = `<p class="form-error">Failed to load: ${escapeHtml(err.message)}</p>`;
   }
 }
