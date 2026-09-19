@@ -17,6 +17,30 @@ function namespacedName(name, kind = 'table') {
   return value.startsWith(prefix) ? value : `${prefix}${value}`;
 }
 
+function tableCandidates(name) {
+  const value = String(name || '').trim();
+  if (!value) return [value];
+  const names = [namespacedName(value), value];
+  return [...new Set(names)];
+}
+
+function functionCandidates(name) {
+  const value = String(name || '').trim();
+  if (!value) return [value];
+  const names = [namespacedName(value, 'rpc'), value];
+  return [...new Set(names)];
+}
+
+function isMissingSchemaObjectError(message, candidate) {
+  if (!message) return false;
+  return message.includes(`'${candidate}'`) && (
+    message.includes('in the schema cache') ||
+    message.includes('does not exist') ||
+    message.includes('Could not find the table') ||
+    message.includes('Could not find the function')
+  );
+}
+
 function usernameToEmail(username) {
   return `${username.trim().toLowerCase()}@${EMAIL_DOMAIN}`;
 }
@@ -90,45 +114,73 @@ async function authFetch(path, body) {
 
 async function restFetch(method, table, { params, body, prefer, headers } = {}) {
   const token = await getAccessToken();
-  const targetTable = namespacedName(table);
   const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-  const res = await fetch(`${CONFIG.url}/rest/v1/${targetTable}${qs}`, {
-    method,
-    headers: {
-      apikey: CONFIG.anonKey,
-      Authorization: `Bearer ${token || CONFIG.anonKey}`,
-      'Content-Type': 'application/json',
-      ...(prefer ? { Prefer: prefer } : {}),
-      ...(headers || {}),
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const data = parseResponseBody(await res.text());
-  if (!res.ok) {
-    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-    throw new Error(message);
+  let lastError = null;
+
+  for (const targetTable of tableCandidates(table)) {
+    try {
+      const res = await fetch(`${CONFIG.url}/rest/v1/${targetTable}${qs}`, {
+        method,
+        headers: {
+          apikey: CONFIG.anonKey,
+          Authorization: `Bearer ${token || CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          ...(prefer ? { Prefer: prefer } : {}),
+          ...(headers || {}),
+        },
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+      const data = parseResponseBody(await res.text());
+      if (!res.ok) {
+        const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+        if (isMissingSchemaObjectError(message, targetTable) && targetTable !== tableCandidates(table).at(-1)) {
+          lastError = new Error(message);
+          continue;
+        }
+        throw new Error(message);
+      }
+      return { data, headers: res.headers };
+    } catch (err) {
+      lastError = err;
+      if (!isMissingSchemaObjectError(err.message, targetTable) || targetTable === tableCandidates(table).at(-1)) throw err;
+    }
   }
-  return { data, headers: res.headers };
+
+  throw lastError || new Error(`Could not resolve table '${table}'`);
 }
 
 async function rpcFetch(name, args) {
   const token = await getAccessToken();
-  const targetName = namespacedName(name, 'rpc');
-  const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${targetName}`, {
-    method: 'POST',
-    headers: {
-      apikey: CONFIG.anonKey,
-      Authorization: `Bearer ${token || CONFIG.anonKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(args || {}),
-  });
-  const data = parseResponseBody(await res.text());
-  if (!res.ok) {
-    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-    throw new Error(message);
+  let lastError = null;
+
+  for (const targetName of functionCandidates(name)) {
+    try {
+      const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${targetName}`, {
+        method: 'POST',
+        headers: {
+          apikey: CONFIG.anonKey,
+          Authorization: `Bearer ${token || CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(args || {}),
+      });
+      const data = parseResponseBody(await res.text());
+      if (!res.ok) {
+        const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+        if (isMissingSchemaObjectError(message, targetName) && targetName !== functionCandidates(name).at(-1)) {
+          lastError = new Error(message);
+          continue;
+        }
+        throw new Error(message);
+      }
+      return data;
+    } catch (err) {
+      lastError = err;
+      if (!isMissingSchemaObjectError(err.message, targetName) || targetName === functionCandidates(name).at(-1)) throw err;
+    }
   }
-  return data;
+
+  throw lastError || new Error(`Could not resolve function '${name}'`);
 }
 
 function anonId() {
