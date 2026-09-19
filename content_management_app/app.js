@@ -112,7 +112,9 @@
         if (!res.ok) {
           try {
             const error = await res.json();
-            this.connectionError = error.message || this.connectionError;
+            this.connectionError = error.code === 'PGRST205'
+              ? 'Table nexus_media_items is missing. Run supabase-schema.sql in the Supabase SQL Editor.'
+              : error.message || this.connectionError;
           } catch (err) {
             // Keep the HTTP status when the response is not JSON.
           }
