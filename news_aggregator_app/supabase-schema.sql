@@ -302,6 +302,10 @@ alter table public.pulse_comment_votes enable row level security;
 drop policy if exists "profiles are publicly readable" on public.pulse_profiles;
 create policy "profiles are publicly readable" on public.pulse_profiles for select using (true);
 
+drop policy if exists "users can create own profile" on public.pulse_profiles;
+create policy "users can create own profile" on public.pulse_profiles
+  for insert with check (auth.uid() = id);
+
 drop policy if exists "users can update own profile" on public.pulse_profiles;
 create policy "users can update own profile" on public.pulse_profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);

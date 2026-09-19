@@ -11,6 +11,8 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert 'public.pulse_cast_post_vote' in schema
     assert 'public.pulse_cast_comment_vote' in schema
     assert 'pulse_on_auth_user_created' in schema
+    assert 'users can create own profile' in schema
+    assert 'for insert with check (auth.uid() = id)' in schema
 
     assert 'namespacedName' in app_js
     assert 'tableCandidates' in app_js
