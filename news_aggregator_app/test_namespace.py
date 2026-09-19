@@ -23,6 +23,8 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert "prefer: 'return=minimal'" in app_js
     assert 'const updated = await fetchProfile(session.user_id)' in app_js
     assert 'user-${String(userId).slice(0, 8)}' in app_js
+    assert 'profile-row-migration.sql' not in app_js
+    assert 'Profile could not be created: ${lastError ? lastError.message' in app_js
     assert "const names = [namespacedName(value), value]" not in app_js
     assert 'drop table if exists public.profiles' not in schema
     assert 'drop table if exists public.posts' not in schema

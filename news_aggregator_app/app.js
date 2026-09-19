@@ -252,6 +252,7 @@ async function ensureProfileRow(userId, fallbackUsername) {
   if (profile) return profile;
 
   const username = (fallbackUsername || `user-${String(userId).slice(0, 8)}`).trim();
+  let lastError = null;
   const candidates = [username, `user-${String(userId).slice(0, 8)}`];
   for (const candidate of [...new Set(candidates)]) {
     try {
@@ -260,20 +261,18 @@ async function ensureProfileRow(userId, fallbackUsername) {
           id: userId,
           username: candidate,
           name: candidate,
-          role: 'user',
-          avatar_data_url: null,
-          status: '',
-          profile_url: null,
         },
         prefer: 'return=representation',
       });
       profile = (data && data[0]) || null;
       if (profile) return profile;
-    } catch (_) {
-      // Retry with an id-derived username when the requested username is taken.
+    } catch (err) {
+      lastError = err;
+      profile = await fetchProfile(userId);
+      if (profile) return profile;
     }
   }
-  return null;
+  throw new Error(`Profile could not be created: ${lastError ? lastError.message : 'the database returned no row'}`);
 }
 
 async function fetchAvatars(ids) {
