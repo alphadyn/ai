@@ -33,6 +33,7 @@ def test_pulse_uses_namespaced_supabase_objects():
     assert 'authRevision: 0' in app_js
     assert 'resetAdminAccess()' in app_js
     assert 'function shouldKeepAdminRender(authRevision)' in app_js
+    assert "body: { author_id: nextAuthorId, author_name: nextAuthorId ? authorName : 'Anonymous' }" in app_js
     assert "auth.jwt()->'app_metadata'->>'role'" in schema
     assert "grant execute on function public.pulse_is_admin()" in schema
     assert "auth.jwt()->'app_metadata'->>'role'" in admin_migration

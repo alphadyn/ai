@@ -683,11 +683,11 @@ const pulse = {
     if (!data || !data.length) throw new Error('Admin access required.');
   },
 
-  async adminSetPostAuthor(postId, authorId) {
-    if (!authorId) throw new Error('A user must be selected before changing ownership.');
+  async adminSetPostAuthor(postId, authorId, authorName) {
+    const nextAuthorId = authorId || null;
     const { data } = await restFetch('PATCH', 'posts', {
       params: { id: `eq.${postId}` },
-      body: { author_id: authorId },
+      body: { author_id: nextAuthorId, author_name: nextAuthorId ? authorName : 'Anonymous' },
       prefer: 'return=representation',
     });
     if (!data || !data.length) throw new Error('Admin access required to change post ownership.');
@@ -1620,8 +1620,9 @@ async function renderAdminView(tab) {
         btn.onclick = async () => {
           const select = content.querySelector(`[data-post-owner-select="${btn.dataset.adminChangeOwner}"]`);
           const ownerId = select ? select.value : '';
+          const ownerName = select && select.selectedOptions[0] ? select.selectedOptions[0].textContent : '';
           try {
-            await pulse.adminSetPostAuthor(btn.dataset.adminChangeOwner, ownerId || null);
+            await pulse.adminSetPostAuthor(btn.dataset.adminChangeOwner, ownerId || null, ownerName);
             toast('Post ownership updated.');
             renderAdminView('posts');
           } catch (err) {
