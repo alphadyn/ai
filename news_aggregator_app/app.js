@@ -1261,7 +1261,10 @@ async function openPublicProfile(id, { updateUrl = true } = {}) {
   showPublicProfileView();
   view.innerHTML = '<p class="muted">Loading profile…</p>';
   try {
-    const profile = await fetchProfile(id);
+    let profile = await fetchProfile(id);
+    if (!profile && state.user && state.user.id === id) {
+      profile = await ensureProfileRow(id, state.user.username);
+    }
     if (!profile) throw new Error('Profile not found.');
     const user = toUser(profile);
     const externalUrl = safeProfileUrl(user.profileUrl);
