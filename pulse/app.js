@@ -952,6 +952,11 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
 document.querySelectorAll('[data-close-modal]').forEach((btn) => {
   btn.addEventListener('click', () => btn.closest('dialog').close());
 });
+document.getElementById('carousel-modal').addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  event.currentTarget.close();
+});
 document.getElementById('post-login-hint').addEventListener('click', () => {
   document.getElementById('post-modal').close();
   openAuthModal('login');
@@ -1164,7 +1169,7 @@ function renderAttachments(attachments) {
 
   return `
     <div class="attachment-carousel" data-carousel>
-      <div class="attachment-carousel-track">
+      <div class="attachment-carousel-track" role="button" tabindex="0" aria-label="Maximize attachment carousel">
         ${slides}
       </div>
       <div class="attachment-carousel-controls">
@@ -1174,6 +1179,27 @@ function renderAttachments(attachments) {
       </div>
     </div>
   `;
+}
+
+function openCarouselModal(carousel) {
+  const modal = document.getElementById('carousel-modal');
+  const content = document.getElementById('carousel-modal-content');
+  const activeIndex = [...carousel.querySelectorAll('.attachment-slide')]
+    .findIndex((slide) => slide.classList.contains('is-active'));
+  const maximizedCarousel = carousel.cloneNode(true);
+  maximizedCarousel.removeAttribute('data-carousel-bound');
+  maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('tabindex');
+  maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('role');
+  maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('aria-label');
+  maximizedCarousel.querySelectorAll('.attachment-slide').forEach((slide, index) => {
+    slide.classList.toggle('is-active', index === activeIndex);
+  });
+  maximizedCarousel.querySelectorAll('[data-carousel-dot]').forEach((dot, index) => {
+    dot.classList.toggle('is-active', index === activeIndex);
+  });
+  content.replaceChildren(maximizedCarousel);
+  bindAttachmentCarousels(content);
+  modal.showModal();
 }
 
 function bindAttachmentCarousels(root = document) {
@@ -1198,6 +1224,19 @@ function bindAttachmentCarousels(root = document) {
     dots.forEach((dot) => {
       dot.addEventListener('click', () => update(Number(dot.dataset.carouselDot)));
     });
+
+    const track = carousel.querySelector('.attachment-carousel-track');
+    if (track?.hasAttribute('tabindex')) {
+      track.addEventListener('click', (event) => {
+        if (event.target.closest('a, button, audio, video')) return;
+        openCarouselModal(carousel);
+      });
+      track.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openCarouselModal(carousel);
+      });
+    }
   });
 }
 

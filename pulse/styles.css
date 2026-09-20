@@ -173,7 +173,8 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 .attachment-media { max-width: 100%; border-radius: var(--radius-sm); margin-top: 8px; display: block; border: 1px solid var(--line-soft); }
 
 .attachment-carousel { display: grid; gap: 10px; margin-top: 10px; }
-.attachment-carousel-track { position: relative; min-height: 220px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel-2); }
+.attachment-carousel-track { position: relative; min-height: 220px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel-2); cursor: zoom-in; }
+.attachment-carousel-track:focus-visible { outline-offset: 3px; }
 .attachment-slide { display: none; width: 100%; min-height: 220px; align-items: center; justify-content: center; padding: 12px; }
 .attachment-slide.is-active { display: flex; }
 .attachment-slide .attachment-media { width: 100%; max-height: 360px; object-fit: contain; margin-top: 0; }
@@ -280,6 +281,19 @@ label input[type="file"] { padding: 8px 10px; cursor: pointer; }
 .modal-card header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .modal-card header h2 { margin: 0; font-size: 1.22rem; font-weight: 750; }
 .modal-card footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+.carousel-modal {
+  border: 0; background: transparent; color: var(--text); padding: 0; width: 96vw; max-width: none; height: 94vh; max-height: none; overflow: hidden;
+}
+.carousel-modal::backdrop { background: rgba(4, 7, 16, .88); backdrop-filter: blur(5px); animation: fade-in .18s var(--ease); }
+.carousel-modal-shell { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+.carousel-modal-close { position: absolute; z-index: 2; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(10, 14, 26, .82); border: 1px solid var(--line); }
+#carousel-modal-content { width: 100%; height: 100%; min-height: 0; }
+#carousel-modal-content .attachment-carousel { width: 100%; height: 100%; margin: 0; grid-template-rows: minmax(0, 1fr) auto; }
+#carousel-modal-content .attachment-carousel-track { min-height: 0; cursor: default; border: 0; background: transparent; }
+#carousel-modal-content .attachment-slide { height: 100%; min-height: 0; padding: 24px 56px 12px; }
+#carousel-modal-content .attachment-media { width: auto; max-width: 100%; height: auto; max-height: 100%; }
+#carousel-modal-content .attachment-carousel-controls { padding: 8px 12px 12px; }
 
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--panel-3);
