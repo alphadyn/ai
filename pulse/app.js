@@ -953,9 +953,15 @@ document.querySelectorAll('[data-close-modal]').forEach((btn) => {
   btn.addEventListener('click', () => btn.closest('dialog').close());
 });
 document.getElementById('carousel-modal').addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    event.currentTarget.close();
+    return;
+  }
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
   event.preventDefault();
-  event.currentTarget.close();
+  const selector = event.key === 'ArrowLeft' ? '[data-carousel-prev]' : '[data-carousel-next]';
+  event.currentTarget.querySelector(selector)?.click();
 });
 document.getElementById('post-login-hint').addEventListener('click', () => {
   document.getElementById('post-modal').close();
@@ -1236,6 +1242,21 @@ function bindAttachmentCarousels(root = document) {
         event.preventDefault();
         openCarouselModal(carousel);
       });
+    }
+
+    if (carousel.closest('#carousel-modal-content')) {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      track?.addEventListener('touchstart', (event) => {
+        touchStartX = event.changedTouches[0].clientX;
+        touchStartY = event.changedTouches[0].clientY;
+      }, { passive: true });
+      track?.addEventListener('touchend', (event) => {
+        const deltaX = event.changedTouches[0].clientX - touchStartX;
+        const deltaY = event.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+        update(slides.findIndex((slide) => slide.classList.contains('is-active')) + (deltaX < 0 ? 1 : -1));
+      }, { passive: true });
     }
   });
 }
