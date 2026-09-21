@@ -2,17 +2,43 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import random
 import re
 import socket
 import urllib.parse
 import urllib.request
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from html.parser import HTMLParser
 
 
 MAX_URLS = 20
 MAX_RESPONSE_BYTES = 2_000_000
-RANDOM_URL_API = "https://en.wikipedia.org/w/api.php"
+RANDOM_DISCOVERY_API = "https://hn.algolia.com/api/v1/search_by_date"
+RANDOM_URL_CANDIDATES = (
+    "https://www.bbc.com/news",
+    "https://www.cern.ch/",
+    "https://www.debian.org/",
+    "https://www.eff.org/",
+    "https://www.gnu.org/",
+    "https://www.iana.org/domains/reserved",
+    "https://www.khanacademy.org/",
+    "https://www.loc.gov/",
+    "https://www.mozilla.org/",
+    "https://www.nasa.gov/",
+    "https://www.nationalgeographic.com/",
+    "https://www.npr.org/",
+    "https://www.openstreetmap.org/",
+    "https://www.python.org/",
+    "https://www.si.edu/",
+    "https://www.space.com/",
+    "https://www.un.org/",
+    "https://www.w3.org/",
+    "https://en.wikinews.org/",
+    "https://en.wikipedia.org/wiki/Special:Random",
+    "https://www.worldbank.org/",
+    "https://www.ycombinator.com/",
+)
 DEFAULT_STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
     "has", "he", "in", "is", "it", "its", "of", "on", "or", "that",
@@ -105,42 +131,71 @@ def count_words(text: str, excluded_words: set[str] | None = None) -> Counter[st
     return Counter(word for word in words if len(word) > 1 and word not in excluded)
 
 
+def discover_random_candidates() -> list[str]:
+    query = urllib.parse.urlencode({
+        "tags": "story",
+        "hitsPerPage": 100,
+        "page": random.randint(0, 9),
+    })
+    request = urllib.request.Request(
+        f"{RANDOM_DISCOVERY_API}?{query}",
+        headers={"User-Agent": "WordScope/1.0 (+local research tool)"},
+    )
+    with urllib.request.urlopen(request, timeout=8) as response:
+        body = response.read(1_000_001)
+        if len(body) > 1_000_000:
+            raise ValueError("The URL discovery service returned too much data.")
+        data = json.loads(body.decode("utf-8"))
+
+    candidates = [hit.get("url", "") for hit in data.get("hits", []) if hit.get("url")]
+    random.shuffle(candidates)
+    return candidates[:60]
+
+
 def find_random_urls(count: int) -> list[str]:
     if not 1 <= count <= MAX_URLS:
         raise ValueError(f"Choose between 1 and {MAX_URLS} URLs.")
 
-    query = urllib.parse.urlencode({
-        "action": "query",
-        "generator": "random",
-        "grnnamespace": 0,
-        "grnlimit": count,
-        "prop": "info",
-        "inprop": "url",
-        "format": "json",
-        "formatversion": 2,
-    })
-    request = urllib.request.Request(
-        f"{RANDOM_URL_API}?{query}",
-        headers={"User-Agent": "WordScope/1.0 (+local research tool)"},
-    )
-    with urllib.request.urlopen(request, timeout=10) as response:
-        body = response.read(512_001)
-        if len(body) > 512_000:
-            raise ValueError("The random URL service returned too much data.")
-        data = json.loads(body.decode("utf-8"))
+    try:
+        candidates = discover_random_candidates()
+    except Exception:
+        candidates = []
+    fallback_candidates = list(RANDOM_URL_CANDIDATES)
+    random.shuffle(fallback_candidates)
+    candidates.extend(fallback_candidates)
+    urls: list[str] = []
+    domains: set[str] = set()
 
-    urls = []
-    for page in data.get("query", {}).get("pages", []):
-        url = page.get("fullurl", "")
+    def verify_candidate(url: str) -> tuple[str, str] | None:
         try:
             safe_url = validate_public_url(url)
-        except ValueError:
-            continue
-        if safe_url not in urls:
+            domain = urllib.parse.urlparse(safe_url).hostname.removeprefix("www.")
+            fetch_page(safe_url)
+        except Exception:
+            return None
+        return safe_url, domain
+
+    executor = ThreadPoolExecutor(max_workers=8)
+    futures = [executor.submit(verify_candidate, url) for url in candidates]
+    try:
+        for future in as_completed(futures):
+            result = future.result()
+            if not result:
+                continue
+            safe_url, domain = result
+            if domain in domains:
+                continue
             urls.append(safe_url)
+            domains.add(domain)
+            if len(urls) == count:
+                break
+    finally:
+        for future in futures:
+            future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
 
     if len(urls) != count:
-        raise ValueError("The random URL service did not return enough working pages. Try again.")
+        raise ValueError("Could not find enough working URLs on distinct domains. Try again.")
     return urls
 
 

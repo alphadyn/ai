@@ -5,7 +5,7 @@ WordScope analyzes visible text across multiple web pages and ranks the most com
 ## Features
 
 - Configure between 1 and 20 web URLs
-- Fill the URL fields with live random Wikipedia articles
+- Discover current public pages from a live web feed, verify them, and use each domain only once
 - Display between 1 and 100 top words in descending frequency order
 - Click any result to exclude it and recalculate the report
 - Click an excluded word to restore it
