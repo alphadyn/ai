@@ -6,7 +6,7 @@ The root landing page in [index.html](index.html) links to the most relevant app
 
 ## Featured projects
 
-The current top apps on the main landing page are:
+The current top apps featured on the main landing page are:
 
 1. [pulse](pulse/) — Social
 2. [nexus](nexus/) — Workspace
@@ -14,8 +14,6 @@ The current top apps on the main landing page are:
 4. [online_store_app](online_store_app/) — Commerce
 5. [photo_gallery_app](photo_gallery_app/) — Gallery
 6. [video_conference_app](video_conference_app/) — Communication
-7. [postboard_app](postboard_app/) — Productivity
-8. [earth_3d_explorer](earth_3d_explorer/) — 3D
 
 ## Repository layout
 
