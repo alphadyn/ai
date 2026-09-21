@@ -44,7 +44,6 @@ The current top apps featured on the main landing page are:
 - [sp500_analysis_app](sp500_analysis_app/) — Dashboard for screening and reviewing large-cap equities.
 - [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
 - [video_conference_app](video_conference_app/) — Meeting interface with chat and file-sharing UX.
-- [word_frequency_app](word_frequency_app/) — Common-word frequency analysis across multiple web URLs.
 
 ### Reports and presentation pages
 
@@ -53,7 +52,6 @@ The current top apps featured on the main landing page are:
 - [human_vs_ai_skills_report](human_vs_ai_skills_report/) — Comparison of human and AI capabilities.
 - [index_fund_report](index_fund_report/) — Index fund overview and risk breakdown.
 - [largest_companies_report](largest_companies_report/) — Large-company market cap summary.
-- [sp500_quarterly_returns](sp500_quarterly_returns/) — Quarterly return highlights for S&P 500 firms.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) — Income report across top occupations.
 
 ### Python utilities and tooling
