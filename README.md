@@ -44,6 +44,7 @@ The current top apps featured on the main landing page are:
 - [sp500_analysis_app](sp500_analysis_app/) — Dashboard for screening and reviewing large-cap equities.
 - [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
 - [video_conference_app](video_conference_app/) — Meeting interface with chat and file-sharing UX.
+- [word_frequency_app](word_frequency_app/) — Common-word frequency analysis across multiple web URLs.
 
 ### Reports and presentation pages
 

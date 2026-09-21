@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Analyze common words across multiple web pages.">
+    <title>WordScope - Web Word Frequency</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="../"><span class="brand-mark">W</span> WordScope</a>
+      <span class="status-dot"><i></i> Local analysis</span>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="pageTitle">
+        <p class="eyebrow">Language patterns across the web</p>
+        <h1 id="pageTitle">See what the pages keep saying.</h1>
+        <p>Compare visible text from multiple URLs, rank the most common words, and remove the noise with a click.</p>
+      </section>
+
+      <section class="workbench">
+        <form class="controls" id="analysisForm">
+          <div class="control-heading">
+            <span>01</span>
+            <div><h2>Configure scan</h2><p>Choose the scope and depth.</p></div>
+          </div>
+
+          <div class="number-grid">
+            <label>
+              <span>Number of URLs</span>
+              <input id="urlCount" type="number" min="1" max="20" value="3" inputmode="numeric">
+            </label>
+            <label>
+              <span>Top words</span>
+              <input id="topCount" type="number" min="1" max="100" value="20" inputmode="numeric">
+            </label>
+          </div>
+
+          <div class="url-section">
+            <div class="field-heading">
+              <span>Web addresses</span>
+              <button class="random-url-button" id="randomUrlButton" type="button">Fill random URLs</button>
+            </div>
+            <div class="url-list" id="urlList"></div>
+          </div>
+
+          <button class="analyze-button" id="analyzeButton" type="submit">
+            <span>Analyze pages</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <p class="form-note">Pages are fetched by this local server. Private network addresses are blocked.</p>
+        </form>
+
+        <section class="results" aria-labelledby="resultsTitle">
+          <div class="results-heading">
+            <div class="control-heading">
+              <span>02</span>
+              <div><h2 id="resultsTitle">Frequency report</h2><p id="resultsSubtitle">Click a word to exclude it.</p></div>
+            </div>
+            <div class="summary" id="summary" hidden>
+              <div><strong id="pageTotal">0</strong><span>pages</span></div>
+              <div><strong id="wordTotal">0</strong><span>words</span></div>
+              <div><strong id="uniqueTotal">0</strong><span>unique</span></div>
+            </div>
+          </div>
+
+          <div class="excluded-panel" id="excludedPanel" hidden>
+            <div><span>Excluded words</span><small>Click to restore</small></div>
+            <div class="excluded-list" id="excludedList"></div>
+          </div>
+
+          <div class="empty-state" id="emptyState">
+            <div class="empty-graphic" aria-hidden="true"><span>Aa</span><i></i><i></i><i></i></div>
+            <h3>Your word map starts here</h3>
+            <p>Add the pages you want to compare, then run the analysis.</p>
+          </div>
+
+          <div class="loading-state" id="loadingState" hidden>
+            <div class="scan-line"></div>
+            <p>Reading visible page content...</p>
+          </div>
+
+          <div class="error-state" id="errorState" role="alert" hidden></div>
+          <ol class="word-list" id="wordList" aria-label="Most common words" hidden></ol>
+          <div class="source-report" id="sourceReport" hidden>
+            <button id="sourceToggle" type="button" aria-expanded="false">Source details <span>+</span></button>
+            <ul id="sourceList" hidden></ul>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <template id="urlFieldTemplate">
+      <label class="url-field">
+        <span class="url-index"></span>
+        <input type="url" placeholder="https://example.com/article" required>
+        <button type="button" class="clear-url" aria-label="Clear URL" title="Clear URL">&times;</button>
+      </label>
+    </template>
+    <script src="app.js"></script>
+  </body>
+</html>
