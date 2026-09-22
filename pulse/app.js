@@ -207,7 +207,13 @@ function sanitizeRichText(raw) {
   let text = raw.replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '');
   text = text.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
   text = text.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '');
-  text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
+    text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
+    text = text.replace(/<a\b([^>]*)>/gi, (match, attributes) => {
+      const cleanAttributes = attributes
+        .replace(/\s(target|rel)\s*=\s*("[^"]*"|'[^']*')/gi, '')
+        .trim();
+      return `<a${cleanAttributes ? ` ${cleanAttributes}` : ''} target="_blank" rel="noopener noreferrer">`;
+    });
   return text;
 }
 
