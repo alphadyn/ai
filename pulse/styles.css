@@ -415,7 +415,7 @@ h1, h2, h3, h4 { font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, 
 .content { min-width: 0; }
 .feed-heading { display: flex; align-items: flex-end; justify-content: space-between; margin: 0 0 18px; }
 .feed-heading h2 { margin: 7px 0 0; font-size: 1.7rem; letter-spacing: -.05em; }
-.feed-refresh { width: 36px; height: 36px; border: 1px solid var(--line); background: var(--panel); border-radius: 50%; font-size: 1.3rem; }
+.feed-refresh { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--line); background: var(--panel); border-radius: 50%; font-size: 1.3rem; line-height: 1; }
 .feed-list { gap: 10px; }
 .post-card { background: linear-gradient(135deg, rgba(20, 40, 34, .95), rgba(15, 29, 26, .9)); border-color: var(--line-soft); border-radius: 18px; padding: 18px 20px; }
 .post-card:hover { border-color: rgba(214, 243, 107, .42); transform: translateY(-2px); }
