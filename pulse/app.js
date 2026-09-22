@@ -1978,6 +1978,7 @@ function bindRichTextToolbars(root) {
     const targetId = toolbar.dataset.target;
     const editor = targetId ? document.getElementById(targetId) : toolbar.nextElementSibling;
     toolbar.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('mousedown', (event) => event.preventDefault());
       btn.onclick = () => {
         editor.focus();
         if (btn.dataset.cmd === 'createLink') {
