@@ -2024,6 +2024,34 @@ document.getElementById('post-files').addEventListener('change', async (e) => {
   }
 });
 
+document.getElementById('post-body').addEventListener('paste', async (e) => {
+  const imageFiles = Array.from(e.clipboardData?.items || [])
+    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+    .map((item) => item.getAsFile())
+    .filter(Boolean);
+  if (!imageFiles.length) return;
+
+  e.preventDefault();
+  try {
+    if (state.pendingAttachments.length + imageFiles.length > MAX_POST_ATTACHMENTS) {
+      throw new Error(`Please attach no more than ${MAX_POST_ATTACHMENTS} files per post.`);
+    }
+    for (const file of imageFiles) {
+      const dataUrl = await readAttachmentDataUrl(file);
+      state.pendingAttachments.push({
+        name: file.name || `pasted-image.${file.type.split('/')[1] || 'png'}`,
+        mimeType: file.type,
+        size: file.size,
+        dataUrl,
+      });
+    }
+    renderAttachmentPreview(document.getElementById('post-attachment-preview'), state.pendingAttachments);
+    toast(`${imageFiles.length === 1 ? 'Image' : 'Images'} added to attachments.`);
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
 document.getElementById('post-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errorEl = document.getElementById('post-error');
