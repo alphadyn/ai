@@ -1999,8 +1999,8 @@ function bindRichTextToolbars(root) {
         event.preventDefault();
       });
       btn.onclick = () => {
-        restoreSelection();
         editor.focus();
+        restoreSelection();
         if (btn.dataset.cmd === 'createLink') {
           const url = prompt('Link URL:');
           if (url) document.execCommand('createLink', false, url);
