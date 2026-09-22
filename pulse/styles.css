@@ -244,6 +244,7 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
   cursor: pointer; transition: all .15s var(--ease); font-size: .85rem;
 }
 .richtext-toolbar button:hover { border-color: var(--accent); background: var(--panel-3); }
+.richtext-toolbar button.is-active { border-color: var(--accent); background: rgba(214, 243, 107, .16); color: var(--accent); }
 .richtext-editor {
   min-height: 100px; max-height: 320px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius-sm);
   padding: 11px 13px; background: var(--panel-2); line-height: 1.5; transition: border-color .15s var(--ease), box-shadow .15s var(--ease);

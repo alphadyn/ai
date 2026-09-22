@@ -1977,7 +1977,22 @@ function bindRichTextToolbars(root) {
   root.querySelectorAll('.richtext-toolbar').forEach((toolbar) => {
     const targetId = toolbar.dataset.target;
     const editor = targetId ? document.getElementById(targetId) : toolbar.nextElementSibling;
+    const syncToolbarState = () => {
+      const selection = window.getSelection();
+      const selectionInsideEditor = selection && selection.rangeCount > 0
+        && editor.contains(selection.anchorNode);
+      if (!selectionInsideEditor) return;
+      toolbar.querySelectorAll('[data-cmd]').forEach((btn) => {
+        const active = ['bold', 'italic', 'underline'].includes(btn.dataset.cmd)
+          && document.queryCommandState(btn.dataset.cmd);
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', String(active));
+      });
+    };
+    ['focus', 'input', 'keyup', 'mouseup'].forEach((eventName) => editor.addEventListener(eventName, syncToolbarState));
+    document.addEventListener('selectionchange', syncToolbarState);
     toolbar.querySelectorAll('button').forEach((btn) => {
+      btn.setAttribute('aria-pressed', 'false');
       btn.addEventListener('mousedown', (event) => event.preventDefault());
       btn.onclick = () => {
         editor.focus();
@@ -1987,6 +2002,7 @@ function bindRichTextToolbars(root) {
         } else {
           document.execCommand(btn.dataset.cmd, false, null);
         }
+        syncToolbarState();
       };
     });
   });
