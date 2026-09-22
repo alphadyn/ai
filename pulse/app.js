@@ -484,7 +484,13 @@ const pulse = {
       },
     });
     const counts = {};
-    (data || []).forEach((row) => { (row.tags || []).forEach((t) => { counts[t] = (counts[t] || 0) + 1; }); });
+    (data || []).forEach((row) => {
+      const rawTags = Array.isArray(row.tags) ? row.tags : [];
+      rawTags.forEach((tag) => {
+        const normalizedTag = String(tag || '').trim().toLowerCase();
+        if (normalizedTag) counts[normalizedTag] = (counts[normalizedTag] || 0) + 1;
+      });
+    });
     return Object.entries(counts).map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count);
   },
 
@@ -991,7 +997,8 @@ async function loadTags() {
       });
     });
   } catch (err) {
-    el.innerHTML = `<p class="muted small">Could not load tags.</p>`;
+    el.innerHTML = `<p class="muted small">Could not load tags. <button class="link-btn" id="retry-tags-btn" type="button">Retry</button></p>`;
+    document.getElementById('retry-tags-btn').addEventListener('click', loadTags);
   }
 }
 
@@ -2055,6 +2062,21 @@ document.querySelector('.brand').addEventListener('click', (e) => {
   renderActiveFilter();
   showFeedView();
   loadFeed(true);
+});
+
+document.getElementById('feed-refresh-btn').addEventListener('click', () => loadFeed(true));
+document.getElementById('mobile-compose-btn').addEventListener('click', () => document.getElementById('submit-post-btn').click());
+document.getElementById('mobile-home-btn').addEventListener('click', () => document.querySelector('.brand').click());
+document.getElementById('mobile-search-btn').addEventListener('click', () => {
+  document.getElementById('search-input').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+document.getElementById('mobile-tags-btn').addEventListener('click', () => {
+  document.querySelector('.tag-cloud').scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+document.getElementById('mobile-profile-btn').addEventListener('click', () => {
+  if (state.user) showProfileView();
+  else openAuthModal('login');
 });
 
 window.addEventListener('popstate', () => {
