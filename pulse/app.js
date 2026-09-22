@@ -1973,6 +1973,34 @@ function validateAttachments(attachments) {
   return safeAttachments;
 }
 
+function toggleBoldSelection(editor) {
+  const selection = window.getSelection();
+  if (!selection || !selection.rangeCount || selection.isCollapsed) return false;
+  const range = selection.getRangeAt(0);
+  if (!editor.contains(range.commonAncestorContainer)) return false;
+
+  let boldAncestor = range.startContainer.nodeType === Node.ELEMENT_NODE
+    ? range.startContainer.closest('strong, b')
+    : range.startContainer.parentElement?.closest('strong, b');
+  if (boldAncestor && !editor.contains(boldAncestor)) boldAncestor = null;
+
+  if (boldAncestor && boldAncestor.contains(range.endContainer)) {
+    const fragment = document.createDocumentFragment();
+    while (boldAncestor.firstChild) fragment.appendChild(boldAncestor.firstChild);
+    boldAncestor.replaceWith(fragment);
+    return true;
+  }
+
+  const strong = document.createElement('strong');
+  strong.appendChild(range.extractContents());
+  range.insertNode(strong);
+  selection.removeAllRanges();
+  const selectedRange = document.createRange();
+  selectedRange.selectNodeContents(strong);
+  selection.addRange(selectedRange);
+  return true;
+}
+
 function bindRichTextToolbars(root) {
   root.querySelectorAll('.richtext-toolbar').forEach((toolbar) => {
     const targetId = toolbar.dataset.target;
@@ -2004,6 +2032,8 @@ function bindRichTextToolbars(root) {
         if (btn.dataset.cmd === 'createLink') {
           const url = prompt('Link URL:');
           if (url) document.execCommand('createLink', false, url);
+        } else if (btn.dataset.cmd === 'bold') {
+          toggleBoldSelection(editor);
         } else {
           const currentState = btn.classList.contains('is-active');
           document.execCommand(btn.dataset.cmd, false, null);
