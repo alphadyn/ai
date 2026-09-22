@@ -798,6 +798,7 @@ const state = {
   offset: 0,
   limit: 30,
   pendingAttachments: [],
+  pendingAttachmentReads: [],
   editingPostId: null,
   authMode: 'login',
   authRevision: 0,
@@ -1991,6 +1992,7 @@ function bindRichTextToolbars(root) {
 document.getElementById('submit-post-btn').addEventListener('click', () => {
   state.editingPostId = null;
   state.pendingAttachments = [];
+  state.pendingAttachmentReads = [];
   document.getElementById('post-form').reset();
   document.getElementById('post-modal-title').textContent = 'Submit a post';
   document.getElementById('post-submit').textContent = 'Post';
@@ -2032,7 +2034,7 @@ document.getElementById('post-body').addEventListener('paste', async (e) => {
   if (!imageFiles.length) return;
 
   e.preventDefault();
-  try {
+  const pasteRead = (async () => {
     if (state.pendingAttachments.length + imageFiles.length > MAX_POST_ATTACHMENTS) {
       throw new Error(`Please attach no more than ${MAX_POST_ATTACHMENTS} files per post.`);
     }
@@ -2047,13 +2049,15 @@ document.getElementById('post-body').addEventListener('paste', async (e) => {
     }
     renderAttachmentPreview(document.getElementById('post-attachment-preview'), state.pendingAttachments);
     toast(`${imageFiles.length === 1 ? 'Image' : 'Images'} added to attachments.`);
-  } catch (err) {
-    toast(err.message);
-  }
+  })();
+  state.pendingAttachmentReads.push(pasteRead);
+  try { await pasteRead; } catch (err) { toast(err.message); }
+  state.pendingAttachmentReads = state.pendingAttachmentReads.filter((pending) => pending !== pasteRead);
 });
 
 document.getElementById('post-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  await Promise.all(state.pendingAttachmentReads);
   const errorEl = document.getElementById('post-error');
   errorEl.hidden = true;
   const title = document.getElementById('post-title').value.trim();
