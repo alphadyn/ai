@@ -2072,7 +2072,11 @@ document.getElementById('mobile-search-btn').addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 document.getElementById('mobile-tags-btn').addEventListener('click', () => {
-  document.querySelector('.tag-cloud').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const tagsPanel = document.getElementById('tags-panel');
+  tagsPanel.classList.add('mobile-topic-open');
+  document.querySelectorAll('.mobile-tab').forEach((tab) => tab.classList.remove('is-active'));
+  document.getElementById('mobile-tags-btn').classList.add('is-active');
+  tagsPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
 document.getElementById('mobile-profile-btn').addEventListener('click', () => {
   if (state.user) showProfileView();

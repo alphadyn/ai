@@ -447,6 +447,7 @@ h1, h2, h3, h4 { font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, 
   .sidebar-intro { padding: 6px 3px 4px; }
   .sidebar-intro h1 { font-size: 1.75rem; }
   .sidebar .panel { display: none; }
+  .sidebar .panel.mobile-topic-open { display: block; }
   .feed-heading h2 { font-size: 1.45rem; }
   .post-card { padding: 15px 13px; gap: 8px; }
   .vote-col { min-width: 30px; }
