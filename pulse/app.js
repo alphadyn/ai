@@ -1287,7 +1287,7 @@ function postCardHtml(post) {
       <button class="vote-btn down${post.myVote === -1 ? ' is-active-down' : ''}" data-vote="-1" aria-label="Downvote">▼</button>
     </div>
     <div class="post-body-col">
-      <h3 class="post-title"><a href="${postUrl(post.id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(post.title)}</a></h3>
+      <h3 class="post-title"><a href="${postUrl(post.id)}" data-open="${post.id}">${escapeHtml(post.title)}</a></h3>
       <div class="post-meta">
         <span class="author-line">${profileLinkHtml(post.authorId, post.authorAvatar, post.authorName, 'avatar-sm')} <span>by</span></span>
         <span>${timeAgo(post.createdAt)}</span>
@@ -1668,7 +1668,7 @@ async function renderAdminView(tab) {
           <tbody>
             ${posts.map((p) => `
               <tr data-id="${p.id}">
-                <td><a href="${postUrl(p.id)}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.title)}</a></td>
+                <td><a href="${postUrl(p.id)}" data-open-admin-post="${p.id}">${escapeHtml(p.title)}</a></td>
                 <td>${profileLinkHtml(p.authorId, null, p.authorName)}</td>
                 <td>
                   <div style="display:flex; gap:8px; align-items:center; min-width: 220px;">
