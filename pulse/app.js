@@ -1977,32 +1977,39 @@ function bindRichTextToolbars(root) {
   root.querySelectorAll('.richtext-toolbar').forEach((toolbar) => {
     const targetId = toolbar.dataset.target;
     const editor = targetId ? document.getElementById(targetId) : toolbar.nextElementSibling;
-    const syncToolbarState = () => {
+    let savedRange = null;
+    const saveSelection = () => {
       const selection = window.getSelection();
-      const selectionInsideEditor = selection && selection.rangeCount > 0
-        && editor.contains(selection.anchorNode);
-      if (!selectionInsideEditor) return;
-      toolbar.querySelectorAll('[data-cmd]').forEach((btn) => {
-        const active = ['bold', 'italic', 'underline'].includes(btn.dataset.cmd)
-          && document.queryCommandState(btn.dataset.cmd);
-        btn.classList.toggle('is-active', active);
-        btn.setAttribute('aria-pressed', String(active));
-      });
+      if (selection && selection.rangeCount > 0 && editor.contains(selection.anchorNode)) {
+        savedRange = selection.getRangeAt(0).cloneRange();
+      }
     };
-    ['focus', 'input', 'keyup', 'mouseup'].forEach((eventName) => editor.addEventListener(eventName, syncToolbarState));
-    document.addEventListener('selectionchange', syncToolbarState);
+    const restoreSelection = () => {
+      if (!savedRange) return;
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
+    };
+    editor.addEventListener('keyup', saveSelection);
+    editor.addEventListener('mouseup', saveSelection);
     toolbar.querySelectorAll('button').forEach((btn) => {
       btn.setAttribute('aria-pressed', 'false');
-      btn.addEventListener('mousedown', (event) => event.preventDefault());
+      btn.addEventListener('mousedown', (event) => {
+        saveSelection();
+        event.preventDefault();
+      });
       btn.onclick = () => {
+        restoreSelection();
         editor.focus();
         if (btn.dataset.cmd === 'createLink') {
           const url = prompt('Link URL:');
           if (url) document.execCommand('createLink', false, url);
         } else {
+          const currentState = btn.classList.contains('is-active');
           document.execCommand(btn.dataset.cmd, false, null);
+          btn.classList.toggle('is-active', !currentState);
+          btn.setAttribute('aria-pressed', String(!currentState));
         }
-        syncToolbarState();
       };
     });
   });

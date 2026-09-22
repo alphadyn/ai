@@ -262,6 +262,7 @@ h1, h2, h3, h4 { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe
 
 /* Forms & modals */
 label { display: flex; flex-direction: column; gap: 6px; font-size: .87rem; color: var(--muted); margin-bottom: 13px; font-weight: 500; }
+.post-body-field { display: flex; flex-direction: column; gap: 6px; font-size: .87rem; color: var(--muted); margin-bottom: 13px; font-weight: 500; }
 label input[type="text"], label input[type="url"], label input[type="password"], label input[type="file"] {
   padding: 10px 13px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
   transition: border-color .15s var(--ease), box-shadow .15s var(--ease); font: inherit;

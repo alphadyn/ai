@@ -146,7 +146,8 @@
     <label>Link (optional)
       <input type="url" id="post-link" placeholder="https://example.com/article">
     </label>
-    <label>Body — plain text, rich text (bold/italic/lists/links), or paste an image
+    <div class="post-body-field">
+      <span>Body — plain text, rich text (bold/italic/lists/links), or paste an image</span>
       <div class="richtext-toolbar" data-target="post-body">
         <button type="button" data-cmd="bold"><b>B</b></button>
         <button type="button" data-cmd="italic"><i>I</i></button>
@@ -154,7 +155,7 @@
         <button type="button" data-cmd="createLink">🔗 Link</button>
       </div>
       <div class="richtext-editor" id="post-body" contenteditable="true" data-placeholder="Write something…"></div>
-    </label>
+    </div>
     <label>Tags <span class="muted small">(comma-separated, up to 12)</span>
       <input type="text" id="post-tags" placeholder="news, tech, science">
     </label>
