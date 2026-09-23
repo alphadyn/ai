@@ -1,7 +1,11 @@
 const VERCEL_API = 'https://sp-six-gamma.vercel.app/api';
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
-const WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD'];
-const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com' };
+const CONSTITUENTS_URL = 'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv';
+const TOP_N_PER_SIGNAL = 20;
+// Used only if the live S&P 500 constituent list can't be fetched (offline, blocked, etc.)
+const FALLBACK_WATCHLIST = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'AVGO', 'JPM', 'LLY', 'V', 'XOM', 'COST', 'WMT', 'ORCL', 'NFLX', 'AMD', 'MA', 'PG', 'HD', 'ABBV', 'KO', 'BAC', 'UNH', 'CRM', 'CVX', 'MRK', 'TMO', 'PEP', 'ADBE', 'ACN', 'MCD', 'CSCO', 'ABT', 'LIN', 'WFC', 'TXN', 'DIS', 'IBM', 'PM', 'GE', 'CAT', 'INTU', 'AXP', 'VZ', 'NOW', 'QCOM', 'AMGN', 'PFE', 'UBER', 'SPGI'];
+let WATCHLIST = FALLBACK_WATCHLIST.slice();
+const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com', MA: 'https://www.mastercard.com', PG: 'https://us.pg.com', HD: 'https://corporate.homedepot.com', ABBV: 'https://www.abbvie.com', KO: 'https://www.coca-colacompany.com', BAC: 'https://www.bankofamerica.com', UNH: 'https://www.unitedhealthgroup.com', CRM: 'https://www.salesforce.com', CVX: 'https://www.chevron.com', MRK: 'https://www.merck.com', TMO: 'https://www.thermofisher.com', PEP: 'https://www.pepsico.com', ADBE: 'https://www.adobe.com', ACN: 'https://www.accenture.com', MCD: 'https://www.mcdonalds.com', CSCO: 'https://www.cisco.com', ABT: 'https://www.abbott.com', LIN: 'https://www.linde.com', WFC: 'https://www.wellsfargo.com', TXN: 'https://www.ti.com', DIS: 'https://www.thewaltdisneycompany.com', IBM: 'https://www.ibm.com', PM: 'https://www.pmi.com', GE: 'https://www.ge.com', CAT: 'https://www.caterpillar.com', INTU: 'https://www.intuit.com', AXP: 'https://www.americanexpress.com', VZ: 'https://www.verizon.com', NOW: 'https://www.servicenow.com', QCOM: 'https://www.qualcomm.com', AMGN: 'https://www.amgen.com', PFE: 'https://www.pfizer.com', UBER: 'https://www.uber.com', SPGI: 'https://www.spglobal.com' };
 
 const $ = (selector) => document.querySelector(selector);
 const elements = { body: $('#ranking-body'), refresh: $('#refresh-button'), updated: $('#last-updated'), status: $('#market-status'), count: $('#scan-count'), detailTitle: $('#detail-title'), detailSignal: $('#detail-signal'), description: $('#detail-description'), price: $('#detail-price'), change: $('#detail-change'), marketCap: $('#detail-market-cap'), range: $('#detail-range'), volume: $('#detail-volume'), pe: $('#detail-pe'), rationale: $('#rationale-list'), period: $('#financial-period'), revenue: $('#financial-revenue'), income: $('#financial-income'), margin: $('#financial-margin'), cash: $('#financial-cash'), companyLink: $('#company-link'), secLink: $('#sec-link') };
@@ -77,15 +81,26 @@ function signalClass(signal) { return `signal-${signal.toLowerCase()}`; }
 function changeClass(value) { return value > 0 ? 'up' : value < 0 ? 'down' : 'neutral'; }
 function changeText(value) { return value === null ? '--' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`; }
 
+function signalBuckets() {
+  return { Buy: results.filter((item) => item.signal === 'Buy').sort((a, b) => b.score - a.score), Hold: results.filter((item) => item.signal === 'Hold').sort((a, b) => Math.abs(50 - a.score) - Math.abs(50 - b.score)), Sell: results.filter((item) => item.signal === 'Sell').sort((a, b) => a.score - b.score) };
+}
+
+// Full universe is scored, but only the strongest N per signal are shown so the table stays readable
+function selectTopSignals() {
+  const buckets = signalBuckets();
+  return [...buckets.Buy.slice(0, TOP_N_PER_SIGNAL), ...buckets.Hold.slice(0, TOP_N_PER_SIGNAL), ...buckets.Sell.slice(0, TOP_N_PER_SIGNAL)];
+}
+
 function renderSummary() {
-  const buckets = { Buy: results.filter((item) => item.signal === 'Buy').sort((a, b) => b.score - a.score), Hold: results.filter((item) => item.signal === 'Hold').sort((a, b) => Math.abs(50 - a.score) - Math.abs(50 - b.score)), Sell: results.filter((item) => item.signal === 'Sell').sort((a, b) => a.score - b.score) };
+  const buckets = signalBuckets();
   [['Buy', buckets.Buy[0], 'buy'], ['Hold', buckets.Hold[0], 'hold'], ['Sell', buckets.Sell[0], 'sell']].forEach(([signal, item, prefix]) => { $(`#${prefix}-symbol`).textContent = item?.symbol || '--'; $(`#${prefix}-name`).textContent = item?.name || (results.length ? `No ${signal} threshold met` : 'No market data'); $(`#${prefix}-score`).textContent = item ? item.score : '--'; });
 }
 
 function renderTable() {
-  elements.count.textContent = `${results.length} / ${WATCHLIST.length} loaded`;
+  const shortlist = selectTopSignals();
+  elements.count.textContent = `${results.length} / ${WATCHLIST.length} scanned · top ${shortlist.length} shown`;
   if (!results.length) { elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">No market data returned. Try refreshing.</td></tr>'; return; }
-  elements.body.innerHTML = results.slice().sort((a, b) => b.score - a.score).map((item, index) => `<tr data-symbol="${item.symbol}" tabindex="0" class="${item.symbol === selectedSymbol ? 'selected' : ''}"><td class="rank">${String(index + 1).padStart(2, '0')}</td><td class="company-cell"><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name)}</span></td><td class="signal-text ${signalClass(item.signal)}">${item.signal}</td><td class="num">${fmtPrice(item.price)}</td><td class="num ${changeClass(item.dayChange)}">${changeText(item.dayChange)}</td><td class="num">${item.score}</td></tr>`).join('');
+  elements.body.innerHTML = shortlist.slice().sort((a, b) => b.score - a.score).map((item, index) => `<tr data-symbol="${item.symbol}" tabindex="0" class="${item.symbol === selectedSymbol ? 'selected' : ''}"><td class="rank">${String(index + 1).padStart(2, '0')}</td><td class="company-cell"><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name)}</span></td><td class="signal-text ${signalClass(item.signal)}">${item.signal}</td><td class="num">${fmtPrice(item.price)}</td><td class="num ${changeClass(item.dayChange)}">${changeText(item.dayChange)}</td><td class="num">${item.score}</td></tr>`).join('');
   elements.body.querySelectorAll('tr[data-symbol]').forEach((row) => { row.addEventListener('click', () => selectCompany(row.dataset.symbol)); row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectCompany(row.dataset.symbol); }); });
 }
 
@@ -134,19 +149,40 @@ async function selectCompany(symbol) {
   await loadFinancials(item);
 }
 
+async function loadUniverse() {
+  try {
+    const response = await fetch(CONSTITUENTS_URL, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Constituent list request failed: ${response.status}`);
+    const text = await response.text();
+    const symbols = text.trim().split('\n').slice(1).map((line) => line.split(',')[0].trim()).filter(Boolean);
+    if (symbols.length > 400) WATCHLIST = symbols;
+  } catch (error) {
+    // keep FALLBACK_WATCHLIST if the live S&P 500 constituent list can't be fetched
+  }
+}
+
 async function runScan() {
   elements.refresh.disabled = true;
-  elements.status.textContent = 'Refreshing market data';
+  elements.status.textContent = `Scanning ${WATCHLIST.length} S&P 500 constituents (this can take a few minutes)`;
   elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr>';
   const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => { const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]); return scoreQuote(parseQuote(symbol, info, chart)); }));
   results = settled.filter((entry) => entry.status === 'fulfilled').map((entry) => entry.value);
   renderSummary();
   renderTable();
-  if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : results[0].symbol);
+  const shortlist = selectTopSignals();
+  if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : (shortlist[0] || results[0]).symbol);
   elements.status.textContent = results.length ? 'Live data connected' : 'Live data unavailable';
   elements.updated.textContent = results.length ? `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live refresh failed';
   elements.refresh.disabled = false;
 }
 
+async function init() {
+  elements.status.textContent = 'Loading S&P 500 constituent list';
+  await loadUniverse();
+  await runScan();
+}
+
 elements.refresh.addEventListener('click', runScan);
-runScan();
+// pageshow fires on normal loads and on back/forward bfcache restores, which otherwise show stale in-memory data without refetching
+window.addEventListener('pageshow', (event) => { if (event.persisted) runScan(); });
+init();

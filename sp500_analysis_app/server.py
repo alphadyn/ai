@@ -11,6 +11,17 @@ NASDAQ_API = "https://api.nasdaq.com/api"
 ROOT = Path(__file__).resolve().parent
 
 
+class DashboardServer(ThreadingHTTPServer):
+    # Browser tabs reload/abort mid-scan constantly with 500+ in-flight requests; these are expected client
+    # disconnects, not server bugs, so silence the default noisy traceback logging for them.
+    def handle_error(self, request, client_address):
+        import sys
+        exc_type = sys.exc_info()[0]
+        if exc_type in (BrokenPipeError, ConnectionResetError):
+            return
+        super().handle_error(request, client_address)
+
+
 class DashboardHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
@@ -46,7 +57,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("127.0.0.1", 8000), DashboardHandler)
+    server = DashboardServer(("127.0.0.1", 8000), DashboardHandler)
     print("Market Lens running at http://localhost:8000")
     try:
         server.serve_forever()

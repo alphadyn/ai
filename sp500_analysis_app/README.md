@@ -1,6 +1,8 @@
 # Market Lens
 
-Market Lens is a dependency-free browser dashboard for screening a selected group of S&P 500 leaders. On every page load, it requests current quote and chart data from Nasdaq's public market endpoints, calculates a transparent rules-based score, and labels the strongest result as Buy, Hold, or Sell. Selecting a row loads the latest available financial statement rows for that company.
+Market Lens is a dependency-free browser dashboard for screening the entire S&P 500 index. On every page load, it fetches the current index constituent list, then requests quote and chart data for every constituent from Nasdaq's public market endpoints, calculates a transparent rules-based score for each, and labels each result as Buy, Hold, or Sell. The ranked watchlist table shows only the top 20 highest-conviction results per signal (Buy/Hold/Sell); the summary cards always reflect the single strongest result across the full scan. Selecting a row loads the latest available financial statement rows for that company.
+
+Scanning the full index means roughly 1,000 Nasdaq requests per scan, so a full refresh can take several minutes; the status line and "scanned / shown" count reflect progress. If the live constituent list can't be fetched (offline, blocked, etc.), the app falls back to a smaller hardcoded watchlist.
 
 ## Run locally
 
