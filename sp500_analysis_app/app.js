@@ -14,6 +14,25 @@ let selectedSymbol = null;
 let selectedRange = '1d';
 let chartRequestId = 0;
 
+const CACHE_KEY = 'sp500-analysis-cache-v1';
+
+function saveCache() {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ results, selectedSymbol, watchlist: WATCHLIST, timestamp: Date.now() }));
+  } catch (error) {
+    // storage may be unavailable (e.g. private browsing); nothing to do
+  }
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 function updateProgress(completed, total, label = 'Assessing constituents') {
   const percentage = total ? Math.round((completed / total) * 100) : 0;
   elements.progressStatus.textContent = label;
@@ -265,9 +284,29 @@ async function runScan() {
   elements.updated.textContent = results.length ? `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live refresh failed';
   updateProgress(WATCHLIST.length, WATCHLIST.length, results.length ? 'Assessment complete' : 'Assessment unavailable');
   elements.refresh.disabled = false;
+  if (results.length) saveCache();
+}
+
+// Restores the last ranked results from localStorage so the page shows data immediately without rescanning the market
+function restoreFromCache() {
+  const cache = loadCache();
+  if (!cache || !Array.isArray(cache.results) || !cache.results.length) return false;
+  results = cache.results;
+  selectedSymbol = cache.selectedSymbol || null;
+  if (Array.isArray(cache.watchlist) && cache.watchlist.length > 400) WATCHLIST = cache.watchlist;
+  renderSummary();
+  renderTable();
+  const shortlist = selectTopSignals();
+  const symbolToShow = selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : (shortlist[0] || results[0]).symbol;
+  selectCompany(symbolToShow);
+  elements.status.textContent = 'Showing saved results';
+  elements.updated.textContent = cache.timestamp ? `Saved ${new Date(cache.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Saved results';
+  updateProgress(WATCHLIST.length, WATCHLIST.length, 'Loaded saved results');
+  return true;
 }
 
 async function init() {
+  if (restoreFromCache()) return;
   elements.status.textContent = 'Loading S&P 500 constituent list';
   await loadUniverse();
   await runScan();
@@ -275,6 +314,4 @@ async function init() {
 
 elements.refresh.addEventListener('click', runScan);
 elements.rangeTabs.forEach((tab) => tab.addEventListener('click', () => { if (!selectedSymbol) return; setActiveRange(tab.dataset.range); loadPerformanceChart(results.find((item) => item.symbol === selectedSymbol), tab.dataset.range); }));
-// pageshow fires on normal loads and on back/forward bfcache restores, which otherwise show stale in-memory data without refetching
-window.addEventListener('pageshow', (event) => { if (event.persisted) runScan(); });
 init();
