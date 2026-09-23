@@ -8,9 +8,11 @@ let WATCHLIST = FALLBACK_WATCHLIST.slice();
 const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com', MA: 'https://www.mastercard.com', PG: 'https://us.pg.com', HD: 'https://corporate.homedepot.com', ABBV: 'https://www.abbvie.com', KO: 'https://www.coca-colacompany.com', BAC: 'https://www.bankofamerica.com', UNH: 'https://www.unitedhealthgroup.com', CRM: 'https://www.salesforce.com', CVX: 'https://www.chevron.com', MRK: 'https://www.merck.com', TMO: 'https://www.thermofisher.com', PEP: 'https://www.pepsico.com', ADBE: 'https://www.adobe.com', ACN: 'https://www.accenture.com', MCD: 'https://www.mcdonalds.com', CSCO: 'https://www.cisco.com', ABT: 'https://www.abbott.com', LIN: 'https://www.linde.com', WFC: 'https://www.wellsfargo.com', TXN: 'https://www.ti.com', DIS: 'https://www.thewaltdisneycompany.com', IBM: 'https://www.ibm.com', PM: 'https://www.pmi.com', GE: 'https://www.ge.com', CAT: 'https://www.caterpillar.com', INTU: 'https://www.intuit.com', AXP: 'https://www.americanexpress.com', VZ: 'https://www.verizon.com', NOW: 'https://www.servicenow.com', QCOM: 'https://www.qualcomm.com', AMGN: 'https://www.amgen.com', PFE: 'https://www.pfizer.com', UBER: 'https://www.uber.com', SPGI: 'https://www.spglobal.com' };
 
 const $ = (selector) => document.querySelector(selector);
-const elements = { body: $('#ranking-body'), refresh: $('#refresh-button'), updated: $('#last-updated'), status: $('#market-status'), count: $('#scan-count'), progressStatus: $('#progress-status'), progressCount: $('#progress-count'), progressBar: $('#progress-bar'), progressTrack: $('.progress-track'), detailTitle: $('#detail-title'), detailSignal: $('#detail-signal'), description: $('#detail-description'), price: $('#detail-price'), change: $('#detail-change'), marketCap: $('#detail-market-cap'), range: $('#detail-range'), volume: $('#detail-volume'), pe: $('#detail-pe'), rationale: $('#rationale-list'), period: $('#financial-period'), revenue: $('#financial-revenue'), income: $('#financial-income'), margin: $('#financial-margin'), cash: $('#financial-cash'), companyLink: $('#company-link'), secLink: $('#sec-link') };
+const elements = { body: $('#ranking-body'), refresh: $('#refresh-button'), updated: $('#last-updated'), status: $('#market-status'), count: $('#scan-count'), progressStatus: $('#progress-status'), progressCount: $('#progress-count'), progressBar: $('#progress-bar'), progressTrack: $('.progress-track'), detailTitle: $('#detail-title'), detailSignal: $('#detail-signal'), description: $('#detail-description'), price: $('#detail-price'), change: $('#detail-change'), marketCap: $('#detail-market-cap'), range: $('#detail-range'), volume: $('#detail-volume'), pe: $('#detail-pe'), performanceChange: $('#performance-change'), performanceChart: $('#performance-chart'), chartStart: $('#chart-start'), chartEnd: $('#chart-end'), rangeTabs: document.querySelectorAll('.range-tab'), rationale: $('#rationale-list'), period: $('#financial-period'), revenue: $('#financial-revenue'), income: $('#financial-income'), margin: $('#financial-margin'), cash: $('#financial-cash'), companyLink: $('#company-link'), secLink: $('#sec-link') };
 let results = [];
 let selectedSymbol = null;
+let selectedRange = '1d';
+let chartRequestId = 0;
 
 function updateProgress(completed, total, label = 'Assessing constituents') {
   const percentage = total ? Math.round((completed / total) * 100) : 0;
@@ -18,6 +20,74 @@ function updateProgress(completed, total, label = 'Assessing constituents') {
   elements.progressCount.textContent = `${completed} / ${total}`;
   elements.progressBar.style.width = `${percentage}%`;
   elements.progressTrack.setAttribute('aria-valuenow', String(percentage));
+}
+
+const PERFORMANCE_RANGES = { '1d': { label: '1D' }, '1w': { label: '1W', days: 7 }, '1m': { label: '1M', days: 30 }, ytd: { label: 'YTD', ytd: true }, '1y': { label: '1Y', days: 365 }, '5y': { label: '5Y', days: 1825 }, '10y': { label: '10Y', days: 3650 }, all: { label: 'All', all: true } };
+
+function rangeStart(range) {
+  const date = new Date();
+  if (range.all) return '1970-01-01';
+  if (range.ytd) return `${date.getUTCFullYear()}-01-01`;
+  date.setUTCDate(date.getUTCDate() - range.days);
+  return date.toISOString().slice(0, 10);
+}
+
+function setActiveRange(range) {
+  selectedRange = range;
+  elements.rangeTabs.forEach((tab) => { const active = tab.dataset.range === range; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
+}
+
+function renderPerformanceChart(points, range) {
+  const validPoints = points.map((point) => ({ x: Number(point.x), y: numberFromText(point.y) })).filter((point) => Number.isFinite(point.x) && point.y !== null && point.y > 0);
+  if (validPoints.length < 2) { elements.performanceChart.innerHTML = '<span class="chart-placeholder">Performance data unavailable for this range.</span>'; elements.performanceChange.textContent = '--'; elements.chartStart.textContent = elements.chartEnd.textContent = '--'; return; }
+  const sampled = validPoints.length > 240 ? validPoints.filter((_, index) => index % Math.ceil(validPoints.length / 240) === 0 || index === validPoints.length - 1) : validPoints;
+  const first = sampled[0].y;
+  const normalized = sampled.map((point) => ({ ...point, value: (point.y / first) * 100 }));
+  const values = normalized.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const padding = Math.max((max - min) * 0.12, 1);
+  const low = min - padding;
+  const high = max + padding;
+  const width = 640;
+  const height = 220;
+  const coords = normalized.map((point, index) => `${(index / (normalized.length - 1)) * width},${height - ((point.value - low) / (high - low)) * height}`).join(' ');
+  const change = normalized.at(-1).value - 100;
+  const changeClassName = changeClass(change);
+  elements.performanceChange.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+  elements.performanceChange.className = changeClassName;
+  elements.chartStart.textContent = new Date(validPoints[0].x).toLocaleDateString([], { month: 'short', day: 'numeric', year: range === 'all' || range === '10y' ? 'numeric' : undefined });
+  elements.chartEnd.textContent = new Date(validPoints.at(-1).x).toLocaleDateString([], { month: 'short', day: 'numeric', year: range === 'all' || range === '10y' ? 'numeric' : undefined });
+  elements.performanceChart.innerHTML = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${PERFORMANCE_RANGES[range].label} performance chart"><line class="chart-baseline" x1="0" y1="${height - ((100 - low) / (high - low)) * height}" x2="${width}" y2="${height - ((100 - low) / (high - low)) * height}" /><polyline class="chart-line ${changeClassName}" points="${coords}" /></svg>`;
+}
+
+async function loadPerformanceChart(item, range = selectedRange) {
+  const requestId = ++chartRequestId;
+  elements.performanceChart.innerHTML = '<span class="chart-placeholder">Loading performance...</span>';
+  elements.performanceChange.textContent = '--';
+  if (range === '1d') {
+    const currentPrice = item.price;
+    const previousClose = item.previousClose;
+    if (currentPrice && previousClose) {
+      renderPerformanceChart([{ x: Date.now() - 86400000, y: previousClose }, { x: Date.now(), y: currentPrice }], range);
+    } else {
+      elements.performanceChart.innerHTML = '<span class="chart-placeholder">End-of-day data unavailable.</span>';
+    }
+    return;
+  }
+  const cachedChart = item.performanceCharts?.[range];
+  if (cachedChart) {
+    renderPerformanceChart(cachedChart.chart || [], range);
+    return;
+  }
+  const query = `&fromdate=${rangeStart(PERFORMANCE_RANGES[range])}`;
+  try {
+    const chart = await getJson(`/quote/${item.symbol}/chart?assetclass=stocks${query}`);
+    item.performanceCharts = { ...(item.performanceCharts || {}), [range]: chart };
+    if (requestId === chartRequestId && selectedSymbol === item.symbol) renderPerformanceChart(chart.chart || [], range);
+  } catch (error) {
+    if (requestId === chartRequestId) elements.performanceChart.innerHTML = '<span class="chart-placeholder">Performance data unavailable.</span>';
+  }
 }
 
 const numberFromText = (value) => {
@@ -65,7 +135,7 @@ function parseQuote(symbol, info, chart) {
   const oneYearChange = history.length > 20 ? ((history.at(-1) / history[0]) - 1) * 100 : null;
   const monthChange = history.length > 20 ? ((history.at(-1) / history[Math.max(0, history.length - 21)]) - 1) * 100 : null;
   const rangePosition = high52 && low52 && price ? ((price - low52) / (high52 - low52)) * 100 : null;
-  return { symbol, name: info.companyName || chartPrimary.company || symbol, exchange: info.exchange || chartPrimary.exchange || '--', price, dayChange, previousClose, volume, marketCap, pe, range: high52 && low52 ? `${fmtPrice(low52)} – ${fmtPrice(high52)}` : range, high52, low52, oneYearChange, monthChange, rangePosition, info, chart: chartPrimary };
+  return { symbol, name: info.companyName || chartPrimary.company || symbol, exchange: info.exchange || chartPrimary.exchange || '--', price, dayChange, previousClose, volume, marketCap, pe, range: high52 && low52 ? `${fmtPrice(low52)} – ${fmtPrice(high52)}` : range, high52, low52, oneYearChange, monthChange, rangePosition, info, chart: chartPrimary, performanceCharts: { '1y': chartPrimary } };
 }
 
 function scoreQuote(quote) {
@@ -154,6 +224,8 @@ async function selectCompany(symbol) {
   elements.rationale.innerHTML = item.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('');
   elements.companyLink.href = COMPANY_SITES[item.symbol] || '#';
   elements.secLink.href = `https://www.sec.gov/edgar/browse/?CIK=${item.symbol}`;
+  setActiveRange('1d');
+  loadPerformanceChart(item);
   await loadFinancials(item);
 }
 
@@ -177,7 +249,7 @@ async function runScan() {
   let completed = 0;
   const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => {
     try {
-      const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]);
+      const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks&fromdate=${rangeStart(PERFORMANCE_RANGES['1y'])}`)]);
       return scoreQuote(parseQuote(symbol, info, chart));
     } finally {
       completed += 1;
@@ -202,6 +274,7 @@ async function init() {
 }
 
 elements.refresh.addEventListener('click', runScan);
+elements.rangeTabs.forEach((tab) => tab.addEventListener('click', () => { if (!selectedSymbol) return; setActiveRange(tab.dataset.range); loadPerformanceChart(results.find((item) => item.symbol === selectedSymbol), tab.dataset.range); }));
 // pageshow fires on normal loads and on back/forward bfcache restores, which otherwise show stale in-memory data without refetching
 window.addEventListener('pageshow', (event) => { if (event.persisted) runScan(); });
 init();
