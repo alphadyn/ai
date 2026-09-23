@@ -16,11 +16,17 @@ let chartRequestId = 0;
 
 const CACHE_KEY = 'sp500-analysis-cache-v1';
 
+// Drops the raw quote/chart payloads (info, chart, performanceCharts) before caching, since storing
+// them for the full universe of companies exceeds localStorage's quota and silently fails to save
+function slimResult({ info, chart, performanceCharts, ...rest }) {
+  return rest;
+}
+
 function saveCache() {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ results, selectedSymbol, watchlist: WATCHLIST, timestamp: Date.now() }));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ results: results.map(slimResult), selectedSymbol, watchlist: WATCHLIST, timestamp: Date.now() }));
   } catch (error) {
-    // storage may be unavailable (e.g. private browsing); nothing to do
+    // storage may be unavailable (e.g. private browsing) or still over quota; nothing to do
   }
 }
 
