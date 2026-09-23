@@ -15,7 +15,7 @@ let selectedRange = '1d';
 let chartRequestId = 0;
 
 // Shared server-side cache (Supabase/Postgres) so every visitor sees the same saved scan,
-// not a per-browser copy. Schema: sp500_analysis_app/supabase-schema.sql
+// not a per-browser copy. Schema: market_lens_app/supabase-schema.sql
 const SUPABASE_URL = 'https://vftmcftccahjlxbxcnsf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_I8I-cRDhS60UoUgCvVvwnQ_MyKI9u14';
 const CACHE_TABLE = `${SUPABASE_URL}/rest/v1/sp500_watchlist_cache`;

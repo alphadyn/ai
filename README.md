@@ -10,7 +10,7 @@ The current top apps featured on the main landing page are:
 
 1. [pulse](pulse/) — Social
 2. [nexus](nexus/) — Workspace
-3. [sp500_analysis_app](sp500_analysis_app/) — Finance
+3. [market_lens_app](market_lens_app/) — Finance
 4. [online_store_app](online_store_app/) — Commerce
 5. [photo_gallery_app](photo_gallery_app/) — Gallery
 6. [video_conference_app](video_conference_app/) — Communication
@@ -41,7 +41,7 @@ The current top apps featured on the main landing page are:
 - [prime_counter_app](prime_counter_app/) — Prime counting utility with charting and timing.
 - [pulse](pulse/) — Social/news-style app with posts, tags, and discussion flows.
 - [resume](resume/) — Portfolio-style resume page.
-- [sp500_analysis_app](sp500_analysis_app/) — Dashboard for screening and reviewing large-cap equities.
+- [market_lens_app](market_lens_app/) — Dashboard for screening and reviewing large-cap equities.
 - [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
 - [video_conference_app](video_conference_app/) — Meeting interface with chat and file-sharing UX.
 
@@ -85,7 +85,7 @@ python3 -m http.server 8000
 cd online_store_app
 python3 -m http.server 8000
 
-cd sp500_analysis_app
+cd market_lens_app
 python3 -m http.server 8000
 ```
 

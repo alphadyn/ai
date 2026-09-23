@@ -31,7 +31,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build S&P 500 market snapshot
-        run: python3 sp500_analysis_app/build_data.py
+        run: python3 market_lens_app/build_data.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
