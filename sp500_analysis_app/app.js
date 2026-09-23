@@ -8,9 +8,17 @@ let WATCHLIST = FALLBACK_WATCHLIST.slice();
 const COMPANY_SITES = { AAPL: 'https://www.apple.com', MSFT: 'https://www.microsoft.com', NVDA: 'https://www.nvidia.com', AMZN: 'https://www.amazon.com', GOOGL: 'https://abc.xyz', META: 'https://about.meta.com', AVGO: 'https://www.broadcom.com', JPM: 'https://www.jpmorganchase.com', LLY: 'https://www.lilly.com', V: 'https://usa.visa.com', XOM: 'https://corporate.exxonmobil.com', COST: 'https://www.costco.com', WMT: 'https://corporate.walmart.com', ORCL: 'https://www.oracle.com', NFLX: 'https://www.netflix.com', AMD: 'https://www.amd.com', MA: 'https://www.mastercard.com', PG: 'https://us.pg.com', HD: 'https://corporate.homedepot.com', ABBV: 'https://www.abbvie.com', KO: 'https://www.coca-colacompany.com', BAC: 'https://www.bankofamerica.com', UNH: 'https://www.unitedhealthgroup.com', CRM: 'https://www.salesforce.com', CVX: 'https://www.chevron.com', MRK: 'https://www.merck.com', TMO: 'https://www.thermofisher.com', PEP: 'https://www.pepsico.com', ADBE: 'https://www.adobe.com', ACN: 'https://www.accenture.com', MCD: 'https://www.mcdonalds.com', CSCO: 'https://www.cisco.com', ABT: 'https://www.abbott.com', LIN: 'https://www.linde.com', WFC: 'https://www.wellsfargo.com', TXN: 'https://www.ti.com', DIS: 'https://www.thewaltdisneycompany.com', IBM: 'https://www.ibm.com', PM: 'https://www.pmi.com', GE: 'https://www.ge.com', CAT: 'https://www.caterpillar.com', INTU: 'https://www.intuit.com', AXP: 'https://www.americanexpress.com', VZ: 'https://www.verizon.com', NOW: 'https://www.servicenow.com', QCOM: 'https://www.qualcomm.com', AMGN: 'https://www.amgen.com', PFE: 'https://www.pfizer.com', UBER: 'https://www.uber.com', SPGI: 'https://www.spglobal.com' };
 
 const $ = (selector) => document.querySelector(selector);
-const elements = { body: $('#ranking-body'), refresh: $('#refresh-button'), updated: $('#last-updated'), status: $('#market-status'), count: $('#scan-count'), detailTitle: $('#detail-title'), detailSignal: $('#detail-signal'), description: $('#detail-description'), price: $('#detail-price'), change: $('#detail-change'), marketCap: $('#detail-market-cap'), range: $('#detail-range'), volume: $('#detail-volume'), pe: $('#detail-pe'), rationale: $('#rationale-list'), period: $('#financial-period'), revenue: $('#financial-revenue'), income: $('#financial-income'), margin: $('#financial-margin'), cash: $('#financial-cash'), companyLink: $('#company-link'), secLink: $('#sec-link') };
+const elements = { body: $('#ranking-body'), refresh: $('#refresh-button'), updated: $('#last-updated'), status: $('#market-status'), count: $('#scan-count'), progressStatus: $('#progress-status'), progressCount: $('#progress-count'), progressBar: $('#progress-bar'), progressTrack: $('.progress-track'), detailTitle: $('#detail-title'), detailSignal: $('#detail-signal'), description: $('#detail-description'), price: $('#detail-price'), change: $('#detail-change'), marketCap: $('#detail-market-cap'), range: $('#detail-range'), volume: $('#detail-volume'), pe: $('#detail-pe'), rationale: $('#rationale-list'), period: $('#financial-period'), revenue: $('#financial-revenue'), income: $('#financial-income'), margin: $('#financial-margin'), cash: $('#financial-cash'), companyLink: $('#company-link'), secLink: $('#sec-link') };
 let results = [];
 let selectedSymbol = null;
+
+function updateProgress(completed, total, label = 'Assessing constituents') {
+  const percentage = total ? Math.round((completed / total) * 100) : 0;
+  elements.progressStatus.textContent = label;
+  elements.progressCount.textContent = `${completed} / ${total}`;
+  elements.progressBar.style.width = `${percentage}%`;
+  elements.progressTrack.setAttribute('aria-valuenow', String(percentage));
+}
 
 const numberFromText = (value) => {
   if (typeof value === 'number') return value;
@@ -98,7 +106,7 @@ function renderSummary() {
 
 function renderTable() {
   const shortlist = selectTopSignals();
-  elements.count.textContent = `${results.length} / ${WATCHLIST.length} scanned · top ${shortlist.length} shown`;
+  elements.count.textContent = `${results.length} / ${WATCHLIST.length} securities · 500 companies · top ${shortlist.length} shown`;
   if (!results.length) { elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">No market data returned. Try refreshing.</td></tr>'; return; }
   elements.body.innerHTML = shortlist.slice().sort((a, b) => b.score - a.score).map((item, index) => `<tr data-symbol="${item.symbol}" tabindex="0" class="${item.symbol === selectedSymbol ? 'selected' : ''}"><td class="rank">${String(index + 1).padStart(2, '0')}</td><td class="company-cell"><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name)}</span></td><td class="signal-text ${signalClass(item.signal)}">${item.signal}</td><td class="num">${fmtPrice(item.price)}</td><td class="num ${changeClass(item.dayChange)}">${changeText(item.dayChange)}</td><td class="num">${item.score}</td></tr>`).join('');
   elements.body.querySelectorAll('tr[data-symbol]').forEach((row) => { row.addEventListener('click', () => selectCompany(row.dataset.symbol)); row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectCompany(row.dataset.symbol); }); });
@@ -163,9 +171,19 @@ async function loadUniverse() {
 
 async function runScan() {
   elements.refresh.disabled = true;
-  elements.status.textContent = `Scanning ${WATCHLIST.length} S&P 500 constituents (this can take a few minutes)`;
+  elements.status.textContent = `Scanning ${WATCHLIST.length} S&P 500 listed securities (500 companies; this can take a few minutes)`;
+  updateProgress(0, WATCHLIST.length, 'Assessing constituents');
   elements.body.innerHTML = '<tr><td colspan="6" class="loading-cell">Loading market data<span class="loader"></span></td></tr>';
-  const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => { const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]); return scoreQuote(parseQuote(symbol, info, chart)); }));
+  let completed = 0;
+  const settled = await Promise.allSettled(WATCHLIST.map(async (symbol) => {
+    try {
+      const [info, chart] = await Promise.all([getJson(`/quote/${symbol}/info?assetclass=stocks`), getJson(`/quote/${symbol}/chart?assetclass=stocks`)]);
+      return scoreQuote(parseQuote(symbol, info, chart));
+    } finally {
+      completed += 1;
+      updateProgress(completed, WATCHLIST.length);
+    }
+  }));
   results = settled.filter((entry) => entry.status === 'fulfilled').map((entry) => entry.value);
   renderSummary();
   renderTable();
@@ -173,6 +191,7 @@ async function runScan() {
   if (results.length) await selectCompany(selectedSymbol && results.some((item) => item.symbol === selectedSymbol) ? selectedSymbol : (shortlist[0] || results[0]).symbol);
   elements.status.textContent = results.length ? 'Live data connected' : 'Live data unavailable';
   elements.updated.textContent = results.length ? `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live refresh failed';
+  updateProgress(WATCHLIST.length, WATCHLIST.length, results.length ? 'Assessment complete' : 'Assessment unavailable');
   elements.refresh.disabled = false;
 }
 

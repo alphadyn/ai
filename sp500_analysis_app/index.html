@@ -8,6 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Market Lens | S&P 500 Analysis</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -17,7 +18,7 @@
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="./"><span class="brand-mark"><i></i><i></i><i></i></span> Market Lens</a>
-      <div class="top-meta"><span class="status-dot"></span><span id="market-status">Connecting to market data</span><span class="top-separator"></span><span>S&amp;P 500 watchlist</span></div>
+      <div class="top-meta"><span class="status-dot"></span><span id="market-status">Connecting to market data</span><span class="top-separator"></span><span>S&amp;P 500 / 503 listed securities</span></div>
     </header>
 
     <section class="hero">
@@ -26,7 +27,7 @@
         <h1>Signals over noise.</h1>
         <p class="hero-copy">A transparent, rules-based scan of selected S&amp;P 500 leaders. Recommendations update from the latest available quote and chart data each time this page loads.</p>
       </div>
-      <div class="hero-actions"><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh scan</button><p id="last-updated" class="updated-label">Waiting for first scan</p></div>
+      <div class="hero-actions"><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh scan</button><p id="last-updated" class="updated-label">Waiting for first scan</p><div class="scan-progress" aria-live="polite"><div class="progress-label"><span id="progress-status">Ready to assess</span><span id="progress-count">0 / 0</span></div><div class="progress-track" role="progressbar" aria-label="S&amp;P 500 assessment progress across 503 listed securities" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></div></div></div>
     </section>
 
     <section class="notice"><span class="notice-icon">i</span><span>Research tool only. A Buy, Sell, or Hold signal is a model output, not personalized investment advice. Verify data and consider your own risk tolerance.</span></section>
