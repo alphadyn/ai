@@ -14,26 +14,39 @@ let selectedSymbol = null;
 let selectedRange = '1d';
 let chartRequestId = 0;
 
-const CACHE_KEY = 'sp500-analysis-cache-v1';
+// Shared server-side cache (Supabase/Postgres) so every visitor sees the same saved scan,
+// not a per-browser copy. Schema: sp500_analysis_app/supabase-schema.sql
+const SUPABASE_URL = 'https://vftmcftccahjlxbxcnsf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_I8I-cRDhS60UoUgCvVvwnQ_MyKI9u14';
+const CACHE_TABLE = `${SUPABASE_URL}/rest/v1/sp500_watchlist_cache`;
+const SUPABASE_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
 
 // Drops the raw quote/chart payloads (info, chart, performanceCharts) before caching, since storing
-// them for the full universe of companies exceeds localStorage's quota and silently fails to save
+// them for the full universe of companies is unnecessarily large and isn't needed to render the table
 function slimResult({ info, chart, performanceCharts, ...rest }) {
   return rest;
 }
 
-function saveCache() {
+async function saveCache() {
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ results: results.map(slimResult), selectedSymbol, watchlist: WATCHLIST, timestamp: Date.now() }));
+    await fetch(CACHE_TABLE, {
+      method: 'POST',
+      headers: { ...SUPABASE_HEADERS, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{ id: 'latest', results: results.map(slimResult), selected_symbol: selectedSymbol, watchlist: WATCHLIST, updated_at: new Date().toISOString() }]),
+    });
   } catch (error) {
-    // storage may be unavailable (e.g. private browsing) or still over quota; nothing to do
+    // cache save is best-effort; the live scan result is already on screen regardless
   }
 }
 
-function loadCache() {
+async function loadCache() {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const response = await fetch(`${CACHE_TABLE}?id=eq.latest&select=results,selected_symbol,watchlist,updated_at`, { headers: SUPABASE_HEADERS });
+    if (!response.ok) return null;
+    const rows = await response.json();
+    const row = rows[0];
+    if (!row) return null;
+    return { results: row.results, selectedSymbol: row.selected_symbol, watchlist: row.watchlist, timestamp: row.updated_at ? Date.parse(row.updated_at) : null };
   } catch (error) {
     return null;
   }
@@ -290,12 +303,12 @@ async function runScan() {
   elements.updated.textContent = results.length ? `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Live refresh failed';
   updateProgress(WATCHLIST.length, WATCHLIST.length, results.length ? 'Assessment complete' : 'Assessment unavailable');
   elements.refresh.disabled = false;
-  if (results.length) saveCache();
+  if (results.length) await saveCache();
 }
 
-// Restores the last ranked results from localStorage so the page shows data immediately without rescanning the market
-function restoreFromCache() {
-  const cache = loadCache();
+// Restores the last ranked results from the shared cache so the page shows data immediately without rescanning the market
+async function restoreFromCache() {
+  const cache = await loadCache();
   if (!cache || !Array.isArray(cache.results) || !cache.results.length) return false;
   results = cache.results;
   selectedSymbol = cache.selectedSymbol || null;
@@ -312,7 +325,7 @@ function restoreFromCache() {
 }
 
 async function init() {
-  if (restoreFromCache()) return;
+  if (await restoreFromCache()) return;
   elements.status.textContent = 'Loading S&P 500 constituent list';
   await loadUniverse();
   await runScan();
