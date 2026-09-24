@@ -638,7 +638,15 @@ function renderAttachedMedia(checkIn) {
 
 function centerMapOnCheckIn(index) {
   const checkIn = checkIns[index];
-  if (checkIn) map.setView([checkIn.lat, checkIn.lon], 12);
+  if (!checkIn) return;
+  map.flyTo([checkIn.lat, checkIn.lon], 12, { duration: 0.45 });
+  checkInListEl.querySelectorAll(".checkin-entry").forEach((entry) => entry.classList.remove("selected"));
+  checkInListEl.querySelector(`[data-checkin-index="${index}"]`)?.classList.add("selected");
+  let markerIndex = 0;
+  checkInLayer.eachLayer((marker) => {
+    if (markerIndex === index) marker.openPopup();
+    markerIndex += 1;
+  });
 }
 
 function handleCheckInListInteraction(event) {

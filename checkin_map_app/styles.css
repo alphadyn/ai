@@ -661,6 +661,12 @@ body.profile-open::before {
   outline: none;
 }
 
+.checkin-entry.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
 .checkin-preview {
   width: 56px;
   height: 56px;
