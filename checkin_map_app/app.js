@@ -1393,6 +1393,7 @@ async function initializeApp() {
         updateAvatar(profile.avatar_url);
         adminPanel.hidden = profile.role !== "admin";
         document.body.classList.remove("public-trip-view");
+        authPanel.hidden = true;
       } else {
         setAuthUi(false, { keepAppVisible: true });
       }
@@ -1405,7 +1406,6 @@ async function initializeApp() {
       if (!session) {
         userStatus.textContent = `Trip: ${currentTrip.name}`;
       }
-      tripsBtn.hidden = Boolean(session);
       setStatus(checkInStatus, "Viewing a public trip.", "success");
       window.setTimeout(() => map.invalidateSize(), 0);
     } catch (error) {

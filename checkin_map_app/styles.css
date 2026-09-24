@@ -150,10 +150,6 @@ select:focus-visible {
   display: none !important;
 }
 
-body:not(.public-trip-view) .public-trip-only {
-  display: none !important;
-}
-
 .public-trip-view #tripsBtn {
   display: none !important;
 }
