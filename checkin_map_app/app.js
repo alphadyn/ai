@@ -16,6 +16,7 @@ const locationInput = document.getElementById("locationInput");
 const checkInBtn = document.getElementById("checkInBtn");
 const checkInStatus = document.getElementById("checkInStatus");
 const checkInListEl = document.getElementById("checkInList");
+const checkInTripName = document.getElementById("checkInTripName");
 const clearCheckInsBtn = document.getElementById("clearCheckInsBtn");
 const photoInput = document.getElementById("photoInput");
 const photoStatus = document.getElementById("photoStatus");
@@ -213,6 +214,7 @@ async function loadTrips() {
   trips = await response.json();
   currentTrip = trips[0] || null;
   if (isPublicTrip && !currentTrip) throw new Error("This public trip does not exist or is no longer shared.");
+  updateCheckInTripName();
   renderTripSelect();
 }
 
@@ -272,6 +274,7 @@ async function handleTripListAction(event) {
     renderCheckInList();
     renderCheckInMarkers();
     renderTripSelect();
+    updateCheckInTripName();
     tripPanel.hidden = true;
     tripPanel.classList.remove("trip-panel-open");
     document.body.classList.remove("trips-open");
@@ -468,7 +471,12 @@ function canEditCheckIn(checkIn) {
   return Boolean(session && (isAdmin() || checkIn.userId === session.user.id));
 }
 
+function updateCheckInTripName() {
+  checkInTripName.textContent = currentTrip ? `Trip: ${currentTrip.name}` : "";
+}
+
 function renderCheckInList() {
+  updateCheckInTripName();
   if (checkIns.length === 0) {
     checkInListEl.innerHTML = '<li class="empty-state">No check-ins yet.</li>';
     updateClearCheckInsButton();
@@ -1095,6 +1103,7 @@ async function saveRenamedTrip(event) {
     currentTrip.name = name;
     const trip = trips.find((item) => item.id === currentTrip.id);
     if (trip) trip.name = name;
+    updateCheckInTripName();
     renderTripSelect();
     closeRenameTripScreen();
     setStatus(tripStatus, "Trip renamed.", "success");
@@ -1113,6 +1122,7 @@ async function saveNewTrip(event) {
     const [trip] = await response.json();
     trips.push(trip);
     currentTrip = trip;
+    updateCheckInTripName();
     renderTripSelect();
     await loadCheckIns();
     renderCheckInList();
