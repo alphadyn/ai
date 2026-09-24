@@ -9,7 +9,7 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
 - **Map display** built with [Leaflet](https://leafletjs.com/) and [CARTO](https://carto.com/basemaps) basemap tiles (built from OpenStreetMap data)
 - **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
   persisted permanently in Supabase so they are available across browsers and page refreshes
-- **Multi-user accounts**: sign up and sign in with Supabase Auth; each user has private trips and check-ins
+- **Multi-user accounts**: sign up and sign in with a unique username; each user has private trips and check-ins
 - **Trips**: create and switch between multiple groups of check-ins
 - **Public trip links**: copy a URL to share a read-only trip with anyone
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
@@ -49,9 +49,13 @@ Then open http://localhost:8000 in your browser.
 ## Notes
 - Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
 - Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
+- Re-run that schema after app updates; it uses idempotent migrations for fields such as `avatar_url`.
 - Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 - Enable email/password authentication in Supabase Auth. Promote the first administrator by changing their
   profile `role` to `admin` in `checkin_map_profiles`.
+- Username login uses an internal Supabase Auth identity, so enable the Supabase Email provider and disable
+  mandatory email confirmation for this username-only flow in the Supabase Auth settings. Users still enter
+  only a username in the app.
 - The schema includes a backfill for users that existed before the profile trigger was installed.
 - Location search (turning a typed place name into coordinates) uses the free
   [Nominatim](https://nominatim.org/) API.

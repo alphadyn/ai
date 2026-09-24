@@ -21,12 +21,14 @@ const photoStatus = document.getElementById("photoStatus");
 const photoListEl = document.getElementById("photoList");
 const mediaViewer = document.getElementById("mediaViewer");
 const mediaViewerClose = document.getElementById("mediaViewerClose");
+const mediaViewerPrev = document.getElementById("mediaViewerPrev");
+const mediaViewerNext = document.getElementById("mediaViewerNext");
 const mediaViewerContent = document.getElementById("mediaViewerContent");
 const mediaViewerName = document.getElementById("mediaViewerName");
 const authPanel = document.getElementById("authPanel");
 const appContent = document.getElementById("appContent");
 const authForm = document.getElementById("authForm");
-const authEmail = document.getElementById("authEmail");
+const authUsername = document.getElementById("authUsername");
 const authPassword = document.getElementById("authPassword");
 const authSubmitBtn = document.getElementById("authSubmitBtn");
 const toggleAuthBtn = document.getElementById("toggleAuthBtn");
@@ -34,6 +36,20 @@ const authModeLabel = document.getElementById("authModeLabel");
 const authStatus = document.getElementById("authStatus");
 const userStatus = document.getElementById("userStatus");
 const signOutBtn = document.getElementById("signOutBtn");
+const loginBtn = document.getElementById("loginBtn");
+const profileBtn = document.getElementById("profileBtn");
+const profilePanel = document.getElementById("profilePanel");
+const closeProfileBtn = document.getElementById("closeProfileBtn");
+const profileForm = document.getElementById("profileForm");
+const profileUsername = document.getElementById("profileUsername");
+const profileDisplayName = document.getElementById("profileDisplayName");
+const profileStatus = document.getElementById("profileStatus");
+const userAvatar = document.getElementById("userAvatar");
+const profileAvatarPreview = document.getElementById("profileAvatarPreview");
+const profileAvatarInput = document.getElementById("profileAvatarInput");
+const tripsBtn = document.getElementById("tripsBtn");
+const tripPanel = document.getElementById("tripPanel");
+const closeTripsBtn = document.getElementById("closeTripsBtn");
 const tripSelect = document.getElementById("tripSelect");
 const newTripBtn = document.getElementById("newTripBtn");
 const tripNameInput = document.getElementById("tripNameInput");
@@ -84,6 +100,9 @@ let photoMarkers = [];
 let swipeStartX = null;
 let suppressNextListClick = false;
 let editingCheckInIndex = null;
+let mediaViewerSlides = [];
+let mediaViewerIndex = 0;
+let mediaViewerTouchStartX = null;
 let session = null;
 let profile = null;
 let trips = [];
@@ -91,6 +110,14 @@ let currentTrip = null;
 let authMode = "signin";
 const publicTripSlug = new URLSearchParams(window.location.search).get("trip");
 const isPublicTrip = Boolean(publicTripSlug);
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase();
+}
+
+function authIdentityForUsername(username) {
+  return `${normalizeUsername(username)}@users.checkin-map.invalid`;
+}
 
 function createId() {
   return window.crypto?.randomUUID?.() || `checkin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -129,7 +156,13 @@ async function authRequest(path, body) {
     headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!response.ok) throw new Error(await getSupabaseError(response, "Authentication failed."));
+  if (!response.ok) {
+    const message = await getSupabaseError(response, `Authentication failed (HTTP ${response.status}).`);
+    if (/email.*(sign.?ups?|provider).*(disabled|off)|provider.*disabled/i.test(message)) {
+      throw new Error("Account creation is disabled in Supabase. Enable Authentication > Providers > Email, then try again.");
+    }
+    throw new Error(message);
+  }
   return response.json();
 }
 
@@ -210,7 +243,7 @@ async function createTrip() {
 async function getSupabaseError(response, fallback) {
   try {
     const body = await response.json();
-    return body.message || body.error || `${fallback} (HTTP ${response.status}).`;
+    return body.message || body.error_description || body.msg || body.error || body.error_code || `${fallback} (HTTP ${response.status}).`;
   } catch {
     return `${fallback} (HTTP ${response.status}).`;
   }
@@ -591,7 +624,9 @@ function movePinCarousel(carousel, direction) {
   slides.forEach((slide, index) => slide.classList.toggle("active", index === nextIndex));
 }
 
-function openMediaViewer(slide) {
+function updateMediaViewer() {
+  const slide = mediaViewerSlides[mediaViewerIndex];
+  if (!slide) return;
   const mediaUrl = slide.dataset.mediaUrl;
   const mediaType = slide.dataset.mediaType;
   const mediaName = slide.dataset.mediaName;
@@ -606,12 +641,29 @@ function openMediaViewer(slide) {
   mediaElement.alt = mediaName;
   mediaViewerContent.replaceChildren(mediaElement);
   mediaViewerName.textContent = mediaName;
+  mediaViewerPrev.disabled = mediaViewerSlides.length < 2;
+  mediaViewerNext.disabled = mediaViewerSlides.length < 2;
   mediaViewer.hidden = false;
+}
+
+function openMediaViewer(slide) {
+  const carousel = slide.closest(".pin-media-carousel");
+  mediaViewerSlides = [...carousel.querySelectorAll("[data-media-url]")];
+  mediaViewerIndex = mediaViewerSlides.indexOf(slide);
+  updateMediaViewer();
+}
+
+function moveMediaViewer(direction) {
+  if (mediaViewerSlides.length < 2) return;
+  mediaViewerIndex = (mediaViewerIndex + direction + mediaViewerSlides.length) % mediaViewerSlides.length;
+  updateMediaViewer();
 }
 
 function closeMediaViewer() {
   mediaViewer.hidden = true;
   mediaViewerContent.replaceChildren();
+  mediaViewerSlides = [];
+  mediaViewerIndex = 0;
 }
 
 function handleMapPopupAction(event) {
@@ -882,13 +934,79 @@ async function handleAdminAction(event) {
   }
 }
 
+function openProfile() {
+  if (!profile) return;
+  profileUsername.value = profile.username || "";
+  profileDisplayName.value = profile.display_name || "";
+  profileAvatarPreview.src = profile.avatar_url || "";
+  profilePanel.hidden = false;
+  profilePanel.classList.add("profile-panel-open");
+  document.body.classList.add("profile-open");
+  profileDisplayName.focus();
+}
+
+function closeProfile() {
+  profilePanel.hidden = true;
+  profilePanel.classList.remove("profile-panel-open");
+  document.body.classList.remove("profile-open");
+}
+
+function updateAvatar(url) {
+  userAvatar.src = url || "";
+  userAvatar.hidden = !url;
+}
+
+async function uploadAvatar(file) {
+  const extension = file.name.split(".").pop().replace(/[^a-z0-9]/gi, "") || "jpg";
+  const storagePath = `avatars/${session.user.id}.${extension}`;
+  const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
+  const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}`, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "image/jpeg", "x-upsert": "true" },
+    body: file,
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not upload your avatar."));
+  return `${SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}?v=${Date.now()}`;
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  const displayName = profileDisplayName.value.trim();
+  const avatarFile = profileAvatarInput.files[0];
+  let avatarUrl = profile.avatar_url || null;
+  if (avatarFile) avatarUrl = await uploadAvatar(avatarFile);
+  const response = await supabaseRequest(`/rest/v1/${PROFILES_TABLE}?id=eq.${encodeURIComponent(session.user.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl }),
+  });
+  if (!response.ok) {
+    const error = await getSupabaseError(response, "Could not save your profile.");
+    if (/avatar_url.*schema cache|column.*avatar_url/i.test(error)) {
+      throw new Error("Your Supabase schema needs the avatar update. Run checkin_map_app/supabase-schema.sql, then refresh the app.");
+    }
+    throw new Error(error);
+  }
+  profile.display_name = displayName;
+  profile.avatar_url = avatarUrl;
+  userStatus.textContent = profile.username || profile.display_name;
+  updateAvatar(avatarUrl);
+  profileAvatarPreview.src = avatarUrl || "";
+  profileAvatarInput.value = "";
+  setStatus(profileStatus, "Profile saved.", "success");
+}
+
 async function enterApp(nextSession) {
   session = nextSession;
   await loadProfile();
   authPanel.hidden = true;
   appContent.hidden = false;
   signOutBtn.hidden = false;
-  userStatus.textContent = profile.display_name || session.user.email;
+  loginBtn.hidden = true;
+  profileBtn.hidden = false;
+  tripsBtn.hidden = false;
+  userStatus.textContent = profile.username || profile.display_name;
+  updateAvatar(profile.avatar_url);
   adminPanel.hidden = profile.role !== "admin";
   await loadTrips();
   if (!currentTrip) {
@@ -904,16 +1022,15 @@ async function enterApp(nextSession) {
   window.setTimeout(() => map.invalidateSize(), 0);
 }
 
-async function createTripRecord(name) {
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name }) });
-  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create your first trip."));
-}
-
 async function handleAuthSubmit(event) {
   event.preventDefault();
   authSubmitBtn.disabled = true;
   try {
-    const data = authMode === "signin" ? await authRequest("token?grant_type=password", { email: authEmail.value, password: authPassword.value }) : await authRequest("signup", { email: authEmail.value, password: authPassword.value });
+    const username = normalizeUsername(authUsername.value);
+    if (!/^[a-z0-9_.-]{3,32}$/.test(username)) throw new Error("Use 3–32 letters, numbers, dots, dashes, or underscores.");
+    const data = authMode === "signin"
+      ? await authRequest("token?grant_type=password", { email: authIdentityForUsername(username), password: authPassword.value })
+      : await authRequest("signup", { email: authIdentityForUsername(username), password: authPassword.value, data: { username } });
     if (!data.access_token) throw new Error("Account created. Confirm your email, then sign in.");
     await enterApp(data);
     setStatus(authStatus, "Signed in.", "success");
@@ -945,6 +1062,30 @@ function photoIcon(previewUrl) {
 }
 
 checkInForm.addEventListener("submit", handleCheckIn);
+loginBtn.addEventListener("click", () => {
+  authPanel.hidden = false;
+  authUsername.focus();
+});
+profileBtn.addEventListener("click", openProfile);
+closeProfileBtn.addEventListener("click", closeProfile);
+profileForm.addEventListener("submit", async (event) => {
+  try { await saveProfile(event); } catch (error) { setStatus(profileStatus, error.message, "error"); }
+});
+profileAvatarInput.addEventListener("change", () => {
+  const [file] = profileAvatarInput.files;
+  if (file) profileAvatarPreview.src = URL.createObjectURL(file);
+});
+tripsBtn.addEventListener("click", () => {
+  tripPanel.hidden = false;
+  tripPanel.classList.add("trip-panel-open");
+  document.body.classList.add("trips-open");
+  tripSelect.focus();
+});
+closeTripsBtn.addEventListener("click", () => {
+  tripPanel.hidden = true;
+  tripPanel.classList.remove("trip-panel-open");
+  document.body.classList.remove("trips-open");
+});
 authForm.addEventListener("submit", handleAuthSubmit);
 toggleAuthBtn.addEventListener("click", () => {
   authMode = authMode === "signin" ? "signup" : "signin";
@@ -993,11 +1134,24 @@ checkInListEl.addEventListener("change", (event) => {
 });
 photoInput.addEventListener("change", handlePhotoUpload);
 mediaViewerClose.addEventListener("click", closeMediaViewer);
+mediaViewerPrev.addEventListener("click", () => moveMediaViewer(-1));
+mediaViewerNext.addEventListener("click", () => moveMediaViewer(1));
 mediaViewer.addEventListener("click", (event) => {
   if (event.target === mediaViewer) closeMediaViewer();
 });
+mediaViewer.addEventListener("touchstart", (event) => {
+  if (event.touches.length === 1) mediaViewerTouchStartX = event.touches[0].clientX;
+}, { passive: true });
+mediaViewer.addEventListener("touchend", (event) => {
+  if (mediaViewerTouchStartX === null) return;
+  const distance = event.changedTouches[0].clientX - mediaViewerTouchStartX;
+  mediaViewerTouchStartX = null;
+  if (Math.abs(distance) > 55) moveMediaViewer(distance < 0 ? 1 : -1);
+}, { passive: true });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !mediaViewer.hidden) closeMediaViewer();
+  if (!mediaViewer.hidden && event.key === "ArrowLeft") moveMediaViewer(-1);
+  if (!mediaViewer.hidden && event.key === "ArrowRight") moveMediaViewer(1);
 });
 
 async function initializeApp() {
