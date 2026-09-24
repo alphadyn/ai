@@ -171,33 +171,13 @@ select:focus-visible {
 }
 
 .public-experience-view { background: var(--bg); }
-.public-experience-view .page-shell { max-width: none; padding: 0 0 2.5rem; }
-.public-experience-view .topbar {
-  width: min(1400px, calc(100vw - 2rem));
-  min-height: 4.5rem;
-  margin: 0 auto 1rem;
-  padding: 0.75rem 0;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-}
-.public-experience-view .topbar .eyebrow,
-.public-experience-view .topbar-subtitle,
-.public-experience-view #userStatus,
-.public-experience-view #profileBtn,
-.public-experience-view #tripsBtn,
-.public-experience-view #experiencesBtn {
-  display: none;
-}
-.public-experience-view .topbar h1 { font-size: clamp(1.6rem, 3vw, 2rem); }
-.public-experience-view .topbar h1 a { padding-bottom: 0; }
-.public-experience-view .topbar h1 a::after { display: none; }
-.public-experience-view .auth-panel { width: min(1400px, calc(100vw - 2rem)); margin: 0 auto 1rem; }
+.public-experience-view .topbar { margin-bottom: 1rem; }
 .public-experience-view #appContent { display: block; }
 .public-experience-view .experience-panel {
   position: relative;
   top: 0;
   inset: auto;
-  width: min(1400px, calc(100vw - 2rem));
+  width: 100%;
   max-height: none;
   min-height: calc(100vh - 3.5rem);
   margin: 0 auto;
@@ -207,8 +187,8 @@ select:focus-visible {
   border-radius: 12px;
   box-shadow: none;
 }
-.public-experience-view .experience-panel.experience-detail-open { width: min(1400px, calc(100vw - 2rem)); max-height: none; }
-.public-experience-view .experience-panel.experience-event-edit-open { width: min(1400px, calc(100vw - 2rem)); max-height: none; }
+.public-experience-view .experience-panel.experience-detail-open,
+.public-experience-view .experience-panel.experience-event-edit-open { width: 100%; max-height: none; }
 .public-experience-view .experience-detail { margin-top: 0; padding: clamp(1rem, 3vw, 2.5rem); border-top: 0; }
 .public-experience-view .experience-detail-heading { padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .public-experience-view .experience-description { max-width: 72ch; font-size: 0.95rem; }
