@@ -48,14 +48,18 @@ body {
   flex-wrap: wrap;
 }
 
-.public-trip-view .trip-actions,
 .public-trip-view #newTripBtn,
 .public-trip-view #shareTripBtn,
 .public-trip-view #toggleTripPublicBtn,
+.public-trip-view #tripEditNameInput,
+.public-trip-view #saveTripDetailsBtn,
+.public-trip-view #tripNameInput,
+.public-trip-view #saveTripBtn,
 .public-trip-view #checkInForm,
 .public-trip-view #clearCheckInsBtn,
 .public-trip-view #photoInput,
 .public-trip-view .file-picker,
+.public-trip-view #photoPanel,
 .public-trip-view .edit-checkin-btn,
 .public-trip-view .delete-checkin-btn,
 .public-trip-view .map-delete-btn,
@@ -69,7 +73,7 @@ body {
 }
 
 .public-trip-view #tripsBtn {
-  display: none !important;
+  display: inline-flex !important;
 }
 
 .public-trip-view #profileBtn {

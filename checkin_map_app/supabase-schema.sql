@@ -113,7 +113,7 @@ drop policy if exists "Check-in Map can delete media" on public.checkin_map_medi
 drop policy if exists "Anyone can read public media" on public.checkin_map_media;
 create policy "Check-in Map can read media" on public.checkin_map_media for select to authenticated using (user_id = auth.uid() or public.checkin_map_is_admin());
 create policy "Anyone can read public media" on public.checkin_map_media for select to anon using (exists (select 1 from public.checkin_map_locations l join public.checkin_map_trips t on t.id = l.trip_id where l.id = checkin_id and t.is_public = true));
-create policy "Check-in Map can create media" on public.checkin_map_media for insert to authenticated with check (user_id = auth.uid());
+create policy "Check-in Map can create media" on public.checkin_map_media for insert to authenticated with check (user_id = auth.uid() and exists (select 1 from public.checkin_map_locations where id = checkin_id and (user_id = auth.uid() or public.checkin_map_is_admin())));
 create policy "Check-in Map can delete media" on public.checkin_map_media for delete to authenticated using (user_id = auth.uid() or public.checkin_map_is_admin());
 
 insert into storage.buckets (id, name, public)
@@ -124,7 +124,7 @@ drop policy if exists "Check-in Map can read stored media" on storage.objects;
 drop policy if exists "Check-in Map can upload stored media" on storage.objects;
 drop policy if exists "Check-in Map can delete stored media" on storage.objects;
 create policy "Check-in Map can read stored media" on storage.objects for select to authenticated using (bucket_id = 'checkin-map-media');
-create policy "Check-in Map can upload stored media" on storage.objects for insert to authenticated with check (bucket_id = 'checkin-map-media');
-create policy "Check-in Map can delete stored media" on storage.objects for delete to authenticated using (bucket_id = 'checkin-map-media');
+create policy "Check-in Map can upload stored media" on storage.objects for insert to authenticated with check (bucket_id = 'checkin-map-media' and (name like 'avatars/' || auth.uid()::text || '.%' or split_part(name, '/', 1) = auth.uid()::text));
+create policy "Check-in Map can delete stored media" on storage.objects for delete to authenticated using (bucket_id = 'checkin-map-media' and (name like 'avatars/' || auth.uid()::text || '.%' or split_part(name, '/', 1) = auth.uid()::text));
 
 notify pgrst, 'reload schema';

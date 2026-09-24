@@ -51,7 +51,7 @@
         <section id="tripPanel" class="panel trip-panel" hidden>
           <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><button type="button" id="closeTripsBtn" class="secondary-btn">Close</button></div>
           <div class="trip-heading-actions"><button type="button" id="toggleTripPublicBtn" class="secondary-btn">Make public</button><button type="button" id="shareTripBtn" class="secondary-btn" hidden>Copy share URL</button><button type="button" id="newTripBtn" class="secondary-btn">New trip</button></div>
-          <div class="trip-actions"><select id="tripSelect" aria-label="Current trip"></select><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
+          <div class="trip-actions"><select id="tripSelect" aria-label="Current trip"></select><input id="tripEditNameInput" type="text" maxlength="100" placeholder="Trip name" aria-label="Trip name" /><button type="button" id="saveTripDetailsBtn" class="secondary-btn">Save name</button><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
           <span id="tripStatus" class="status-text" role="status"></span>
         </section>
         <section class="panel map-panel">
@@ -75,7 +75,7 @@
           <span id="checkInStatus" class="status-text" role="status"></span>
         </section>
 
-        <section class="panel">
+        <section id="photoPanel" class="panel">
           <div class="section-heading">
             <div><p class="panel-kicker">Your trail</p><h2>Check-Ins</h2></div>
             <button type="button" id="clearCheckInsBtn" class="secondary-btn" disabled>Remove all</button>

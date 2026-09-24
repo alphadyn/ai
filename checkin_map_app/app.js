@@ -9,6 +9,7 @@ const LOCATIONS_TABLE = "checkin_map_locations";
 const MEDIA_TABLE = "checkin_map_media";
 const TRIPS_TABLE = "checkin_map_trips";
 const PROFILES_TABLE = "checkin_map_profiles";
+const AUTH_SESSION_KEY = "checkin-map-app:auth-session";
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
@@ -54,6 +55,8 @@ const tripSelect = document.getElementById("tripSelect");
 const newTripBtn = document.getElementById("newTripBtn");
 const tripNameInput = document.getElementById("tripNameInput");
 const saveTripBtn = document.getElementById("saveTripBtn");
+const tripEditNameInput = document.getElementById("tripEditNameInput");
+const saveTripDetailsBtn = document.getElementById("saveTripDetailsBtn");
 const tripStatus = document.getElementById("tripStatus");
 const adminPanel = document.getElementById("adminPanel");
 const adminContent = document.getElementById("adminContent");
@@ -166,6 +169,29 @@ async function authRequest(path, body) {
   return response.json();
 }
 
+function storeSession(nextSession) {
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(nextSession));
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+}
+
+async function restoreSession() {
+  const stored = localStorage.getItem(AUTH_SESSION_KEY);
+  if (!stored) return null;
+  try {
+    const previousSession = JSON.parse(stored);
+    if (!previousSession.refresh_token) return null;
+    const refreshedSession = await authRequest("token?grant_type=refresh_token", { refresh_token: previousSession.refresh_token });
+    storeSession(refreshedSession);
+    return refreshedSession;
+  } catch {
+    clearStoredSession();
+    return null;
+  }
+}
+
 async function loadProfile() {
   const response = await supabaseRequest(`/rest/v1/${PROFILES_TABLE}?select=*&id=eq.${encodeURIComponent(session.user.id)}&limit=1`);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load your profile."));
@@ -185,13 +211,16 @@ async function loadTrips() {
 function renderTripSelect() {
   tripSelect.innerHTML = trips.map((trip) => `<option value="${escapeHtml(trip.id)}">${escapeHtml(trip.name)}</option>`).join("");
   if (currentTrip) tripSelect.value = currentTrip.id;
+  tripEditNameInput.value = currentTrip?.name || "";
   updateTripSharingControls();
 }
 
 function updateTripSharingControls() {
-  const ownerView = Boolean(currentTrip && !isPublicTrip);
+  const ownerView = Boolean(canEditTrip() && !isPublicTrip);
   toggleTripPublicBtn.hidden = !ownerView;
   shareTripBtn.hidden = !ownerView || !currentTrip.is_public;
+  tripEditNameInput.hidden = !ownerView;
+  saveTripDetailsBtn.hidden = !ownerView;
   toggleTripPublicBtn.textContent = currentTrip?.is_public ? "Make private" : "Make public";
 }
 
@@ -209,7 +238,7 @@ async function copyTripUrl() {
 }
 
 async function toggleTripPublic() {
-  if (!currentTrip || isPublicTrip) return;
+  if (!canEditTrip() || isPublicTrip) return;
   const isPublic = !currentTrip.is_public;
   const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
     method: "PATCH",
@@ -240,6 +269,23 @@ async function createTrip() {
   setStatus(tripStatus, `Trip "${trip.name}" created.`, "success");
 }
 
+async function saveTripDetails() {
+  if (!canEditTrip() || isPublicTrip) return;
+  const name = tripEditNameInput.value.trim();
+  if (!name) throw new Error("Enter a name for this trip.");
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the trip name."));
+  currentTrip.name = name;
+  const selectedTrip = trips.find((trip) => trip.id === currentTrip.id);
+  if (selectedTrip) selectedTrip.name = name;
+  renderTripSelect();
+  setStatus(tripStatus, "Trip name saved.", "success");
+}
+
 async function getSupabaseError(response, fallback) {
   try {
     const body = await response.json();
@@ -260,6 +306,7 @@ function mapLocationRow(row, mediaByCheckIn) {
     previewUrl: row.preview_url || "",
     media: mediaByCheckIn.get(row.id) || [],
     tripId: row.trip_id,
+    userId: row.user_id,
   });
 }
 
@@ -325,7 +372,7 @@ async function deleteAllCheckInsFromSupabase() {
 }
 
 function updateClearCheckInsButton() {
-  clearCheckInsBtn.disabled = checkIns.length === 0;
+  clearCheckInsBtn.disabled = checkIns.length === 0 || !canEditTrip();
 }
 
 async function addCheckIn(checkIn) {
@@ -379,6 +426,18 @@ function formatLocationLabel(address = {}, fallback = "Map point") {
   return [city, address.state, address.country].filter(Boolean).join(", ") || fallback;
 }
 
+function isAdmin() {
+  return profile?.role === "admin";
+}
+
+function canEditTrip() {
+  return Boolean(session && currentTrip && (isAdmin() || currentTrip.user_id === session.user.id));
+}
+
+function canEditCheckIn(checkIn) {
+  return Boolean(session && (isAdmin() || checkIn.userId === session.user.id));
+}
+
 function renderCheckInList() {
   if (checkIns.length === 0) {
     checkInListEl.innerHTML = '<li class="empty-state">No check-ins yet.</li>';
@@ -395,8 +454,7 @@ function renderCheckInList() {
             <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
             ${renderAttachedMedia(checkIn)}
           </div>
-          <button type="button" class="edit-checkin-btn" data-edit-index="${index}" data-stop-map-click="true" aria-label="Edit ${escapeHtml(checkIn.label)}" title="Edit check-in">Edit</button>
-          <button type="button" class="delete-checkin-btn" data-delete-index="${index}" data-stop-map-click="true" aria-label="Delete ${escapeHtml(checkIn.label)}" title="Delete check-in">&times;</button>
+          ${canEditCheckIn(checkIn) ? `<button type="button" class="edit-checkin-btn" data-edit-index="${index}" data-stop-map-click="true" aria-label="Edit ${escapeHtml(checkIn.label)}" title="Edit check-in">Edit</button><button type="button" class="delete-checkin-btn" data-delete-index="${index}" data-stop-map-click="true" aria-label="Delete ${escapeHtml(checkIn.label)}" title="Delete check-in">&times;</button>` : ""}
         </li>`
     )
     .join("");
@@ -427,7 +485,7 @@ function formatDateTimeInput(isoString) {
 }
 
 async function clearAllCheckIns() {
-  if (!checkIns.length || !window.confirm("Remove all check-ins and their attached media?")) return;
+  if (!canEditTrip() || !checkIns.length || !window.confirm("Remove all check-ins and their attached media?")) return;
   clearCheckInsBtn.disabled = true;
   setStatus(checkInStatus, "Removing check-ins from Supabase…");
   try {
@@ -444,7 +502,7 @@ async function clearAllCheckIns() {
 
 async function deleteCheckIn(index) {
   const checkIn = checkIns[index];
-  if (!checkIn || !window.confirm(`Delete the check-in for ${checkIn.label}?`)) return;
+  if (!checkIn || !canEditCheckIn(checkIn) || !window.confirm(`Delete the check-in for ${checkIn.label}?`)) return;
   try {
     await deleteCheckInFromSupabase(checkIn);
     checkIns.splice(index, 1);
@@ -462,6 +520,7 @@ async function deleteCheckInById(id) {
 }
 
 function startEditCheckIn(index) {
+  if (!canEditCheckIn(checkIns[index])) return;
   editingCheckInIndex = index;
   renderCheckInList();
   checkInListEl.querySelector("input[name=label]")?.focus();
@@ -474,7 +533,7 @@ async function saveEditedCheckIn(event) {
   const checkIn = checkIns[index];
   const label = form.elements.label.value.trim();
   const timestamp = new Date(form.elements.timestamp.value);
-  if (!checkIn || !label || Number.isNaN(timestamp.getTime())) return;
+  if (!checkIn || !canEditCheckIn(checkIn) || !label || Number.isNaN(timestamp.getTime())) return;
 
   checkIn.label = label;
   checkIn.timestamp = timestamp.toISOString();
@@ -596,7 +655,7 @@ function renderCheckInMarkers() {
   checkIns.forEach((checkIn) => {
     L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
       .addTo(checkInLayer)
-      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}${renderPinMediaCarousel(checkIn)}<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>`);
+      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}${renderPinMediaCarousel(checkIn)}${canEditCheckIn(checkIn) ? `<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>` : ""}`);
   });
 }
 
@@ -822,7 +881,7 @@ function readFileAsDataUrl(file) {
 
 async function uploadMediaFile(checkIn, file) {
   const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
-  const storagePath = `${checkIn.id}/${createId()}-${safeName}`;
+  const storagePath = `${session.user.id}/${checkIn.id}/${createId()}-${safeName}`;
   const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
   const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}`, {
     method: "POST",
@@ -853,7 +912,7 @@ async function uploadMediaFile(checkIn, file) {
 async function handleMediaAttachment(event) {
   const input = event.target;
   const checkIn = checkIns[Number(input.dataset.checkinIndex)];
-  if (!checkIn || !input.files.length) return;
+  if (!checkIn || !canEditCheckIn(checkIn) || !input.files.length) return;
 
   const availableSlots = MAX_MEDIA_FILES - checkIn.media.length;
   const files = Array.from(input.files).slice(0, availableSlots);
@@ -1032,6 +1091,7 @@ async function handleAuthSubmit(event) {
       ? await authRequest("token?grant_type=password", { email: authIdentityForUsername(username), password: authPassword.value })
       : await authRequest("signup", { email: authIdentityForUsername(username), password: authPassword.value, data: { username } });
     if (!data.access_token) throw new Error("Account created. Confirm your email, then sign in.");
+    storeSession(data);
     await enterApp(data);
     setStatus(authStatus, "Signed in.", "success");
   } catch (error) {
@@ -1093,7 +1153,10 @@ toggleAuthBtn.addEventListener("click", () => {
   toggleAuthBtn.textContent = authMode === "signin" ? "Create account" : "Back to sign in";
   authModeLabel.textContent = authMode === "signin" ? "Sign in" : "Create account";
 });
-signOutBtn.addEventListener("click", () => window.location.reload());
+signOutBtn.addEventListener("click", () => {
+  clearStoredSession();
+  window.location.reload();
+});
 shareTripBtn.addEventListener("click", async () => {
   try { await copyTripUrl(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
 });
@@ -1103,6 +1166,7 @@ toggleTripPublicBtn.addEventListener("click", async () => {
 tripSelect.addEventListener("change", async () => {
   currentTrip = trips.find((trip) => trip.id === tripSelect.value);
   updateTripSharingControls();
+  tripEditNameInput.value = currentTrip?.name || "";
   await loadCheckIns();
   renderCheckInList();
   renderCheckInMarkers();
@@ -1115,6 +1179,9 @@ newTripBtn.addEventListener("click", () => {
 });
 saveTripBtn.addEventListener("click", async () => {
   try { await createTrip(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+});
+saveTripDetailsBtn.addEventListener("click", async () => {
+  try { await saveTripDetails(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
 });
 refreshAdminBtn.addEventListener("click", async () => {
   try { await loadAdminData(); setStatus(adminStatus, "Admin data refreshed.", "success"); } catch (error) { setStatus(adminStatus, error.message, "error"); }
@@ -1170,12 +1237,24 @@ async function initializeApp() {
       renderCheckInMarkers();
       renderPhotoList();
       userStatus.textContent = `Public trip: ${currentTrip.name}`;
+      tripsBtn.hidden = false;
       setStatus(checkInStatus, "Viewing a public trip.", "success");
       window.setTimeout(() => map.invalidateSize(), 0);
     } catch (error) {
       setStatus(checkInStatus, error.message, "error");
     }
     return;
+  }
+  const restoredSession = await restoreSession();
+  if (restoredSession) {
+    try {
+      await enterApp(restoredSession);
+      setStatus(checkInStatus, "Session restored.", "success");
+      return;
+    } catch (error) {
+      clearStoredSession();
+      setStatus(authStatus, error.message, "error");
+    }
   }
   setStatus(checkInStatus, "Sign in to load your trips.");
 }
