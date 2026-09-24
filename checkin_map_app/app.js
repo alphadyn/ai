@@ -97,10 +97,15 @@ const activeExperienceDescription = document.getElementById("activeExperienceDes
 const experienceDoneBtn = document.getElementById("experienceDoneBtn");
 const experienceEditDetailsBtn = document.getElementById("experienceEditDetailsBtn");
 const newExperienceEventBtn = document.getElementById("newExperienceEventBtn");
+const experienceEventCreateScreen = document.getElementById("experienceEventCreateScreen");
+const backFromExperienceEventCreateBtn = document.getElementById("backFromExperienceEventCreateBtn");
 const experienceLocationForm = document.getElementById("experienceLocationForm");
+const experienceEventNameInput = document.getElementById("experienceEventNameInput");
 const experienceLocationInput = document.getElementById("experienceLocationInput");
 const experienceTimeInput = document.getElementById("experienceTimeInput");
 const experienceEventDescriptionInput = document.getElementById("experienceEventDescriptionInput");
+const experienceEventMediaInput = document.getElementById("experienceEventMediaInput");
+const experienceEventMediaPreview = document.getElementById("experienceEventMediaPreview");
 const experienceLocationList = document.getElementById("experienceLocationList");
 const experienceEventEditScreen = document.getElementById("experienceEventEditScreen");
 const experienceEventEditName = document.getElementById("experienceEventEditName");
@@ -180,6 +185,7 @@ let experienceLocations = [];
 let editingExperienceLocationId = null;
 let experienceViewMode = "view";
 let experienceMarkersByLocationId = new Map();
+let pendingExperienceEventFiles = [];
 let tripPageScrollY = null;
 let draggedTripId = null;
 let authMode = "signin";
@@ -347,6 +353,7 @@ function showExperienceIndex() {
   experienceIndexScreen.hidden = false;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = true;
+  experienceEventCreateScreen.hidden = true;
   experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   renderExperiences();
@@ -360,6 +367,7 @@ function showExperienceCreate() {
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = false;
   experienceDetail.hidden = true;
+  experienceEventCreateScreen.hidden = true;
   experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   experienceNameInput.focus();
@@ -392,7 +400,7 @@ function renderExperienceLocations() {
   experienceLocationList.innerHTML = experienceLocations.length ? experienceLocations.map((location) => `
     <li class="experience-location-card" data-experience-location-id="${escapeHtml(location.id)}">
       <div class="experience-location-summary">
-        <button type="button" class="experience-location-open" data-show-experience-location="${escapeHtml(location.id)}"><strong>${escapeHtml(location.label)}</strong><span>${formatTimestamp(location.timestamp)}</span></button>
+        <button type="button" class="experience-location-open" data-show-experience-location="${escapeHtml(location.id)}"><strong>${escapeHtml(location.eventName || location.label)}</strong><span>${escapeHtml(location.label)} &middot; ${formatTimestamp(location.timestamp)}</span></button>
         ${canEditExperience(activeExperience) ? `<div class="experience-location-actions"><button type="button" class="secondary-btn" data-edit-experience-location="${escapeHtml(location.id)}">Edit</button>${experienceViewMode === "edit" ? `<button type="button" class="secondary-btn icon-btn event-remove-btn" data-delete-experience-location="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(location.label)}" title="Delete event">&minus;</button>` : ""}</div>` : ""}
       </div>
       ${location.description ? `<p>${escapeHtml(location.description)}</p>` : ""}
@@ -413,6 +421,7 @@ function renderExperienceMediaAvatars(location) {
 
 function renderExperienceLocationEditor(location) {
   return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
+  <label>Event name<input name="eventName" value="${escapeHtml(location.eventName || location.label)}" required /></label>
       <label>Location name<input name="label" value="${escapeHtml(location.label)}" required /></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
@@ -452,24 +461,34 @@ async function saveExperience(event) {
 async function addExperienceEvent(event) {
   event.preventDefault();
   if (!activeExperience || !currentTrip || !canEditExperience(activeExperience)) return;
+  const eventName = experienceEventNameInput.value.trim();
   const query = experienceLocationInput.value.trim();
   const timestamp = new Date(experienceTimeInput.value);
   const description = experienceEventDescriptionInput.value.trim();
-  if (!query || Number.isNaN(timestamp.getTime())) return;
+  if (!eventName || !query || Number.isNaN(timestamp.getTime())) return;
+  const oversizedFile = pendingExperienceEventFiles.find((file) => file.size > MAX_MEDIA_SIZE);
+  if (oversizedFile) {
+    setStatus(experienceStatus, `${oversizedFile.name} is larger than 5 MB.`, "error");
+    return;
+  }
   try {
     setStatus(experienceStatus, `Looking up "${query}"…`);
     const { lat, lon, label } = await geocodeLocation(query);
-    const location = { id: createId(), lat, lon, label, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: currentTrip.id, userId: session.user.id };
+    const location = { id: createId(), lat, lon, label, eventName, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: currentTrip.id, userId: session.user.id };
     const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ...mapCheckInToRow(location), experience_id: activeExperience.id }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not add the event."));
+    if (pendingExperienceEventFiles.length) location.media.push(...await Promise.all(pendingExperienceEventFiles.map((file) => uploadMediaFile(location, file))));
     experienceLocations.push(location);
     experienceLocationForm.reset();
+    pendingExperienceEventFiles = [];
+    renderPendingExperienceEventFiles();
     experienceTimeInput.value = formatDateTimeInput(new Date().toISOString());
-    experienceLocationForm.hidden = true;
+    experienceEventCreateScreen.hidden = true;
+    experienceDetail.hidden = false;
     renderExperienceLocations();
     renderExperienceMarkers();
     map.flyTo([lat, lon], 12, { duration: 0.45 });
-    setStatus(experienceStatus, `${label} added as an event.`, "success");
+    setStatus(experienceStatus, `${eventName} added as an event.`, "success");
   } catch (error) { setStatus(experienceStatus, error.message, "error"); }
 }
 
@@ -478,7 +497,7 @@ function renderExperienceMarkers() {
   experienceMapLayer.clearLayers();
   experienceMarkersByLocationId = new Map();
   experienceLocations.forEach((location) => {
-    const popup = `<strong>${escapeHtml(location.label)}</strong><br>${formatTimestamp(location.timestamp)}${location.description ? `<br>${escapeHtml(location.description)}` : ""}${renderPinMediaCarousel(location)}`;
+    const popup = `<strong>${escapeHtml(location.eventName || location.label)}</strong><br>${escapeHtml(location.label)}<br>${formatTimestamp(location.timestamp)}${location.description ? `<br>${escapeHtml(location.description)}` : ""}${renderPinMediaCarousel(location)}`;
     const marker = L.marker([location.lat, location.lon]).addTo(experienceLayer).bindPopup(popup);
     marker.on("click", () => map.flyTo([location.lat, location.lon], 12, { duration: 0.45 }));
     const detailMarker = L.marker([location.lat, location.lon]).addTo(experienceMapLayer).bindPopup(popup);
@@ -504,6 +523,7 @@ async function openExperience(id, options = {}) {
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = false;
+  experienceEventCreateScreen.hidden = true;
   experiencePanel.classList.add("experience-detail-open");
   experienceEventEditScreen.hidden = true;
   await loadExperienceLocations();
@@ -532,14 +552,16 @@ async function saveExperienceLocation(event) {
   const form = event.target;
   const id = form.dataset.experienceLocationForm;
   const location = experienceLocations.find((item) => item.id === id);
+  const eventName = form.elements.eventName.value.trim();
   const label = form.elements.label.value.trim();
   const timestamp = new Date(form.elements.timestamp.value);
-  if (!location || !label || Number.isNaN(timestamp.getTime())) return;
+  if (!location || !eventName || !label || Number.isNaN(timestamp.getTime())) return;
+  location.eventName = eventName;
   location.label = label;
   location.description = form.elements.description.value.trim();
   location.timestamp = timestamp.toISOString();
   try {
-    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ label: location.label, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
+    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
     experienceEventEditScreen.hidden = true;
@@ -589,6 +611,7 @@ function closeExperiences() {
   activeExperience = null;
   experienceLocations = [];
   experienceLayer.clearLayers();
+  experienceEventCreateScreen.hidden = true;
   experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   unlockTripPageScroll();
@@ -597,9 +620,37 @@ function closeExperiences() {
 function openExperienceEventForm() {
   if (!activeExperience || !canEditExperience(activeExperience)) return;
   experienceLocationForm.reset();
+  pendingExperienceEventFiles = [];
+  renderPendingExperienceEventFiles();
   experienceTimeInput.value = formatDateTimeInput(new Date().toISOString());
+  experienceIndexScreen.hidden = true;
+  experienceCreateScreen.hidden = true;
+  experienceDetail.hidden = true;
+  experienceEventEditScreen.hidden = true;
   experienceLocationForm.hidden = false;
+  experienceEventCreateScreen.hidden = false;
   experienceLocationInput.focus();
+}
+
+function closeExperienceEventCreate() {
+  experienceLocationForm.reset();
+  pendingExperienceEventFiles = [];
+  renderPendingExperienceEventFiles();
+  experienceIndexScreen.hidden = true;
+  experienceCreateScreen.hidden = true;
+  experienceLocationForm.hidden = true;
+  experienceEventCreateScreen.hidden = true;
+  experienceEventEditScreen.hidden = true;
+  experienceDetail.hidden = false;
+}
+
+function renderPendingExperienceEventFiles() {
+  experienceEventMediaPreview.innerHTML = pendingExperienceEventFiles.map((file, index) => {
+    const preview = file.type.startsWith("image/")
+      ? `<img src="${escapeHtml(URL.createObjectURL(file))}" alt="${escapeHtml(file.name)}" />`
+      : `<span class="event-media-file-type">${file.type.startsWith("video/") ? "Video" : file.type.startsWith("audio/") ? "Audio" : "File"}</span>`;
+    return `<div class="event-media-avatar" title="${escapeHtml(file.name)}">${preview}<button type="button" class="event-media-remove" data-remove-pending-event-media="${index}" aria-label="Remove ${escapeHtml(file.name)}">&times;</button></div>`;
+  }).join("");
 }
 
 function openExperienceDetailsForm() {
@@ -708,7 +759,7 @@ function openExperienceEventEdit(id) {
   const location = experienceLocations.find((item) => item.id === id);
   if (!location || !canEditExperience(activeExperience)) return;
   editingExperienceLocationId = id;
-  experienceEventEditName.textContent = location.label;
+  experienceEventEditName.textContent = location.eventName || location.label;
   experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
   experienceDetail.hidden = true;
   experienceEventEditScreen.hidden = false;
@@ -908,6 +959,7 @@ function mapLocationRow(row, mediaByCheckIn) {
     lat: row.lat,
     lon: row.lon,
     label: row.label,
+    eventName: row.event_name || "",
     description: row.description || "",
     timestamp: row.timestamp,
     type: row.type,
@@ -943,6 +995,7 @@ function mapCheckInToRow(checkIn) {
     lat: checkIn.lat,
     lon: checkIn.lon,
     label: checkIn.label,
+    event_name: checkIn.eventName || null,
     description: checkIn.description || "",
     timestamp: checkIn.timestamp,
     type: checkIn.type,
@@ -1940,9 +1993,22 @@ backFromExperienceCreateBtn.addEventListener("click", showExperienceIndex);
 experienceDoneBtn.addEventListener("click", showExperienceIndex);
 experienceEditDetailsBtn.addEventListener("click", openExperienceDetailsForm);
 newExperienceEventBtn.addEventListener("click", openExperienceEventForm);
+backFromExperienceEventCreateBtn.addEventListener("click", closeExperienceEventCreate);
 experienceForm.addEventListener("submit", saveExperience);
 experienceCancelEditBtn.addEventListener("click", resetExperienceForm);
 experienceLocationForm.addEventListener("submit", addExperienceEvent);
+experienceEventMediaInput.addEventListener("change", () => {
+  const files = Array.from(experienceEventMediaInput.files);
+  pendingExperienceEventFiles.push(...files.slice(0, MAX_MEDIA_FILES - pendingExperienceEventFiles.length));
+  experienceEventMediaInput.value = "";
+  renderPendingExperienceEventFiles();
+});
+experienceEventMediaPreview.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-pending-event-media]");
+  if (!removeButton) return;
+  pendingExperienceEventFiles.splice(Number(removeButton.dataset.removePendingEventMedia), 1);
+  renderPendingExperienceEventFiles();
+});
 experienceList?.addEventListener("click", handleExperienceClick);
 experienceList?.addEventListener("change", handleExperienceChange);
 experienceLocationList?.addEventListener("click", handleExperienceLocationClick);

@@ -77,14 +77,20 @@
             <div class="experience-detail-heading"><div><p id="experienceDetailKicker" class="panel-kicker">Experience</p><h3 id="activeExperienceName"></h3></div><div class="experience-detail-actions"><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit</button><button type="button" id="experienceDoneBtn" class="secondary-btn icon-btn" aria-label="Close experience" title="Close experience">&times;</button></div></div>
             <p id="activeExperienceDescription" class="experience-description"></p>
             <div id="experienceMap" class="experience-map" aria-label="Experience events map"></div>
-            <form id="experienceLocationForm" class="experience-location-form" hidden>
-              <label>Location<input id="experienceLocationInput" type="text" placeholder="Search for a location" required /></label>
-              <label>When<input id="experienceTimeInput" type="datetime-local" required /></label>
-              <label>Description<textarea id="experienceEventDescriptionInput" rows="2" maxlength="500" placeholder="What made this event memorable?"></textarea></label>
-              <button type="submit" class="primary-btn">Save event</button>
-            </form>
             <div class="experience-events-heading"><h4>Events</h4><button type="button" id="newExperienceEventBtn" class="secondary-btn icon-btn" aria-label="Add event" title="Add event">+</button></div>
             <ol id="experienceLocationList" class="experience-location-list"></ol>
+          </section>
+          <section id="experienceEventCreateScreen" class="experience-event-create-screen" hidden>
+            <div class="section-heading"><div><p class="panel-kicker">Experience event</p><h2>New event</h2></div><button type="button" id="backFromExperienceEventCreateBtn" class="secondary-btn icon-btn" aria-label="Back to experience" title="Back to experience">&larr;</button></div>
+            <form id="experienceLocationForm" class="experience-location-form experience-event-create-form">
+              <label>Event name<input id="experienceEventNameInput" type="text" maxlength="100" placeholder="e.g. Dinner at the harbor" required /></label>
+              <label>Location<input id="experienceLocationInput" type="text" placeholder="Search for a location" required /></label>
+              <label>When<input id="experienceTimeInput" type="datetime-local" required /></label>
+              <label class="event-description-field">Description<textarea id="experienceEventDescriptionInput" rows="3" maxlength="500" placeholder="What made this event memorable?"></textarea></label>
+              <label class="event-attachment-picker"><span>Attachments</span><input id="experienceEventMediaInput" type="file" accept="image/*,video/*,audio/*" multiple /></label>
+              <div id="experienceEventMediaPreview" class="event-media-avatars" aria-label="Selected attachments"></div>
+              <div class="experience-form-actions"><button type="submit" class="primary-btn">Create event</button></div>
+            </form>
           </section>
           <section id="experienceEventEditScreen" class="experience-detail" hidden>
             <div class="experience-detail-heading"><div><p class="panel-kicker">Edit event</p><h3 id="experienceEventEditName"></h3></div><button type="button" id="backFromExperienceEventEditBtn" class="secondary-btn">Back</button></div>

@@ -45,6 +45,7 @@ create table if not exists public.checkin_map_locations (
   lat double precision not null,
   lon double precision not null,
   label text not null,
+  event_name text,
   description text not null default '',
   timestamp timestamptz not null,
   type text not null default 'location',
@@ -77,6 +78,7 @@ create table if not exists public.checkin_map_experiences (
 alter table public.checkin_map_locations add column if not exists user_id uuid references auth.users(id) on delete cascade;
 alter table public.checkin_map_locations add column if not exists trip_id uuid references public.checkin_map_trips(id) on delete cascade;
 alter table public.checkin_map_locations add column if not exists description text not null default '';
+alter table public.checkin_map_locations add column if not exists event_name text;
 alter table public.checkin_map_locations add column if not exists experience_id uuid references public.checkin_map_experiences(id) on delete cascade;
 create index if not exists checkin_map_locations_experience_id_idx on public.checkin_map_locations(experience_id);
 alter table public.checkin_map_experiences add column if not exists public_slug text;

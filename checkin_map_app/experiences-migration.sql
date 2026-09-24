@@ -12,6 +12,8 @@ create table if not exists public.checkin_map_experiences (
 
 alter table public.checkin_map_locations
   add column if not exists experience_id uuid references public.checkin_map_experiences(id) on delete cascade;
+alter table public.checkin_map_locations
+  add column if not exists event_name text;
 
 alter table public.checkin_map_experiences add column if not exists public_slug text;
 alter table public.checkin_map_experiences add column if not exists is_public boolean not null default false;
