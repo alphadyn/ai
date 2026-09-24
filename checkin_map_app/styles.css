@@ -130,6 +130,10 @@ body {
   display: none !important;
 }
 
+.public-trip-view #signOutBtn {
+  display: none !important;
+}
+
 .auth-panel {
   margin-bottom: 1.25rem;
 }

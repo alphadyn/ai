@@ -1305,7 +1305,7 @@ async function initializeApp() {
       renderCheckInList();
       renderCheckInMarkers();
       renderPhotoList();
-      userStatus.textContent = `Public trip: ${currentTrip.name}`;
+      userStatus.textContent = `Trip: ${currentTrip.name}`;
       tripsBtn.hidden = false;
       setStatus(checkInStatus, "Viewing a public trip.", "success");
       window.setTimeout(() => map.invalidateSize(), 0);
