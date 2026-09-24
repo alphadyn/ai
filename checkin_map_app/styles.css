@@ -149,14 +149,6 @@ select:focus-visible {
   display: none !important;
 }
 
-.public-trip-view #loginBtn {
-  display: none !important;
-}
-
-.public-trip-view #createProfileBtn {
-  display: none !important;
-}
-
 .public-trip-view #tripsBtn {
   display: none !important;
 }
