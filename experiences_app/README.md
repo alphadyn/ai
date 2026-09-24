@@ -54,7 +54,7 @@ Then open http://localhost:8000 in your browser.
 - Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
 - Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
 - Re-run that schema after app updates; it uses idempotent migrations for fields such as `avatar_url`.
-- Existing deployments can add Experiences and Events without resetting data by running [experiences-migration.sql](experiences-migration.sql) in the Supabase SQL editor, then refreshing the app. Re-run it after Experience updates to apply idempotent fields and policies such as `event_name` and attachment permissions.
+- Existing deployments can add Experiences and Events without resetting data by running [experiences-migration.sql](experiences-migration.sql) in the Supabase SQL editor, then refreshing the app. Re-run it after Experience updates to apply idempotent fields and policies such as `event_name`, collection ordering, and attachment permissions.
 - Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 - Enable email/password authentication in Supabase Auth. Promote the first administrator by changing their
   profile `role` to `admin` in `checkin_map_profiles`.

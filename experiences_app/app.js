@@ -205,6 +205,7 @@ let editingExperienceLocationId = null;
 let experienceViewMode = "view";
 let experienceMarkersByLocationId = new Map();
 let pendingExperienceEventFiles = [];
+let draggedExperienceId = null;
 let tripPageScrollY = null;
 let draggedTripId = null;
 let authMode = "signin";
@@ -326,7 +327,7 @@ async function loadTrips() {
 }
 
 async function loadExperiences() {
-  const response = await supabaseRequest(isPublicExperience && !session ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=updated_at.desc,created_at.desc`);
+  const response = await supabaseRequest(isPublicExperience && !session ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load experiences."));
   experiences = await response.json();
   if (isPublicExperience && !session && !experiences.length) throw new Error("This public experience does not exist or is no longer shared.");
@@ -393,14 +394,14 @@ function showExperienceCreate() {
 }
 
 function renderExperiences() {
-  experienceList.innerHTML = experiences.length ? experiences.map((experience) => `
-    <article class="experience-card${activeExperience?.id === experience.id ? " active" : ""}">
+  experienceList.innerHTML = experiences.length ? experiences.map((experience, index) => `
+    <article class="experience-card${activeExperience?.id === experience.id ? " active" : ""}" data-experience-id="${escapeHtml(experience.id)}" draggable="${canEditExperience(experience)}">
       <div class="experience-card-open">
         <span class="experience-card-kicker">${experience.is_public ? "Public experience" : "Private experience"}</span><strong>${escapeHtml(experience.name)}</strong>
         ${experience.description ? `<span>${escapeHtml(experience.description)}</span>` : ""}
       </div>
       <div class="experience-card-actions">
-        ${canEditExperience(experience) ? `<label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
+        ${canEditExperience(experience) ? `<div class="experience-order-controls" aria-label="Reorder ${escapeHtml(experience.name)}"><button type="button" class="secondary-btn icon-btn" data-move-experience="up" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-experience="down" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} down" title="Move down" ${index === experiences.length - 1 ? "disabled" : ""}>&darr;</button></div><label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
       </div>
     </article>`).join("") : '<p class="empty-experience-state">Create an experience, then collect its events, places, and media.</p>';
   experienceDetail.hidden = !activeExperience;
@@ -412,6 +413,70 @@ function renderExperiences() {
     experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
     newExperienceEventBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode !== "edit";
   }
+}
+
+async function moveExperience(id, direction) {
+  const currentIndex = experiences.findIndex((experience) => experience.id === id);
+  const targetIndex = currentIndex + (direction === "up" ? -1 : 1);
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= experiences.length) return;
+  const reorderedExperiences = [...experiences];
+  [reorderedExperiences[currentIndex], reorderedExperiences[targetIndex]] = [reorderedExperiences[targetIndex], reorderedExperiences[currentIndex]];
+  await saveExperienceOrder(reorderedExperiences);
+}
+
+async function saveExperienceOrder(reorderedExperiences) {
+  const responses = await Promise.all(reorderedExperiences.map((experience, index) => supabaseRequest(
+    `/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(experience.id)}`,
+    { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ sort_order: index + 1 }) }
+  )));
+  const failedResponse = responses.find((response) => !response.ok);
+  if (failedResponse) throw new Error(await getSupabaseError(failedResponse, "Could not reorder experiences."));
+  experiences = reorderedExperiences.map((experience, index) => ({ ...experience, sort_order: index + 1 }));
+  renderExperiences();
+  setStatus(experienceStatus, "Experience order saved.", "success");
+}
+
+function clearExperienceDragState() {
+  draggedExperienceId = null;
+  experienceList.querySelectorAll(".is-dragging, .drag-over-before, .drag-over-after").forEach((card) => card.classList.remove("is-dragging", "drag-over-before", "drag-over-after"));
+}
+
+function handleExperienceDragStart(event) {
+  const card = event.target.closest('.experience-card[draggable="true"]');
+  if (!card || event.target.closest("button, input, label")) {
+    event.preventDefault();
+    return;
+  }
+  draggedExperienceId = card.dataset.experienceId;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", draggedExperienceId);
+  card.classList.add("is-dragging");
+}
+
+function handleExperienceDragOver(event) {
+  if (!draggedExperienceId) return;
+  const card = event.target.closest(".experience-card");
+  if (!card || card.dataset.experienceId === draggedExperienceId) return;
+  event.preventDefault();
+  experienceList.querySelectorAll(".drag-over-before, .drag-over-after").forEach((item) => item.classList.remove("drag-over-before", "drag-over-after"));
+  card.classList.add(event.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2 ? "drag-over-before" : "drag-over-after");
+  event.dataTransfer.dropEffect = "move";
+}
+
+async function handleExperienceDrop(event) {
+  const targetCard = event.target.closest(".experience-card");
+  if (!draggedExperienceId || !targetCard || targetCard.dataset.experienceId === draggedExperienceId) return;
+  event.preventDefault();
+  const sourceIndex = experiences.findIndex((experience) => experience.id === draggedExperienceId);
+  let targetIndex = experiences.findIndex((experience) => experience.id === targetCard.dataset.experienceId);
+  if (event.clientY >= targetCard.getBoundingClientRect().top + targetCard.offsetHeight / 2) targetIndex += 1;
+  const reorderedExperiences = [...experiences];
+  const [draggedExperience] = reorderedExperiences.splice(sourceIndex, 1);
+  if (sourceIndex < targetIndex) targetIndex -= 1;
+  reorderedExperiences.splice(targetIndex, 0, draggedExperience);
+  try { await saveExperienceOrder(reorderedExperiences); }
+  catch (error) { setStatus(experienceStatus, error.message, "error"); }
+  finally { clearExperienceDragState(); }
 }
 
 function renderExperienceLocations() {
@@ -458,10 +523,11 @@ async function saveExperience(event) {
   experienceSaveBtn.disabled = true;
   try {
     const id = experienceIdInput.value;
+    const sortOrder = Math.max(0, ...experiences.map((experience) => experience.sort_order || 0)) + 1;
     const response = await supabaseRequest(id ? `/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(id)}` : `/rest/v1/${EXPERIENCES_TABLE}`, {
       method: id ? "PATCH" : "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ name, description, ...(id ? { updated_at: new Date().toISOString() } : { is_public: false, public_slug: createPublicSlug(name) }) }),
+      body: JSON.stringify({ name, description, ...(id ? { updated_at: new Date().toISOString() } : { is_public: false, public_slug: createPublicSlug(name), sort_order: sortOrder }) }),
     });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not save the experience."));
     const [savedExperience] = await response.json();
@@ -737,6 +803,12 @@ async function handleExperienceClick(event) {
     const experience = experiences.find((item) => item.id === editButton.dataset.editExperience);
     if (!experience) return;
     await openExperience(experience.id, { edit: true });
+    return;
+  }
+  const moveButton = event.target.closest("[data-move-experience]");
+  if (moveButton) {
+    try { await moveExperience(moveButton.dataset.experienceId, moveButton.dataset.moveExperience); }
+    catch (error) { setStatus(experienceStatus, error.message, "error"); }
     return;
   }
   const deleteButton = event.target.closest("[data-delete-experience]");
@@ -2109,6 +2181,10 @@ experienceEventMediaPreview.addEventListener("click", (event) => {
 });
 experienceList?.addEventListener("click", handleExperienceClick);
 experienceList?.addEventListener("change", handleExperienceChange);
+experienceList?.addEventListener("dragstart", handleExperienceDragStart);
+experienceList?.addEventListener("dragover", handleExperienceDragOver);
+experienceList?.addEventListener("drop", handleExperienceDrop);
+experienceList?.addEventListener("dragend", clearExperienceDragState);
 experienceLocationList?.addEventListener("click", handleExperienceLocationClick);
 experienceLocationList?.addEventListener("submit", saveExperienceLocation);
 experienceLocationList?.addEventListener("change", (event) => {

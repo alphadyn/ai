@@ -6,6 +6,7 @@ create table if not exists public.checkin_map_experiences (
   description text not null default '',
   public_slug text unique not null default gen_random_uuid()::text,
   is_public boolean not null default false,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -17,7 +18,13 @@ alter table public.checkin_map_locations
 
 alter table public.checkin_map_experiences add column if not exists public_slug text;
 alter table public.checkin_map_experiences add column if not exists is_public boolean not null default false;
+alter table public.checkin_map_experiences add column if not exists sort_order integer not null default 0;
 update public.checkin_map_experiences set public_slug = coalesce(public_slug, gen_random_uuid()::text) where public_slug is null;
+with ranked_experiences as (
+  select id, row_number() over (partition by user_id order by created_at asc) as position
+  from public.checkin_map_experiences
+)
+update public.checkin_map_experiences e set sort_order = ranked_experiences.position from ranked_experiences where e.id = ranked_experiences.id and e.sort_order = 0;
 alter table public.checkin_map_experiences alter column public_slug set not null;
 create unique index if not exists checkin_map_experiences_public_slug_idx on public.checkin_map_experiences(public_slug);
 
