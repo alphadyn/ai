@@ -36,7 +36,6 @@ const authForm = document.getElementById("authForm");
 const authUsername = document.getElementById("authUsername");
 const authPassword = document.getElementById("authPassword");
 const authSubmitBtn = document.getElementById("authSubmitBtn");
-const toggleAuthBtn = document.getElementById("toggleAuthBtn");
 const authModeLabel = document.getElementById("authModeLabel");
 const authStatus = document.getElementById("authStatus");
 const userStatus = document.getElementById("userStatus");
@@ -2371,7 +2370,6 @@ async function initializeApp() {
         authMode = "signin";
         authModeLabel.textContent = "Sign in";
         authSubmitBtn.textContent = "Sign in";
-        toggleAuthBtn.textContent = "Sign up";
       }
       appContent.hidden = false;
       experiencePanel.hidden = false;
