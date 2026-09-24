@@ -631,7 +631,7 @@ function renderAttachedMedia(checkIn) {
   return `<div class="attached-media">${checkIn.media
     .map((media) => {
       if (media.type.startsWith("image/")) {
-        return `<img class="attached-media-preview" src="${escapeHtml(media.dataUrl)}" alt="${escapeHtml(media.name)}" title="${escapeHtml(media.name)}" />`;
+        return `<img class="attached-media-preview" src="${escapeHtml(media.dataUrl)}" alt="Attached image" />`;
       }
       return `<a class="attached-media-link" href="${escapeHtml(media.dataUrl)}" target="_blank" rel="noopener">${escapeHtml(media.name)}</a>`;
     })
@@ -755,7 +755,7 @@ function renderPinMediaCarousel(checkIn) {
         : media.type.startsWith("video/")
           ? `<video src="${escapeHtml(media.dataUrl)}" controls></video>`
           : `<audio src="${escapeHtml(media.dataUrl)}" controls></audio>`;
-      return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}" data-media-url="${escapeHtml(media.dataUrl)}" data-media-type="${escapeHtml(media.type)}" data-media-name="${escapeHtml(media.name)}">${content}<span>${escapeHtml(media.name)}</span></div>`;
+      return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}" data-media-url="${escapeHtml(media.dataUrl)}" data-media-type="${escapeHtml(media.type)}" data-media-name="${escapeHtml(media.name)}">${content}</div>`;
     })
     .join("");
   return `<div class="pin-media-carousel" data-active-index="0" data-description="${escapeHtml(checkIn.description || "")}"><div class="pin-media-slides">${slides}</div><div class="pin-media-controls"><button type="button" data-carousel-direction="prev" aria-label="Previous media">&#8249;</button><span>${checkIn.media.length} attached</span><button type="button" data-carousel-direction="next" aria-label="Next media">&#8250;</button></div></div>`;
@@ -786,7 +786,7 @@ function updateMediaViewer() {
   mediaElement.autoplay = mediaType.startsWith("video/") || mediaType.startsWith("audio/");
   mediaElement.alt = mediaName;
   mediaViewerContent.replaceChildren(mediaElement);
-  mediaViewerName.textContent = mediaName;
+  mediaViewerName.textContent = "";
   mediaViewerDescription.textContent = slide.closest(".pin-media-carousel")?.dataset.description || "";
   mediaViewerPrev.disabled = mediaViewerSlides.length < 2;
   mediaViewerNext.disabled = mediaViewerSlides.length < 2;
