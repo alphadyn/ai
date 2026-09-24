@@ -145,7 +145,12 @@ select:focus-visible {
 .public-trip-view .delete-checkin-btn,
 .public-trip-view .map-delete-btn,
 .public-trip-view .attach-media-btn,
-.public-trip-view #adminPanel {
+.public-trip-view #adminPanel,
+.public-trip-view .trip-card-edit {
+  display: none !important;
+}
+
+body:not(.public-trip-view) .public-trip-only {
   display: none !important;
 }
 

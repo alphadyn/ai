@@ -1392,6 +1392,7 @@ async function initializeApp() {
         userStatus.textContent = profile.username || profile.display_name;
         updateAvatar(profile.avatar_url);
         adminPanel.hidden = profile.role !== "admin";
+        document.body.classList.remove("public-trip-view");
       } else {
         setAuthUi(false, { keepAppVisible: true });
       }
