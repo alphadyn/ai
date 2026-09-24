@@ -428,7 +428,7 @@ function renderExperiences() {
     activeExperienceName.textContent = activeExperience.name;
     activeExperienceDescription.textContent = activeExperience.description || "Add events, places, and media to this experience.";
     experienceLocationForm.hidden = true;
-    experienceDetailKicker.textContent = experienceViewMode === "edit" ? "Edit experience" : "Experience";
+    experienceDetailKicker.textContent = "Experience";
     experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
     const canAddEvent = canEditExperience(activeExperience) || (isPublicExperience && activeExperience.is_public);
     newExperienceEventBtn.hidden = !canAddEvent || (experienceViewMode !== "edit" && !isPublicExperience);
@@ -2377,6 +2377,11 @@ async function initializeApp() {
       if (isPublicExperience && !restoredSession) {
         setAuthUi(false, { keepAppVisible: true });
         userStatus.textContent = `Experience: ${activeExperience.name}`;
+        authPanel.hidden = false;
+        authMode = "signin";
+        authModeLabel.textContent = "Sign in";
+        authSubmitBtn.textContent = "Sign in";
+        toggleAuthBtn.textContent = "Sign up";
       }
       appContent.hidden = false;
       experiencePanel.hidden = false;
