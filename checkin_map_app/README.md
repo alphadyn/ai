@@ -1,13 +1,13 @@
 # Check-In Map
 
 A browser-based app for checking in known locations on a map by name, keeping a running history of
-your last 10 check-ins, and mapping the GPS location embedded in uploaded photos.
+your last 100 check-ins, and mapping the GPS location embedded in uploaded photos.
 
 ## Features
 - **Check in** by typing a known place name (city, address, landmark); it's geocoded into coordinates
   and dropped as a pin on an interactive map — no browser location permission required
 - **Map display** built with [Leaflet](https://leafletjs.com/) and [CARTO](https://carto.com/basemaps) basemap tiles (built from OpenStreetMap data)
-- **Last 10 check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
+- **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
   persisted in the browser's local storage so they survive a page refresh
 - **Map click check-in**: click any point on the map to save that coordinate as a check-in
 - **Media attachments**: attach up to five local image, video, or audio files to each check-in
@@ -30,12 +30,12 @@ Then open http://localhost:8000 in your browser.
 ## How to use
 1. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
    and click **Check In**. A marker appears on the map and the check-in is added to the top of the
-   "Last 10 Check-Ins" list.
+  "Check-Ins" list.
 2. Click any point on the map to add a coordinate check-in, then use **Attach media** on that list item
   to add image, video, or audio files to the location.
 3. Click **Choose a photo** and pick a JPEG photo taken with a phone or camera that recorded GPS data.
   If the photo has location data, a marker appears on the map and the photo is added to both the
-  "Last 10 Check-Ins" history and the photo list below.
+  "Check-Ins" history and the photo list below.
 
 ## Main files
 - `index.html` — page structure (map, check-in form, check-in list, photo upload)

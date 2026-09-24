@@ -23,7 +23,7 @@ The current top apps featured on the main landing page are:
 - [audio_equalizer_app](audio_equalizer_app/) — Browser media player with live waveform and spectrum analysis.
 - [business_site](business_site/) — Marketing landing page for an AI company.
 - [car_sketch_project](car_sketch_project/) — Image-to-car-sketch generator.
-- [checkin_map_app](checkin_map_app/) — Map-based check-in experience with recent activity log.
+- [checkin_map_app](checkin_map_app/) — Map-based check-in journal with right-click pinning, editable locations, media attachments, and a 100-entry history.
 - [earth_3d_explorer](earth_3d_explorer/) — Three.js globe with overlays and inspection interactions.
 - [ehr_web_app](ehr_web_app/) — Electronic health record demo interface.
 - [enterprise_executive_dashboard](enterprise_executive_dashboard/) — Multi-page executive dashboard.

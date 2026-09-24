@@ -1,5 +1,5 @@
 const STORAGE_KEY = "checkin-map-app:checkins";
-const MAX_CHECKINS = 10;
+const MAX_CHECKINS = 100;
 const MAX_MEDIA_FILES = 5;
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 
@@ -50,6 +50,7 @@ let checkIns = loadCheckIns();
 let photoMarkers = [];
 let swipeStartX = null;
 let suppressNextListClick = false;
+let editingCheckInIndex = null;
 
 function loadCheckIns() {
   try {
@@ -138,23 +139,43 @@ function renderCheckInList() {
   }
   checkInListEl.innerHTML = checkIns
     .map(
-      (checkIn, index) => `
+      (checkIn, index) => editingCheckInIndex === index ? renderCheckInEditor(checkIn, index) : `
         <li class="checkin-entry" data-checkin-index="${index}" role="button" tabindex="0">
           ${checkIn.previewUrl ? `<img class="checkin-preview" src="${escapeHtml(checkIn.previewUrl)}" alt="${escapeHtml(checkIn.label)}" />` : ""}
           <div>
             <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
             <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
             ${renderAttachedMedia(checkIn)}
-            <label class="attach-media-btn" data-stop-map-click="true">
-              <span>Attach media</span>
-              <input class="media-input" type="file" accept="image/*,video/*,audio/*" multiple data-checkin-index="${index}" />
-            </label>
           </div>
+          <button type="button" class="edit-checkin-btn" data-edit-index="${index}" data-stop-map-click="true" aria-label="Edit ${escapeHtml(checkIn.label)}" title="Edit check-in">Edit</button>
           <button type="button" class="delete-checkin-btn" data-delete-index="${index}" data-stop-map-click="true" aria-label="Delete ${escapeHtml(checkIn.label)}" title="Delete check-in">&times;</button>
         </li>`
     )
     .join("");
   updateClearCheckInsButton();
+}
+
+function renderCheckInEditor(checkIn, index) {
+  return `<li class="checkin-entry checkin-editor" data-checkin-index="${index}">
+    <form class="edit-checkin-form" data-edit-form-index="${index}" data-stop-map-click="true">
+      <label>Location name<input name="label" type="text" value="${escapeHtml(checkIn.label)}" required /></label>
+      <label>Date and time<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(checkIn.timestamp)}" required /></label>
+      <label class="attach-media-btn">
+        <span>Attach media</span>
+        <input class="media-input" type="file" accept="image/*,video/*,audio/*" multiple data-checkin-index="${index}" />
+      </label>
+      <div class="edit-checkin-actions">
+        <button type="submit" class="primary-btn">Save</button>
+        <button type="button" class="secondary-btn" data-cancel-edit="true">Cancel</button>
+      </div>
+    </form>
+  </li>`;
+}
+
+function formatDateTimeInput(isoString) {
+  const date = new Date(isoString);
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
 function clearAllCheckIns() {
@@ -179,6 +200,30 @@ function deleteCheckIn(index) {
 function deleteCheckInById(id) {
   const index = checkIns.findIndex((checkIn) => checkIn.id === id);
   if (index !== -1) deleteCheckIn(index);
+}
+
+function startEditCheckIn(index) {
+  editingCheckInIndex = index;
+  renderCheckInList();
+  checkInListEl.querySelector("input[name=label]")?.focus();
+}
+
+function saveEditedCheckIn(event) {
+  event.preventDefault();
+  const form = event.target;
+  const index = Number(form.dataset.editFormIndex);
+  const checkIn = checkIns[index];
+  const label = form.elements.label.value.trim();
+  const timestamp = new Date(form.elements.timestamp.value);
+  if (!checkIn || !label || Number.isNaN(timestamp.getTime())) return;
+
+  checkIn.label = label;
+  checkIn.timestamp = timestamp.toISOString();
+  editingCheckInIndex = null;
+  saveCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  setStatus(checkInStatus, "Check-in updated.", "success");
 }
 
 function renderAttachedMedia(checkIn) {
@@ -213,6 +258,22 @@ function handleCheckInListInteraction(event) {
 }
 
 function handleCheckInListAction(event) {
+  const editButton = event.target.closest("[data-edit-index]");
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    startEditCheckIn(Number(editButton.dataset.editIndex));
+    return;
+  }
+
+  if (event.target.closest("[data-cancel-edit]")) {
+    event.preventDefault();
+    event.stopPropagation();
+    editingCheckInIndex = null;
+    renderCheckInList();
+    return;
+  }
+
   const deleteButton = event.target.closest("[data-delete-index]");
   if (!deleteButton) return;
   event.preventDefault();
@@ -268,11 +329,43 @@ function renderCheckInMarkers() {
   checkIns.forEach((checkIn) => {
     L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
       .addTo(checkInLayer)
-      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>`);
+      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}${renderPinMediaCarousel(checkIn)}<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>`);
   });
 }
 
+function renderPinMediaCarousel(checkIn) {
+  if (!checkIn.media.length) return "";
+  const slides = checkIn.media
+    .map((media, index) => {
+      const content = media.type.startsWith("image/")
+        ? `<img src="${escapeHtml(media.dataUrl)}" alt="${escapeHtml(media.name)}" />`
+        : media.type.startsWith("video/")
+          ? `<video src="${escapeHtml(media.dataUrl)}" controls></video>`
+          : `<audio src="${escapeHtml(media.dataUrl)}" controls></audio>`;
+      return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}">${content}<span>${escapeHtml(media.name)}</span></div>`;
+    })
+    .join("");
+  return `<div class="pin-media-carousel" data-active-index="0"><div class="pin-media-slides">${slides}</div><div class="pin-media-controls"><button type="button" data-carousel-direction="prev" aria-label="Previous media">&#8249;</button><span>${checkIn.media.length} attached</span><button type="button" data-carousel-direction="next" aria-label="Next media">&#8250;</button></div></div>`;
+}
+
+function movePinCarousel(carousel, direction) {
+  const slides = [...carousel.querySelectorAll(".pin-media-slide")];
+  if (slides.length < 2) return;
+  const currentIndex = Number(carousel.dataset.activeIndex);
+  const nextIndex = (currentIndex + direction + slides.length) % slides.length;
+  carousel.dataset.activeIndex = nextIndex;
+  slides.forEach((slide, index) => slide.classList.toggle("active", index === nextIndex));
+}
+
 function handleMapPopupAction(event) {
+  const carouselButton = event.target.closest("[data-carousel-direction]");
+  if (carouselButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    movePinCarousel(carouselButton.closest(".pin-media-carousel"), carouselButton.dataset.carouselDirection === "next" ? 1 : -1);
+    return;
+  }
+
   const dropPinButton = event.target.closest("[data-drop-pin-lat]");
   if (dropPinButton) {
     event.preventDefault();
@@ -461,6 +554,7 @@ map.getContainer().addEventListener("click", handleMapPopupAction);
 checkInListEl.addEventListener("click", handleCheckInListInteraction);
 checkInListEl.addEventListener("click", handleCheckInListAction);
 checkInListEl.addEventListener("keydown", handleCheckInListInteraction);
+checkInListEl.addEventListener("submit", saveEditedCheckIn);
 checkInListEl.addEventListener("touchstart", handleCheckInTouchStart, { passive: true });
 checkInListEl.addEventListener("touchend", handleCheckInTouchEnd, { passive: true });
 checkInListEl.addEventListener("change", (event) => {
