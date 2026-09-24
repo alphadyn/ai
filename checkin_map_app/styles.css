@@ -126,6 +126,10 @@ body {
   display: none !important;
 }
 
+.public-trip-view #createProfileBtn {
+  display: none !important;
+}
+
 .public-trip-view #tripsBtn {
   display: none !important;
 }
@@ -575,6 +579,13 @@ body.profile-open::before {
   font-size: 0.78rem;
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.account-bar #createProfileBtn {
+  padding: 0.78rem 1.25rem;
+  border-radius: 9px;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .button-icon {

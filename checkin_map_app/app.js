@@ -39,6 +39,7 @@ const authStatus = document.getElementById("authStatus");
 const userStatus = document.getElementById("userStatus");
 const signOutBtn = document.getElementById("signOutBtn");
 const loginBtn = document.getElementById("loginBtn");
+const createProfileBtn = document.getElementById("createProfileBtn");
 const profileBtn = document.getElementById("profileBtn");
 const profilePanel = document.getElementById("profilePanel");
 const closeProfileBtn = document.getElementById("closeProfileBtn");
@@ -449,6 +450,7 @@ function updateClearCheckInsButton() {
 }
 
 async function addCheckIn(checkIn) {
+  checkIn.userId = session.user.id;
   checkIn.tripId = currentTrip.id;
   await saveCheckIn(checkIn);
   checkIns.unshift(checkIn);
@@ -1103,6 +1105,7 @@ function updateAvatar(url) {
 
 function setAuthUi(isAuthenticated) {
   loginBtn.hidden = isAuthenticated;
+  createProfileBtn.hidden = isAuthenticated;
   profileBtn.hidden = !isAuthenticated;
   tripsBtn.hidden = !isAuthenticated;
   signOutBtn.hidden = !isAuthenticated;
@@ -1223,6 +1226,18 @@ function photoIcon(previewUrl) {
 checkInForm.addEventListener("submit", handleCheckIn);
 loginBtn.addEventListener("click", () => {
   authPanel.hidden = false;
+  authMode = "signin";
+  authModeLabel.textContent = "Sign in";
+  authSubmitBtn.textContent = "Sign in";
+  toggleAuthBtn.textContent = "Sign up";
+  authUsername.focus();
+});
+createProfileBtn.addEventListener("click", () => {
+  authPanel.hidden = false;
+  authMode = "signup";
+  authModeLabel.textContent = "Sign up";
+  authSubmitBtn.textContent = "Sign up";
+  toggleAuthBtn.textContent = "Back to sign in";
   authUsername.focus();
 });
 profileBtn.addEventListener("click", openProfile);
@@ -1249,8 +1264,9 @@ authForm.addEventListener("submit", handleAuthSubmit);
 toggleAuthBtn.addEventListener("click", () => {
   authMode = authMode === "signin" ? "signup" : "signin";
   authSubmitBtn.textContent = authMode === "signin" ? "Sign in" : "Create account";
-  toggleAuthBtn.textContent = authMode === "signin" ? "Create account" : "Back to sign in";
-  authModeLabel.textContent = authMode === "signin" ? "Sign in" : "Create account";
+  toggleAuthBtn.textContent = authMode === "signin" ? "Sign up" : "Back to sign in";
+  authModeLabel.textContent = authMode === "signin" ? "Sign in" : "Sign up";
+  authSubmitBtn.textContent = authMode === "signin" ? "Sign in" : "Sign up";
 });
 signOutBtn.addEventListener("click", () => {
   clearStoredSession();
