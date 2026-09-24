@@ -225,8 +225,16 @@ select:focus-visible {
   width: min(92vw, 760px);
   max-height: min(80vh, 680px);
   overflow: auto;
+  overscroll-behavior: contain;
   transform: translate(-50%, -46%);
   box-shadow: 0 28px 80px rgba(23, 33, 43, 0.25);
+}
+
+body.trips-open {
+  position: fixed;
+  top: var(--trip-page-scroll-y, 0);
+  width: 100%;
+  overflow: hidden;
 }
 
 body.trips-open::before {

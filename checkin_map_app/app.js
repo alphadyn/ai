@@ -121,6 +121,7 @@ let session = null;
 let profile = null;
 let trips = [];
 let currentTrip = null;
+let tripPageScrollY = null;
 let draggedTripId = null;
 let authMode = "signin";
 const publicTripSlug = new URLSearchParams(window.location.search).get("trip") || DEFAULT_PUBLIC_TRIP_SLUG;
@@ -128,6 +129,22 @@ const isPublicTrip = Boolean(publicTripSlug);
 
 function normalizeUsername(value) {
   return value.trim().toLowerCase();
+}
+
+function lockTripPageScroll() {
+  if (tripPageScrollY !== null) return;
+  tripPageScrollY = window.scrollY;
+  document.body.style.setProperty("--trip-page-scroll-y", `-${tripPageScrollY}px`);
+  document.body.classList.add("trips-open");
+}
+
+function unlockTripPageScroll() {
+  if (tripPageScrollY === null) return;
+  const scrollY = tripPageScrollY;
+  tripPageScrollY = null;
+  document.body.classList.remove("trips-open");
+  document.body.style.removeProperty("--trip-page-scroll-y");
+  window.scrollTo(0, scrollY);
 }
 
 function authIdentityForUsername(username) {
@@ -212,11 +229,11 @@ async function loadProfile() {
 }
 
 async function loadTrips() {
-  const response = await supabaseRequest(isPublicTrip ? `/rest/v1/${TRIPS_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicTripSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${TRIPS_TABLE}?select=*&order=sort_order.asc,created_at.asc`);
+  const response = await supabaseRequest(isPublicTrip && !session ? `/rest/v1/${TRIPS_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicTripSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${TRIPS_TABLE}?select=*&order=sort_order.asc,created_at.asc`);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load trips."));
   trips = await response.json();
   currentTrip = trips[0] || null;
-  if (isPublicTrip && !currentTrip) throw new Error("This public trip does not exist or is no longer shared.");
+  if (isPublicTrip && !session && !currentTrip) throw new Error("This public trip does not exist or is no longer shared.");
   updateCheckInTripName();
   renderTripSelect();
 }
@@ -348,7 +365,7 @@ async function handleTripListAction(event) {
     updateCheckInTripName();
     tripPanel.hidden = true;
     tripPanel.classList.remove("trip-panel-open");
-    document.body.classList.remove("trips-open");
+    unlockTripPageScroll();
     fitMapToCheckIns();
     setStatus(checkInStatus, `Opened trip "${currentTrip.name}".`, "success");
     return;
@@ -1241,7 +1258,7 @@ function setAuthUi(isAuthenticated, options = {}) {
     authPanel.hidden = true;
     closeProfile();
     tripPanel.hidden = true;
-    document.body.classList.remove("trips-open");
+    unlockTripPageScroll();
   } else {
     appContent.hidden = false;
   }
@@ -1393,13 +1410,13 @@ profileAvatarInput.addEventListener("change", () => {
 tripsBtn.addEventListener("click", () => {
   tripPanel.hidden = false;
   tripPanel.classList.add("trip-panel-open");
-  document.body.classList.add("trips-open");
+  lockTripPageScroll();
   tripListEl.querySelector(".trip-card.active")?.focus();
 });
 closeTripsBtn.addEventListener("click", () => {
   tripPanel.hidden = true;
   tripPanel.classList.remove("trip-panel-open");
-  document.body.classList.remove("trips-open");
+  unlockTripPageScroll();
 });
 authForm.addEventListener("submit", handleAuthSubmit);
 toggleAuthBtn.addEventListener("click", () => {
