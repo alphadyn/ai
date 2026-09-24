@@ -509,7 +509,7 @@ function renderExperienceLocationEditor(location) {
   const canManageAttachments = canEditExperience(activeExperience);
   return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
   <label>Event name<input name="eventName" value="${escapeHtml(location.eventName || location.label)}" required /></label>
-  <label>Location<input name="label" value="${escapeHtml(location.label)}" required /><button type="button" class="secondary-btn event-location-find-btn" data-find-event-location>Find location</button></label>
+  <label>Location<input name="label" value="${escapeHtml(location.label)}" required /><button type="button" class="secondary-btn event-location-find-btn" data-find-event-location>Find location on map</button></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
       ${canManageAttachments ? `<label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>${renderExperienceMediaAvatars(location)}` : ""}
@@ -906,8 +906,8 @@ function openExperienceEventEdit(id) {
   experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
   experienceDetail.hidden = true;
   experienceEventEditScreen.hidden = false;
+  experienceEventEditMapElement.hidden = true;
   experienceEventEditCoordinates = { lat: location.lat, lon: location.lon };
-  renderExperienceEventEditMap();
   experienceEventEditContent.querySelector("input[name=label]")?.focus();
 }
 
@@ -916,6 +916,7 @@ function closeExperienceEventEdit() {
   experienceEventEditCoordinates = null;
   if (experienceEventEditMarker) experienceEventEditMap.removeLayer(experienceEventEditMarker);
   experienceEventEditMarker = null;
+  experienceEventEditMapElement.hidden = true;
   experienceEventEditScreen.hidden = true;
   experienceDetail.hidden = false;
   renderExperienceLocations();
@@ -932,11 +933,13 @@ function renderExperienceEventEditMap() {
 async function findExperienceEventLocation() {
   const input = experienceEventEditContent.querySelector("input[name=label]");
   const query = input?.value.trim();
-  if (!query) return;
   try {
-    const { lat, lon, label } = await geocodeLocation(query);
-    input.value = label;
-    experienceEventEditCoordinates = { lat, lon };
+    if (query) {
+      const { lat, lon, label } = await geocodeLocation(query);
+      input.value = label;
+      experienceEventEditCoordinates = { lat, lon };
+    }
+    experienceEventEditMapElement.hidden = false;
     renderExperienceEventEditMap();
   } catch (error) { setStatus(experienceStatus, error.message, "error"); }
 }
@@ -2206,6 +2209,12 @@ experienceEventEditContent.addEventListener("click", (event) => {
   if (event.target.closest("[data-cancel-experience-location-edit]")) closeExperienceEventEdit();
   else if (event.target.closest("[data-find-event-location]")) findExperienceEventLocation();
   else handleExperienceLocationClick(event);
+});
+experienceEventEditContent.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches("input[name=label]")) {
+    event.preventDefault();
+    findExperienceEventLocation();
+  }
 });
 experienceEventEditContent.addEventListener("submit", saveExperienceLocation);
 experienceEventEditContent.addEventListener("change", (event) => {
