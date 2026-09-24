@@ -106,11 +106,14 @@ const experienceTimeInput = document.getElementById("experienceTimeInput");
 const experienceEventDescriptionInput = document.getElementById("experienceEventDescriptionInput");
 const experienceEventMediaInput = document.getElementById("experienceEventMediaInput");
 const experienceEventMediaPreview = document.getElementById("experienceEventMediaPreview");
+const findExperienceEventLocationBtn = document.getElementById("findExperienceEventLocationBtn");
+const experienceEventCreateMapElement = document.getElementById("experienceEventCreateMap");
 const experienceLocationList = document.getElementById("experienceLocationList");
 const experienceEventEditScreen = document.getElementById("experienceEventEditScreen");
 const experienceEventEditName = document.getElementById("experienceEventEditName");
 const experienceEventEditContent = document.getElementById("experienceEventEditContent");
 const backFromExperienceEventEditBtn = document.getElementById("backFromExperienceEventEditBtn");
+const experienceEventEditMapElement = document.getElementById("experienceEventEditMap");
 const experienceMapElement = document.getElementById("experienceMap");
 
 const mapElement = document.getElementById("map");
@@ -154,6 +157,22 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=
   noWrap: true,
 }).addTo(experienceMap);
 const experienceMapLayer = L.layerGroup().addTo(experienceMap);
+const experienceEventEditMap = L.map(experienceEventEditMapElement, { zoomControl: true, attributionControl: false }).setView([0, 0], 1);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2w0f_1_82cba88eb21776b6335fa821", {
+  subdomains: "abcd",
+  maxZoom: 19,
+  noWrap: true,
+}).addTo(experienceEventEditMap);
+let experienceEventEditMarker = null;
+let experienceEventEditCoordinates = null;
+const experienceEventCreateMap = L.map(experienceEventCreateMapElement, { zoomControl: true, attributionControl: false }).setView([0, 0], 1);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2w0f_1_82cba88eb21776b6335fa821", {
+  subdomains: "abcd",
+  maxZoom: 19,
+  noWrap: true,
+}).addTo(experienceEventCreateMap);
+let experienceEventCreateMarker = null;
+let experienceEventCreateCoordinates = null;
 const experienceMapResetControl = L.control({ position: "topleft" });
 experienceMapResetControl.onAdd = () => {
   const button = L.DomUtil.create("button", "experience-map-reset");
@@ -422,7 +441,7 @@ function renderExperienceMediaAvatars(location) {
 function renderExperienceLocationEditor(location) {
   return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
   <label>Event name<input name="eventName" value="${escapeHtml(location.eventName || location.label)}" required /></label>
-      <label>Location name<input name="label" value="${escapeHtml(location.label)}" required /></label>
+  <label>Location<input name="label" value="${escapeHtml(location.label)}" required /><button type="button" class="secondary-btn event-location-find-btn" data-find-event-location>Find location</button></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
       <label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>
@@ -473,7 +492,8 @@ async function addExperienceEvent(event) {
   }
   try {
     setStatus(experienceStatus, `Looking up "${query}"…`);
-    const { lat, lon, label } = await geocodeLocation(query);
+    const foundLocation = experienceEventCreateCoordinates ? { ...experienceEventCreateCoordinates, label: query } : await geocodeLocation(query);
+    const { lat, lon, label } = foundLocation;
     const location = { id: createId(), lat, lon, label, eventName, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: currentTrip.id, userId: session.user.id };
     const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ...mapCheckInToRow(location), experience_id: activeExperience.id }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not add the event."));
@@ -482,6 +502,9 @@ async function addExperienceEvent(event) {
     experienceLocationForm.reset();
     pendingExperienceEventFiles = [];
     renderPendingExperienceEventFiles();
+    experienceEventCreateCoordinates = null;
+    if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
+    experienceEventCreateMarker = null;
     experienceTimeInput.value = formatDateTimeInput(new Date().toISOString());
     experienceEventCreateScreen.hidden = true;
     experienceDetail.hidden = false;
@@ -560,8 +583,12 @@ async function saveExperienceLocation(event) {
   location.label = label;
   location.description = form.elements.description.value.trim();
   location.timestamp = timestamp.toISOString();
+  if (experienceEventEditCoordinates) {
+    location.lat = experienceEventEditCoordinates.lat;
+    location.lon = experienceEventEditCoordinates.lon;
+  }
   try {
-    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
+    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, lat: location.lat, lon: location.lon, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
     experienceEventEditScreen.hidden = true;
@@ -623,12 +650,16 @@ function openExperienceEventForm() {
   pendingExperienceEventFiles = [];
   renderPendingExperienceEventFiles();
   experienceTimeInput.value = formatDateTimeInput(new Date().toISOString());
+  experienceEventCreateCoordinates = null;
+  if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
+  experienceEventCreateMarker = null;
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = true;
   experienceEventEditScreen.hidden = true;
   experienceLocationForm.hidden = false;
   experienceEventCreateScreen.hidden = false;
+  window.setTimeout(() => experienceEventCreateMap.invalidateSize(), 0);
   experienceLocationInput.focus();
 }
 
@@ -636,6 +667,9 @@ function closeExperienceEventCreate() {
   experienceLocationForm.reset();
   pendingExperienceEventFiles = [];
   renderPendingExperienceEventFiles();
+  experienceEventCreateCoordinates = null;
+  if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
+  experienceEventCreateMarker = null;
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = true;
   experienceLocationForm.hidden = true;
@@ -643,6 +677,31 @@ function closeExperienceEventCreate() {
   experienceEventEditScreen.hidden = true;
   experienceDetail.hidden = false;
 }
+
+function setExperienceEventCreateLocation(lat, lon, label) {
+  experienceLocationInput.value = label;
+  experienceEventCreateCoordinates = { lat, lon };
+  experienceEventCreateMap.invalidateSize();
+  experienceEventCreateMap.setView([lat, lon], 11);
+  if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
+  experienceEventCreateMarker = L.marker([lat, lon]).addTo(experienceEventCreateMap);
+}
+
+async function findNewExperienceEventLocation() {
+  const query = experienceLocationInput.value.trim();
+  if (!query) return;
+  try {
+    const { lat, lon, label } = await geocodeLocation(query);
+    setExperienceEventCreateLocation(lat, lon, label);
+  } catch (error) { setStatus(experienceStatus, error.message, "error"); }
+}
+
+experienceEventCreateMap.on("click", async (event) => {
+  try {
+    const label = await reverseGeocodeLocation(event.latlng.lat, event.latlng.lng);
+    setExperienceEventCreateLocation(event.latlng.lat, event.latlng.lng, label);
+  } catch (error) { setStatus(experienceStatus, error.message, "error"); }
+});
 
 function renderPendingExperienceEventFiles() {
   experienceEventMediaPreview.innerHTML = pendingExperienceEventFiles.map((file, index) => {
@@ -763,15 +822,50 @@ function openExperienceEventEdit(id) {
   experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
   experienceDetail.hidden = true;
   experienceEventEditScreen.hidden = false;
+  experienceEventEditCoordinates = { lat: location.lat, lon: location.lon };
+  renderExperienceEventEditMap();
   experienceEventEditContent.querySelector("input[name=label]")?.focus();
 }
 
 function closeExperienceEventEdit() {
   editingExperienceLocationId = null;
+  experienceEventEditCoordinates = null;
+  if (experienceEventEditMarker) experienceEventEditMap.removeLayer(experienceEventEditMarker);
+  experienceEventEditMarker = null;
   experienceEventEditScreen.hidden = true;
   experienceDetail.hidden = false;
   renderExperienceLocations();
 }
+
+function renderExperienceEventEditMap() {
+  if (!experienceEventEditCoordinates) return;
+  experienceEventEditMap.invalidateSize();
+  experienceEventEditMap.setView([experienceEventEditCoordinates.lat, experienceEventEditCoordinates.lon], 11);
+  if (experienceEventEditMarker) experienceEventEditMap.removeLayer(experienceEventEditMarker);
+  experienceEventEditMarker = L.marker([experienceEventEditCoordinates.lat, experienceEventEditCoordinates.lon]).addTo(experienceEventEditMap);
+}
+
+async function findExperienceEventLocation() {
+  const input = experienceEventEditContent.querySelector("input[name=label]");
+  const query = input?.value.trim();
+  if (!query) return;
+  try {
+    const { lat, lon, label } = await geocodeLocation(query);
+    input.value = label;
+    experienceEventEditCoordinates = { lat, lon };
+    renderExperienceEventEditMap();
+  } catch (error) { setStatus(experienceStatus, error.message, "error"); }
+}
+
+experienceEventEditMap.on("click", async (event) => {
+  try {
+    const label = await reverseGeocodeLocation(event.latlng.lat, event.latlng.lng);
+    const input = experienceEventEditContent.querySelector("input[name=label]");
+    if (input) input.value = label;
+    experienceEventEditCoordinates = { lat: event.latlng.lat, lon: event.latlng.lng };
+    renderExperienceEventEditMap();
+  } catch (error) { setStatus(experienceStatus, error.message, "error"); }
+});
 
 function renderTripSelect() {
   tripListEl.innerHTML = trips.map((trip, index) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}" draggable="${canEditTrip()}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}${index === 0 ? " · Default on login" : ""}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><div class="trip-order-controls" aria-label="Reorder ${escapeHtml(trip.name)}"><button type="button" class="secondary-btn icon-btn" data-move-trip="up" data-trip-id="${escapeHtml(trip.id)}" aria-label="Move ${escapeHtml(trip.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-trip="down" data-trip-id="${escapeHtml(trip.id)}" aria-label="Move ${escapeHtml(trip.name)} down" title="Move down" ${index === trips.length - 1 ? "disabled" : ""}>&darr;</button></div><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
@@ -1859,7 +1953,7 @@ async function saveProfile(event) {
   if (!response.ok) {
     const error = await getSupabaseError(response, "Could not save your profile.");
     if (/avatar_url.*schema cache|column.*avatar_url/i.test(error)) {
-      throw new Error("Your Supabase schema needs the avatar update. Run checkin_map_app/supabase-schema.sql, then refresh the app.");
+      throw new Error("Your Supabase schema needs the avatar update. Run experiences_app/supabase-schema.sql, then refresh the app.");
     }
     throw new Error(error);
   }
@@ -1997,6 +2091,10 @@ backFromExperienceEventCreateBtn.addEventListener("click", closeExperienceEventC
 experienceForm.addEventListener("submit", saveExperience);
 experienceCancelEditBtn.addEventListener("click", resetExperienceForm);
 experienceLocationForm.addEventListener("submit", addExperienceEvent);
+findExperienceEventLocationBtn.addEventListener("click", findNewExperienceEventLocation);
+experienceLocationInput.addEventListener("input", () => {
+  experienceEventCreateCoordinates = null;
+});
 experienceEventMediaInput.addEventListener("change", () => {
   const files = Array.from(experienceEventMediaInput.files);
   pendingExperienceEventFiles.push(...files.slice(0, MAX_MEDIA_FILES - pendingExperienceEventFiles.length));
@@ -2018,6 +2116,7 @@ experienceLocationList?.addEventListener("change", (event) => {
 });
 experienceEventEditContent.addEventListener("click", (event) => {
   if (event.target.closest("[data-cancel-experience-location-edit]")) closeExperienceEventEdit();
+  else if (event.target.closest("[data-find-event-location]")) findExperienceEventLocation();
   else handleExperienceLocationClick(event);
 });
 experienceEventEditContent.addEventListener("submit", saveExperienceLocation);

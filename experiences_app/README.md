@@ -1,7 +1,6 @@
-# Check-In Map
+# Experiences
 
-A browser-based app for checking in known locations on a map by name, keeping a running history of
-your last 100 check-ins, and mapping the GPS location embedded in uploaded photos.
+A browser-based app for recording trips, Experiences, and named Events with maps, locations, and media.
 
 ## Features
 - **Check in** by typing a known place name (city, address, landmark); it's geocoded into coordinates
@@ -11,7 +10,10 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
   persisted permanently in Supabase so they are available across browsers and page refreshes
 - **Multi-user accounts**: sign up and sign in with a unique username; each user has private trips and check-ins
 - **Trips**: create, reorder, and switch between multiple groups of check-ins; the first trip is the default shown at login
-- **Experiences and events**: build private or public Experience collections, add/edit/delete their date-and-time Event locations, and attach photo, video, or audio carousels to every Event
+- **Experiences and events**: build private or public Experience collections, then add named Events with a date/time, location, description, and photo, video, or audio attachments
+- **Event maps**: open an Experience to see all Event pins on a dedicated map, select an Event card to focus its pin, and reset the map to show every Event
+- **Location picking**: find a city, region, or country by name, or choose a precise Event location by clicking the Event creation or editing map
+- **Experience links**: every Experience has a stable copyable URL; enable its Public toggle to share a read-only map, Event list, and media with anyone
 - **Public trip links**: copy a URL to share a read-only trip with anyone; visitors to the home page see the featured public trip by default
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in
@@ -26,7 +28,7 @@ internet connection is required. Open [index.html](index.html) directly in a bro
 folder locally:
 
 ```bash
-cd checkin_map_app
+cd experiences_app
 python3 -m http.server 8000
 ```
 
@@ -41,6 +43,7 @@ Then open http://localhost:8000 in your browser.
 3. Click **Choose a photo** and pick a JPEG photo taken with a phone or camera that recorded GPS data.
   If the photo has location data, a marker appears on the map and the photo is added to both the
   "Check-Ins" history and the photo list below.
+4. Open **Experiences** in the header and create an Experience. Open it to view its Event map, then use **+** to add an Event with a name, location, time, description, and attachments. Use **Edit** on an Event to revise its details, media, or map location.
 
 ## Main files
 - `index.html` — page structure (map, check-in form, check-in list, photo upload)
@@ -51,7 +54,7 @@ Then open http://localhost:8000 in your browser.
 - Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
 - Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
 - Re-run that schema after app updates; it uses idempotent migrations for fields such as `avatar_url`.
-- Existing deployments can add Events without resetting data by running [experiences-migration.sql](experiences-migration.sql) in the Supabase SQL editor, then refreshing the app.
+- Existing deployments can add Experiences and Events without resetting data by running [experiences-migration.sql](experiences-migration.sql) in the Supabase SQL editor, then refreshing the app. Re-run it after Experience updates to apply idempotent fields and policies such as `event_name` and attachment permissions.
 - Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 - Enable email/password authentication in Supabase Auth. Promote the first administrator by changing their
   profile `role` to `admin` in `checkin_map_profiles`.
