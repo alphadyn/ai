@@ -275,7 +275,7 @@ async function handleTripListAction(event) {
     tripPanel.hidden = true;
     tripPanel.classList.remove("trip-panel-open");
     document.body.classList.remove("trips-open");
-    if (checkIns.length > 0) map.setView([checkIns[0].lat, checkIns[0].lon], 10);
+    fitMapToCheckIns();
     setStatus(checkInStatus, `Opened trip "${currentTrip.name}".`, "success");
     return;
   }
@@ -704,6 +704,12 @@ function renderCheckInMarkers() {
       .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}${renderPinMediaCarousel(checkIn)}${canEditCheckIn(checkIn) ? `<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>` : ""}`);
     marker.on("click", () => map.flyTo([checkIn.lat, checkIn.lon], 12, { duration: 0.45 }));
   });
+}
+
+function fitMapToCheckIns() {
+  if (checkIns.length === 0) return;
+  const bounds = L.latLngBounds(checkIns.map((checkIn) => [checkIn.lat, checkIn.lon]));
+  map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
 }
 
 function renderPinMediaCarousel(checkIn) {
