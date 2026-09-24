@@ -13,7 +13,7 @@ A browser-based app for recording trips, Experiences, and named Events with maps
 - **Experiences and events**: build private or public Experience collections, then add named Events with a date/time, location, description, and photo, video, or audio attachments
 - **Event maps**: open an Experience to see all Event pins on a dedicated map, select an Event card to focus its pin, and reset the map to show every Event
 - **Location picking**: find a city, region, or country by name, or choose a precise Event location by clicking the Event creation or editing map
-- **Experience links**: every Experience has a stable copyable URL; enable its Public toggle to open a standalone shared Experience page where visitors can view its map and add or edit named Events with a location, date/time, and description
+- **Experience links**: every Experience has a stable copyable URL; enable its Public toggle to open a standalone shared Experience page where visitors can view its map and add or edit named Events with a location, date/time, description, and attachments
 - **Public trip links**: copy a URL to share a read-only trip with anyone; visitors to the home page see the featured public trip by default
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in

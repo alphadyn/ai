@@ -32,7 +32,7 @@
       <section id="authPanel" class="panel auth-panel" hidden>
         <div class="section-heading"><h2>Account</h2><span id="authModeLabel" class="hint">Sign in</span></div>
         <form id="authForm" class="auth-form">
-          <input id="authUsername" type="text" placeholder="Username" autocomplete="username" pattern="[A-Za-z0-9_.-]{3,32}" required />
+          <input id="authUsername" type="text" placeholder="Username" autocomplete="username" pattern="[A-Za-z0-9_.\-]{3,32}" required />
           <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" minlength="6" required />
           <button type="submit" id="authSubmitBtn" class="primary-btn">Sign in</button>
           <button type="button" id="toggleAuthBtn" class="secondary-btn">Create account</button>

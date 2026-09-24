@@ -245,6 +245,41 @@ create policy "Check-in Map can delete media" on public.checkin_map_media for de
   )
 );
 
+drop policy if exists "Anyone can create public experience media" on public.checkin_map_media;
+create policy "Anyone can create public experience media" on public.checkin_map_media for insert to anon with check (
+  user_id is null and exists (
+    select 1 from public.checkin_map_locations l
+    join public.checkin_map_experiences e on e.id = l.experience_id
+    where l.id = checkin_id and e.is_public = true
+  )
+);
+drop policy if exists "Anyone can delete public experience media" on public.checkin_map_media;
+create policy "Anyone can delete public experience media" on public.checkin_map_media for delete to anon using (
+  exists (
+    select 1 from public.checkin_map_locations l
+    join public.checkin_map_experiences e on e.id = l.experience_id
+    where l.id = checkin_id and e.is_public = true
+  )
+);
+
+drop policy if exists "Anyone can upload public experience media" on storage.objects;
+create policy "Anyone can upload public experience media" on storage.objects for insert to anon with check (
+  bucket_id = 'checkin-map-media' and split_part(name, '/', 1) = 'public-events' and exists (
+    select 1 from public.checkin_map_locations l
+    join public.checkin_map_experiences e on e.id = l.experience_id
+    where l.id::text = split_part(name, '/', 2) and e.is_public = true
+  )
+);
+drop policy if exists "Anyone can delete public experience stored media" on storage.objects;
+create policy "Anyone can delete public experience stored media" on storage.objects for delete to anon using (
+  bucket_id = 'checkin-map-media' and exists (
+    select 1 from public.checkin_map_media m
+    join public.checkin_map_locations l on l.id = m.checkin_id
+    join public.checkin_map_experiences e on e.id = l.experience_id
+    where m.storage_path = storage.objects.name and e.is_public = true
+  )
+);
+
 drop policy if exists "Experience owners can delete stored media" on storage.objects;
 create or replace function public.checkin_map_can_delete_experience_media(object_name text)
 returns boolean language sql security definer set search_path = public

@@ -211,9 +211,10 @@ let draggedTripId = null;
 let authMode = "signin";
 const pageParams = new URLSearchParams(window.location.search);
 const publicExperienceSlug = pageParams.get("experience");
-const publicTripSlug = pageParams.get("trip") || (publicExperienceSlug ? null : DEFAULT_PUBLIC_TRIP_SLUG);
+const isExperienceUrl = Boolean(publicExperienceSlug);
+const publicTripSlug = pageParams.get("trip") || (isExperienceUrl ? null : DEFAULT_PUBLIC_TRIP_SLUG);
 const isPublicTrip = Boolean(publicTripSlug);
-const isPublicExperience = Boolean(publicExperienceSlug);
+let isPublicExperience = false;
 
 function normalizeUsername(value) {
   return value.trim().toLowerCase();
@@ -326,12 +327,20 @@ async function loadTrips() {
   renderTripSelect();
 }
 
-async function loadExperiences() {
+async function loadExperiences(options = {}) {
+  const { scopeToUrl = false } = options;
   const publicRequest = { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } };
-  const response = await supabaseRequest(isPublicExperience ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`, isPublicExperience ? publicRequest : undefined);
+  const useAnonymousExperienceRequest = scopeToUrl && isExperienceUrl && !session;
+  const experiencePath = scopeToUrl && isExperienceUrl
+    ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}${useAnonymousExperienceRequest ? "&is_public=eq.true" : ""}&limit=1`
+    : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`;
+  const response = await supabaseRequest(experiencePath, useAnonymousExperienceRequest ? publicRequest : undefined);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load experiences."));
   experiences = await response.json();
-  if (isPublicExperience && !experiences.length) throw new Error("This public experience does not exist or is no longer shared.");
+  if (scopeToUrl) {
+    isPublicExperience = Boolean(experiences[0]?.is_public);
+    if (!experiences.length) throw new Error("This experience is private or no longer exists.");
+  }
   if (activeExperience) activeExperience = experiences.find((experience) => experience.id === activeExperience.id) || null;
   renderExperiences();
 }
@@ -365,18 +374,30 @@ function resetExperienceForm() {
   experienceCancelEditBtn.hidden = true;
 }
 
-function showExperienceIndex() {
+function showExperienceScreen(screen) {
+  const screens = {
+    index: experienceIndexScreen,
+    create: experienceCreateScreen,
+    detail: experienceDetail,
+    eventCreate: experienceEventCreateScreen,
+    eventEdit: experienceEventEditScreen,
+  };
+  Object.entries(screens).forEach(([name, element]) => { element.hidden = name !== screen; });
+}
+
+async function showExperienceIndex() {
   activeExperience = null;
   experienceLocations = [];
   experienceViewMode = "view";
   experienceLayer.clearLayers();
   experiencePanel.classList.remove("experience-detail-open");
-  experienceIndexScreen.hidden = false;
-  experienceCreateScreen.hidden = true;
-  experienceDetail.hidden = true;
-  experienceEventCreateScreen.hidden = true;
-  experienceEventEditScreen.hidden = true;
+  showExperienceScreen("index");
   resetExperienceForm();
+  if (session && isExperienceUrl) {
+    history.replaceState(null, "", window.location.pathname);
+    await loadExperiences();
+    return;
+  }
   renderExperiences();
 }
 
@@ -385,11 +406,7 @@ function showExperienceCreate() {
   experienceLocations = [];
   experienceLayer.clearLayers();
   experiencePanel.classList.remove("experience-detail-open");
-  experienceIndexScreen.hidden = true;
-  experienceCreateScreen.hidden = false;
-  experienceDetail.hidden = true;
-  experienceEventCreateScreen.hidden = true;
-  experienceEventEditScreen.hidden = true;
+  showExperienceScreen("create");
   resetExperienceForm();
   experienceNameInput.focus();
 }
@@ -500,19 +517,19 @@ function renderExperienceMediaAvatars(location) {
     const avatar = media.type.startsWith("image/")
       ? `<img src="${escapeHtml(media.dataUrl)}" alt="${escapeHtml(media.name)}" />`
       : `<span class="event-media-file-type">${media.type.startsWith("video/") ? "Video" : media.type.startsWith("audio/") ? "Audio" : "File"}</span>`;
-    const removeButton = canEditExperience(activeExperience) ? `<button type="button" class="event-media-remove" data-delete-experience-media-id="${escapeHtml(media.id)}" data-experience-location-id="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(media.name)}" title="Delete attachment">&times;</button>` : "";
+    const removeButton = canEditExperience(activeExperience) || canCollaboratePublicExperience() ? `<button type="button" class="event-media-remove" data-delete-experience-media-id="${escapeHtml(media.id)}" data-experience-location-id="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(media.name)}" title="Delete attachment">&times;</button>` : "";
     return `<div class="event-media-avatar" title="${escapeHtml(media.name)}">${avatar}${removeButton}</div>`;
   }).join("")}</div>`;
 }
 
 function renderExperienceLocationEditor(location) {
-  const canManageAttachments = canEditExperience(activeExperience);
+  const attachments = `<label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>${renderExperienceMediaAvatars(location)}`;
   return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
   <label>Event name<input name="eventName" value="${escapeHtml(location.eventName || location.label)}" required /></label>
   <label>Location<input name="label" value="${escapeHtml(location.label)}" required /><button type="button" class="secondary-btn event-location-find-btn" data-find-event-location>Find location on map</button></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
-      ${canManageAttachments ? `<label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>${renderExperienceMediaAvatars(location)}` : ""}
+      ${attachments}
       <div class="edit-checkin-actions"><button type="submit" class="primary-btn">Save event</button><button type="button" class="secondary-btn" data-cancel-experience-location-edit>Cancel</button></div>
     </form>`;
 }
@@ -554,7 +571,7 @@ async function addExperienceEvent(event) {
   const timestamp = new Date(experienceTimeInput.value);
   const description = experienceEventDescriptionInput.value.trim();
   if (!eventName || !query || Number.isNaN(timestamp.getTime())) return;
-  const files = canAddPublicEvent ? [] : pendingExperienceEventFiles;
+  const files = pendingExperienceEventFiles;
   const oversizedFile = files.find((file) => file.size > MAX_MEDIA_SIZE);
   if (oversizedFile) {
     setStatus(experienceStatus, `${oversizedFile.name} is larger than 5 MB.`, "error");
@@ -578,8 +595,7 @@ async function addExperienceEvent(event) {
     if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
     experienceEventCreateMarker = null;
     experienceTimeInput.value = formatDateTimeInput(new Date().toISOString());
-    experienceEventCreateScreen.hidden = true;
-    experienceDetail.hidden = false;
+    showExperienceScreen("detail");
     renderExperienceLocations();
     renderExperienceMarkers();
     map.flyTo([lat, lon], 12, { duration: 0.45 });
@@ -615,12 +631,8 @@ async function openExperience(id, options = {}) {
   activeExperience = experiences.find((experience) => experience.id === id) || null;
   experienceViewMode = options.edit ? "edit" : "view";
   editingExperienceLocationId = null;
-  experienceIndexScreen.hidden = true;
-  experienceCreateScreen.hidden = true;
-  experienceDetail.hidden = false;
-  experienceEventCreateScreen.hidden = true;
+  showExperienceScreen("detail");
   experiencePanel.classList.add("experience-detail-open");
-  experienceEventEditScreen.hidden = true;
   await loadExperienceLocations();
   renderExperiences();
   window.setTimeout(fitExperienceMap, 0);
@@ -665,8 +677,7 @@ async function saveExperienceLocation(event) {
       : await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, lat: location.lat, lon: location.lon, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
-    experienceEventEditScreen.hidden = true;
-    experienceDetail.hidden = false;
+    showExperienceScreen("detail");
     renderExperienceLocations();
     renderExperienceMarkers();
     setStatus(experienceStatus, "Location updated.", "success");
@@ -712,8 +723,7 @@ function closeExperiences() {
   activeExperience = null;
   experienceLocations = [];
   experienceLayer.clearLayers();
-  experienceEventCreateScreen.hidden = true;
-  experienceEventEditScreen.hidden = true;
+  showExperienceScreen("index");
   resetExperienceForm();
   unlockTripPageScroll();
 }
@@ -728,12 +738,8 @@ function openExperienceEventForm() {
   experienceEventCreateCoordinates = null;
   if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
   experienceEventCreateMarker = null;
-  experienceIndexScreen.hidden = true;
-  experienceCreateScreen.hidden = true;
-  experienceDetail.hidden = true;
-  experienceEventEditScreen.hidden = true;
+  showExperienceScreen("eventCreate");
   experienceLocationForm.hidden = false;
-  experienceEventCreateScreen.hidden = false;
   experienceEventMediaInput.closest(".event-attachment-picker").hidden = isPublicExperience;
   experienceEventMediaPreview.hidden = isPublicExperience;
   window.setTimeout(() => experienceEventCreateMap.invalidateSize(), 0);
@@ -747,12 +753,8 @@ function closeExperienceEventCreate() {
   experienceEventCreateCoordinates = null;
   if (experienceEventCreateMarker) experienceEventCreateMap.removeLayer(experienceEventCreateMarker);
   experienceEventCreateMarker = null;
-  experienceIndexScreen.hidden = true;
-  experienceCreateScreen.hidden = true;
   experienceLocationForm.hidden = true;
-  experienceEventCreateScreen.hidden = true;
-  experienceEventEditScreen.hidden = true;
-  experienceDetail.hidden = false;
+  showExperienceScreen("detail");
 }
 
 function setExperienceEventCreateLocation(lat, lon, label) {
@@ -796,17 +798,19 @@ function openExperienceDetailsForm() {
   experienceDescriptionInput.value = activeExperience.description || "";
   experienceSaveBtn.textContent = "Save experience";
   experienceCancelEditBtn.hidden = false;
-  experienceIndexScreen.hidden = true;
-  experienceCreateScreen.hidden = false;
-  experienceDetail.hidden = true;
+  showExperienceScreen("create");
   experienceNameInput.focus();
 }
 
 async function handleExperienceClick(event) {
   const card = event.target.closest(".experience-card");
   if (card && !event.target.closest("button, input, label")) {
-    const id = card.querySelector("[data-edit-experience]")?.dataset.editExperience;
-    if (id) await openExperience(id);
+    const experience = experiences.find((item) => item.id === card.dataset.experienceId);
+    if (!experience) return;
+    try {
+      const url = await experienceUrl(experience);
+      window.open(url, "_blank", "noopener");
+    } catch (error) { setStatus(experienceStatus, error.message, "error"); }
     return;
   }
   const editButton = event.target.closest("[data-edit-experience]");
@@ -847,14 +851,18 @@ async function updateExperienceSharing(id, isPublic) {
 async function copyExperienceUrl(id) {
   const experience = experiences.find((item) => item.id === id);
   if (!experience || !canEditExperience(experience)) return;
+  await navigator.clipboard.writeText(await experienceUrl(experience));
+  setStatus(experienceStatus, experience.is_public ? "Public experience URL copied." : "Private experience URL copied. It requires owner sign-in.", "success");
+}
+
+async function experienceUrl(experience) {
   const slug = experience.public_slug || createPublicSlug(experience.name);
   if (!experience.public_slug) {
-    const response = await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ public_slug: slug, updated_at: new Date().toISOString() }) });
+    const response = await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(experience.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ public_slug: slug, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create the experience URL."));
     experience.public_slug = slug;
   }
-  await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`);
-  setStatus(experienceStatus, experience.is_public ? "Public experience URL copied." : "Experience URL copied. Enable Public before sharing it.", "success");
+  return `${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`;
 }
 
 async function handleExperienceChange(event) {
@@ -904,8 +912,8 @@ function openExperienceEventEdit(id) {
   editingExperienceLocationId = id;
   experienceEventEditName.textContent = location.eventName || location.label;
   experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
-  experienceDetail.hidden = true;
-  experienceEventEditScreen.hidden = false;
+  showExperienceScreen("eventEdit");
+  experiencePanel.classList.add("experience-event-edit-open");
   experienceEventEditMapElement.hidden = true;
   experienceEventEditCoordinates = { lat: location.lat, lon: location.lon };
   experienceEventEditContent.querySelector("input[name=label]")?.focus();
@@ -917,8 +925,8 @@ function closeExperienceEventEdit() {
   if (experienceEventEditMarker) experienceEventEditMap.removeLayer(experienceEventEditMarker);
   experienceEventEditMarker = null;
   experienceEventEditMapElement.hidden = true;
-  experienceEventEditScreen.hidden = true;
-  experienceDetail.hidden = false;
+  experiencePanel.classList.remove("experience-event-edit-open");
+  showExperienceScreen("detail");
   renderExperienceLocations();
 }
 
@@ -1196,24 +1204,25 @@ async function saveCheckIn(checkIn) {
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not save the check-in to Supabase."));
 }
 
-async function deleteStoredMedia(media) {
+async function deleteStoredMedia(media, options = {}) {
   if (!media.storagePath) return;
-  const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${media.storagePath.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE" });
+  const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${media.storagePath.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE", ...options });
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not remove attached media from Supabase."));
 }
 
 async function deleteExperienceMedia(locationId, mediaId) {
   const location = experienceLocations.find((item) => item.id === locationId);
   const media = location?.media.find((item) => item.id === mediaId);
-  if (!location || !media || !canEditExperience(activeExperience)) return;
+  if (!location || !media || (!canEditExperience(activeExperience) && !canCollaboratePublicExperience())) return;
   try {
-    const response = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}?id=eq.${encodeURIComponent(media.id)}`, { method: "DELETE" });
+    const publicRequest = canCollaboratePublicExperience() ? { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } } : {};
+    const response = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}?id=eq.${encodeURIComponent(media.id)}`, { method: "DELETE", ...publicRequest });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not delete the attachment."));
     location.media = location.media.filter((item) => item.id !== media.id);
     renderExperienceLocations();
     renderExperienceMarkers();
     setStatus(experienceStatus, "Attachment deleted.", "success");
-    deleteStoredMedia(media).catch(() => {});
+    deleteStoredMedia(media, publicRequest).catch(() => {});
   } catch (error) { setStatus(experienceStatus, error.message, "error"); }
 }
 
@@ -1299,6 +1308,10 @@ function canEditCheckIn(checkIn) {
 
 function canEditExperience(experience) {
   return Boolean(session && experience && (isAdmin() || experience.user_id === session.user.id));
+}
+
+function canCollaboratePublicExperience() {
+  return Boolean(isPublicExperience && activeExperience?.is_public);
 }
 
 function updateCheckInTripName() {
@@ -1768,11 +1781,14 @@ function readFileAsDataUrl(file) {
 
 async function uploadMediaFile(checkIn, file) {
   const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
-  const storagePath = `${session.user.id}/${checkIn.id}/${createId()}-${safeName}`;
+  const isPublicAttachment = canCollaboratePublicExperience();
+  const storagePath = isPublicAttachment
+    ? `public-events/${checkIn.id}/${createId()}-${safeName}`
+    : `${session.user.id}/${checkIn.id}/${createId()}-${safeName}`;
   const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
   const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}`, {
     method: "POST",
-    headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" },
+    headers: { ...(isPublicAttachment ? { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } : {}), "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" },
     body: file,
   });
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not upload media to Supabase Storage."));
@@ -1781,11 +1797,11 @@ async function uploadMediaFile(checkIn, file) {
   const media = { id: createId(), name: file.name, type: file.type || "application/octet-stream", storagePath, dataUrl: publicUrl };
   const metadataResponse = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}`, {
     method: "POST",
-    headers: { Prefer: "return=minimal" },
+    headers: { ...(isPublicAttachment ? { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } : {}), Prefer: "return=minimal" },
     body: JSON.stringify({
       id: media.id,
       checkin_id: checkIn.id,
-      user_id: session.user.id,
+      user_id: isPublicAttachment ? null : session.user.id,
       name: media.name,
       mime_type: media.type,
       storage_path: media.storagePath,
@@ -2314,37 +2330,46 @@ async function initializeApp() {
   renderPhotoList();
   document.body.classList.remove("public-trip-view");
   document.body.classList.remove("public-experience-view");
-  if (isPublicExperience) {
-    authPanel.hidden = true;
-    appContent.hidden = false;
-    setAuthUi(false, { keepAppVisible: true });
-    setLoggedOutPreview(false);
-    document.body.classList.add("public-trip-view");
-    document.body.classList.add("public-experience-view");
-    try {
-      await loadExperiences();
-      activeExperience = experiences[0] || null;
-      experienceViewMode = "view";
-      experienceIndexScreen.hidden = true;
-      experienceCreateScreen.hidden = true;
-      experienceEventCreateScreen.hidden = true;
-      experienceEventEditScreen.hidden = true;
-      experienceDetail.hidden = false;
-      experiencePanel.classList.add("experience-detail-open");
-      renderExperiences();
-      await loadExperienceLocations();
-      experiencePanel.hidden = false;
-      experiencePanel.classList.remove("trip-panel-open");
-      userStatus.textContent = `Experience: ${activeExperience.name}`;
-      window.setTimeout(() => {
-        map.invalidateSize();
-        fitExperienceMap();
-        if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
-      }, 0);
-    } catch (error) {
-      setStatus(checkInStatus, error.message, "error");
-      setLoggedOutPreview(true);
+  if (isExperienceUrl) {
+    const restoredSession = await restoreSession();
+    if (restoredSession) {
+      session = restoredSession;
+      await loadProfile();
+      appContent.hidden = false;
+      setAuthUi(true);
+      userStatus.textContent = profile.username || profile.display_name;
+      updateAvatar(profile.avatar_url);
+      adminPanel.hidden = profile.role !== "admin";
     }
+    try {
+      await loadExperiences({ scopeToUrl: true });
+    } catch (error) {
+      session = null;
+      profile = null;
+      setAuthUi(false);
+      appContent.hidden = true;
+      authPanel.hidden = false;
+      setStatus(authStatus, "Sign in to open this private experience.", "error");
+      return;
+    }
+    activeExperience = experiences[0] || null;
+    experienceViewMode = restoredSession && canEditExperience(activeExperience) ? "edit" : "view";
+    showExperienceScreen("detail");
+    experiencePanel.classList.add("experience-detail-open");
+    renderExperiences();
+    await loadExperienceLocations();
+    experiencePanel.hidden = false;
+    experiencePanel.classList.remove("trip-panel-open");
+    if (isPublicExperience && !restoredSession) {
+      setAuthUi(false, { keepAppVisible: true });
+      document.body.classList.add("public-trip-view", "public-experience-view");
+      userStatus.textContent = `Experience: ${activeExperience.name}`;
+    }
+    window.setTimeout(() => {
+      map.invalidateSize();
+      fitExperienceMap();
+      if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
+    }, 0);
     return;
   }
   if (isPublicTrip) {
