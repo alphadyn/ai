@@ -1299,6 +1299,7 @@ async function saveProfile(event) {
 async function enterApp(nextSession) {
   session = nextSession;
   setLoggedOutPreview(false);
+  document.body.classList.remove("public-trip-view");
   await loadProfile();
   authPanel.hidden = true;
   appContent.hidden = false;
