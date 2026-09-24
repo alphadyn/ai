@@ -24,6 +24,7 @@
           <button type="button" id="createProfileBtn" class="secondary-btn">Sign up</button>
           <button type="button" id="profileBtn" class="secondary-btn" hidden>Profile</button>
           <button type="button" id="tripsBtn" class="secondary-btn" hidden>Trips</button>
+          <button type="button" id="experiencesBtn" class="secondary-btn" hidden>Experiences</button>
           <button type="button" id="signOutBtn" class="secondary-btn" hidden>Sign out</button>
         </div>
       </header>
@@ -55,6 +56,35 @@
           <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn icon-btn" aria-label="New trip" title="New trip">+</button><button type="button" id="closeTripsBtn" class="secondary-btn icon-btn" aria-label="Close trips" title="Close trips">&times;</button></div></div>
           <div id="tripList" class="trip-list"></div>
           <span id="tripStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section id="experiencePanel" class="panel experience-panel" hidden>
+          <section id="experienceIndexScreen">
+            <div class="section-heading"><div><p class="panel-kicker">Remember</p><h2>Experiences</h2></div><div class="trip-heading-actions"><button type="button" id="newExperienceBtn" class="secondary-btn icon-btn" aria-label="New experience" title="New experience">+</button><button type="button" id="closeExperiencesBtn" class="secondary-btn icon-btn" aria-label="Close experiences" title="Close experiences">&times;</button></div></div>
+            <span id="experienceStatus" class="status-text" role="status"></span>
+            <div id="experienceList" class="experience-list"></div>
+          </section>
+          <section id="experienceCreateScreen" hidden>
+            <div class="section-heading"><div><p class="panel-kicker">Remember</p><h2>New experience</h2></div><button type="button" id="backFromExperienceCreateBtn" class="secondary-btn">Back</button></div>
+            <form id="experienceForm" class="experience-form">
+              <input id="experienceIdInput" type="hidden" />
+              <label>Experience name<input id="experienceNameInput" type="text" maxlength="100" placeholder="e.g. Sunset in Lisbon" required /></label>
+              <label>Story or description<textarea id="experienceDescriptionInput" rows="3" maxlength="1000" placeholder="Capture the feeling, people, or details you want to remember."></textarea></label>
+              <div class="experience-form-actions"><button type="submit" id="experienceSaveBtn" class="primary-btn">Create experience</button><button type="button" id="experienceCancelEditBtn" class="secondary-btn" hidden>Cancel edit</button></div>
+            </form>
+          </section>
+          <section id="experienceDetail" class="experience-detail" hidden>
+            <div class="experience-detail-heading"><div><p class="panel-kicker">Edit experience</p><h3 id="activeExperienceName"></h3></div><div class="experience-detail-actions"><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit details</button><button type="button" id="experienceDoneBtn" class="secondary-btn">Back</button></div></div>
+            <p id="activeExperienceDescription" class="experience-description"></p>
+            <form id="experienceLocationForm" class="experience-location-form" hidden>
+              <label>Location<input id="experienceLocationInput" type="text" placeholder="Search for a location" required /></label>
+              <label>When<input id="experienceTimeInput" type="datetime-local" required /></label>
+              <label>Description<textarea id="experienceEventDescriptionInput" rows="2" maxlength="500" placeholder="What made this event memorable?"></textarea></label>
+              <button type="submit" class="primary-btn">Save event</button>
+            </form>
+            <div class="experience-events-heading"><h4>Events</h4><button type="button" id="newExperienceEventBtn" class="secondary-btn icon-btn" aria-label="Add event" title="Add event">+</button></div>
+            <ol id="experienceLocationList" class="experience-location-list"></ol>
+          </section>
         </section>
 
         <section id="newTripPanel" class="panel new-trip-panel" hidden>

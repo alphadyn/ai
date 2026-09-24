@@ -11,6 +11,7 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
   persisted permanently in Supabase so they are available across browsers and page refreshes
 - **Multi-user accounts**: sign up and sign in with a unique username; each user has private trips and check-ins
 - **Trips**: create, reorder, and switch between multiple groups of check-ins; the first trip is the default shown at login
+- **Experiences and events**: build private or public Experience collections, add/edit/delete their date-and-time Event locations, and attach photo, video, or audio carousels to every Event
 - **Public trip links**: copy a URL to share a read-only trip with anyone; visitors to the home page see the featured public trip by default
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in
@@ -50,6 +51,7 @@ Then open http://localhost:8000 in your browser.
 - Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
 - Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
 - Re-run that schema after app updates; it uses idempotent migrations for fields such as `avatar_url`.
+- Existing deployments can add Events without resetting data by running [experiences-migration.sql](experiences-migration.sql) in the Supabase SQL editor, then refreshing the app.
 - Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 - Enable email/password authentication in Supabase Auth. Promote the first administrator by changing their
   profile `role` to `admin` in `checkin_map_profiles`.
