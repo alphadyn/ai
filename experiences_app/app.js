@@ -395,6 +395,7 @@ async function showExperienceIndex() {
   resetExperienceForm();
   if (session && isExperienceUrl) {
     history.replaceState(null, "", window.location.pathname);
+    document.body.classList.remove("public-experience-view");
     await loadExperiences();
     return;
   }
@@ -807,10 +808,23 @@ async function handleExperienceClick(event) {
   if (card && !event.target.closest("button, input, label")) {
     const experience = experiences.find((item) => item.id === card.dataset.experienceId);
     if (!experience) return;
+    if (experience.public_slug) {
+      window.open(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(experience.public_slug)}`, "_blank", "noopener");
+      return;
+    }
+    const experienceTab = window.open("about:blank", "_blank");
+    if (!experienceTab) {
+      setStatus(experienceStatus, "Your browser blocked the Experience tab.", "error");
+      return;
+    }
+    experienceTab.opener = null;
     try {
       const url = await experienceUrl(experience);
-      window.open(url, "_blank", "noopener");
-    } catch (error) { setStatus(experienceStatus, error.message, "error"); }
+      experienceTab.location.replace(url);
+    } catch (error) {
+      experienceTab.close();
+      setStatus(experienceStatus, error.message, "error");
+    }
     return;
   }
   const editButton = event.target.closest("[data-edit-experience]");
@@ -2346,30 +2360,42 @@ async function initializeApp() {
     } catch (error) {
       session = null;
       profile = null;
+      document.body.classList.remove("public-experience-view");
       setAuthUi(false);
       appContent.hidden = true;
       authPanel.hidden = false;
-      setStatus(authStatus, "Sign in to open this private experience.", "error");
+      setStatus(authStatus, `Could not open this experience: ${error.message}`, "error");
       return;
     }
-    activeExperience = experiences[0] || null;
-    experienceViewMode = restoredSession && canEditExperience(activeExperience) ? "edit" : "view";
-    showExperienceScreen("detail");
-    experiencePanel.classList.add("experience-detail-open");
-    renderExperiences();
-    await loadExperienceLocations();
-    experiencePanel.hidden = false;
-    experiencePanel.classList.remove("trip-panel-open");
-    if (isPublicExperience && !restoredSession) {
-      setAuthUi(false, { keepAppVisible: true });
-      document.body.classList.add("public-trip-view", "public-experience-view");
-      userStatus.textContent = `Experience: ${activeExperience.name}`;
+    try {
+      activeExperience = experiences[0] || null;
+      document.body.classList.add("public-experience-view");
+      experienceViewMode = restoredSession && canEditExperience(activeExperience) ? "edit" : "view";
+      showExperienceScreen("detail");
+      experiencePanel.classList.add("experience-detail-open");
+      renderExperiences();
+      if (isPublicExperience && !restoredSession) {
+        setAuthUi(false, { keepAppVisible: true });
+        userStatus.textContent = `Experience: ${activeExperience.name}`;
+      }
+      appContent.hidden = false;
+      experiencePanel.hidden = false;
+      experiencePanel.classList.remove("trip-panel-open");
+      try {
+        await loadExperienceLocations();
+      } catch (error) {
+        experienceLocationList.innerHTML = `<li class="form-error">Could not load events: ${escapeHtml(error.message)}</li>`;
+      }
+      window.setTimeout(() => {
+        map.invalidateSize();
+        fitExperienceMap();
+        if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
+      }, 0);
+    } catch (error) {
+      appContent.hidden = false;
+      experiencePanel.hidden = false;
+      experiencePanel.innerHTML = `<p class="form-error">Could not display this experience: ${escapeHtml(error.message)}</p>`;
     }
-    window.setTimeout(() => {
-      map.invalidateSize();
-      fitExperienceMap();
-      if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
-    }, 0);
     return;
   }
   if (isPublicTrip) {
