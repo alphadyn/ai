@@ -10,6 +10,7 @@ const MEDIA_TABLE = "checkin_map_media";
 const TRIPS_TABLE = "checkin_map_trips";
 const PROFILES_TABLE = "checkin_map_profiles";
 const AUTH_SESSION_KEY = "checkin-map-app:auth-session";
+const DEFAULT_PUBLIC_TRIP_SLUG = "test-69250751";
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
@@ -121,7 +122,7 @@ let trips = [];
 let currentTrip = null;
 let draggedTripId = null;
 let authMode = "signin";
-const publicTripSlug = new URLSearchParams(window.location.search).get("trip");
+const publicTripSlug = new URLSearchParams(window.location.search).get("trip") || DEFAULT_PUBLIC_TRIP_SLUG;
 const isPublicTrip = Boolean(publicTripSlug);
 
 function normalizeUsername(value) {
