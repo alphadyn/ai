@@ -1100,6 +1100,22 @@ function updateAvatar(url) {
   userAvatar.hidden = !url;
 }
 
+function setAuthUi(isAuthenticated) {
+  loginBtn.hidden = isAuthenticated;
+  profileBtn.hidden = !isAuthenticated;
+  tripsBtn.hidden = !isAuthenticated;
+  signOutBtn.hidden = !isAuthenticated;
+  if (!isAuthenticated) {
+    userStatus.textContent = "Sign in to continue";
+    updateAvatar("");
+    appContent.hidden = true;
+    authPanel.hidden = true;
+    closeProfile();
+    tripPanel.hidden = true;
+    document.body.classList.remove("trips-open");
+  }
+}
+
 async function uploadAvatar(file) {
   const extension = file.name.split(".").pop().replace(/[^a-z0-9]/gi, "") || "jpg";
   const storagePath = `avatars/${session.user.id}.${extension}`;
@@ -1145,10 +1161,7 @@ async function enterApp(nextSession) {
   await loadProfile();
   authPanel.hidden = true;
   appContent.hidden = false;
-  signOutBtn.hidden = false;
-  loginBtn.hidden = true;
-  profileBtn.hidden = false;
-  tripsBtn.hidden = false;
+  setAuthUi(true);
   userStatus.textContent = profile.username || profile.display_name;
   updateAvatar(profile.avatar_url);
   adminPanel.hidden = profile.role !== "admin";
@@ -1240,7 +1253,14 @@ toggleAuthBtn.addEventListener("click", () => {
 });
 signOutBtn.addEventListener("click", () => {
   clearStoredSession();
-  window.location.reload();
+  session = null;
+  profile = null;
+  trips = [];
+  currentTrip = null;
+  checkIns = [];
+  renderCheckInList();
+  renderCheckInMarkers();
+  setAuthUi(false);
 });
 tripListEl.addEventListener("click", handleTripListAction);
 newTripBtn.addEventListener("click", () => {
