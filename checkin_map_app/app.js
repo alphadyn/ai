@@ -65,20 +65,13 @@ const renameTripNameInput = document.getElementById("renameTripNameInput");
 const backFromRenameBtn = document.getElementById("backFromRenameBtn");
 const cancelRenameBtn = document.getElementById("cancelRenameBtn");
 const renameTripStatus = document.getElementById("renameTripStatus");
-const tripSelect = document.getElementById("tripSelect");
 const tripListEl = document.getElementById("tripList");
 const newTripBtn = document.getElementById("newTripBtn");
-const tripNameInput = document.getElementById("tripNameInput");
-const saveTripBtn = document.getElementById("saveTripBtn");
-const tripEditNameInput = document.getElementById("tripEditNameInput");
-const saveTripDetailsBtn = document.getElementById("saveTripDetailsBtn");
 const tripStatus = document.getElementById("tripStatus");
 const adminPanel = document.getElementById("adminPanel");
 const adminContent = document.getElementById("adminContent");
 const adminStatus = document.getElementById("adminStatus");
 const refreshAdminBtn = document.getElementById("refreshAdminBtn");
-const shareTripBtn = document.getElementById("shareTripBtn");
-const toggleTripPublicBtn = document.getElementById("toggleTripPublicBtn");
 
 const mapElement = document.getElementById("map");
 const worldFitZoom = Math.max(
@@ -225,17 +218,6 @@ async function loadTrips() {
 
 function renderTripSelect() {
   tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><input type="text" maxlength="100" value="${escapeHtml(trip.name)}" data-trip-name="${escapeHtml(trip.id)}" aria-label="Trip name" /><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
-  updateTripSharingControls();
-}
-
-function updateTripSharingControls() {
-  if (tripListEl) return;
-  const ownerView = Boolean(canEditTrip() && !isPublicTrip);
-  toggleTripPublicBtn.hidden = !ownerView;
-  shareTripBtn.hidden = !ownerView || !currentTrip.is_public;
-  tripEditNameInput.hidden = !ownerView;
-  saveTripDetailsBtn.hidden = !ownerView;
-  toggleTripPublicBtn.checked = Boolean(currentTrip?.is_public);
 }
 
 async function saveTripCard(tripId) {
@@ -329,58 +311,6 @@ async function copyTripUrl() {
   const url = `${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(slug)}`;
   await navigator.clipboard.writeText(url);
   setStatus(tripStatus, "Public trip URL copied.", "success");
-}
-
-async function toggleTripPublic() {
-  if (!canEditTrip() || isPublicTrip) return;
-  const isPublic = toggleTripPublicBtn.checked;
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ is_public: isPublic }),
-  });
-  if (!response.ok) {
-    toggleTripPublicBtn.checked = Boolean(currentTrip.is_public);
-    throw new Error(await getSupabaseError(response, "Could not update trip visibility."));
-  }
-  currentTrip.is_public = isPublic;
-  updateTripSharingControls();
-  setStatus(tripStatus, isPublic ? "Trip is now public." : "Trip is now private.", "success");
-}
-
-async function createTrip() {
-  const name = tripNameInput.value.trim();
-  if (!name) return;
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ name, is_public: false, public_slug: createPublicSlug(name) }) });
-  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create trip."));
-  const [trip] = await response.json();
-  trips.push(trip);
-  currentTrip = trip;
-  renderTripSelect();
-  await loadCheckIns();
-  renderCheckInList();
-  renderCheckInMarkers();
-  tripNameInput.value = "";
-  tripNameInput.hidden = true;
-  saveTripBtn.hidden = true;
-  setStatus(tripStatus, `Trip "${trip.name}" created.`, "success");
-}
-
-async function saveTripDetails() {
-  if (!canEditTrip() || isPublicTrip) return;
-  const name = tripEditNameInput.value.trim();
-  if (!name) throw new Error("Enter a name for this trip.");
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ name }),
-  });
-  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the trip name."));
-  currentTrip.name = name;
-  const selectedTrip = trips.find((trip) => trip.id === currentTrip.id);
-  if (selectedTrip) selectedTrip.name = name;
-  renderTripSelect();
-  setStatus(tripStatus, "Trip name saved.", "success");
 }
 
 async function getSupabaseError(response, fallback) {
@@ -1384,9 +1314,6 @@ newTripForm.addEventListener("submit", saveNewTrip);
 backFromRenameBtn.addEventListener("click", closeRenameTripScreen);
 cancelRenameBtn.addEventListener("click", closeRenameTripScreen);
 renameTripForm.addEventListener("submit", saveRenamedTrip);
-saveTripBtn.addEventListener("click", async () => {
-  try { await createTrip(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
-});
 refreshAdminBtn.addEventListener("click", async () => {
   try { await loadAdminData(); setStatus(adminStatus, "Admin data refreshed.", "success"); } catch (error) { setStatus(adminStatus, error.message, "error"); }
 });

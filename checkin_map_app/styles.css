@@ -1009,6 +1009,23 @@ body.profile-open::before {
   font-weight: 400;
 }
 
+.edit-checkin-form textarea {
+  width: 100%;
+  min-height: 4.5rem;
+  resize: vertical;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--ink);
+  font: inherit;
+}
+
+.edit-checkin-form textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
 .edit-checkin-actions {
   display: flex;
   gap: 0.5rem;
