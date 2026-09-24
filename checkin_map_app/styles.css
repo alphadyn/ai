@@ -299,6 +299,26 @@ select:focus-visible {
 
 .experience-form-actions { display: flex; gap: 0.45rem; }
 
+.experience-create-screen { max-width: 720px; margin: 0 auto; padding: 0.35rem 0 0.85rem; }
+.experience-create-screen .section-heading { padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.experience-create-screen .section-heading h2 { font-size: 1.42rem; }
+.experience-create-form {
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffffff 0%, #f4faf7 100%);
+  box-shadow: 0 12px 28px rgba(31, 52, 45, 0.08);
+}
+.experience-create-form label { gap: 0.45rem; font-size: 0.84rem; }
+.experience-create-form input,
+.experience-create-form textarea { padding: 0.8rem 0.9rem; border-radius: 8px; }
+.experience-create-form textarea { min-height: 9rem; line-height: 1.5; }
+.experience-create-form .experience-form-actions { justify-content: flex-end; padding-top: 0.35rem; border-top: 1px solid var(--border); }
+.experience-create-form .primary-btn { min-width: 10rem; }
+
 .experience-list {
   display: grid;
   grid-template-columns: 1fr;
