@@ -20,8 +20,8 @@
         <div class="account-bar">
           <span id="userStatus" class="status-text">Sign in to continue</span>
           <img id="userAvatar" class="user-avatar" alt="" hidden />
-          <button type="button" id="loginBtn" class="primary-btn">Log in</button>
-          <button type="button" id="createProfileBtn" class="secondary-btn">Sign up</button>
+          <button type="button" id="loginBtn" class="auth-tab primary-btn is-active">Log in</button>
+          <button type="button" id="createProfileBtn" class="auth-tab secondary-btn">Sign up</button>
           <button type="button" id="profileBtn" class="secondary-btn" hidden>Profile</button>
           <button type="button" id="tripsBtn" class="secondary-btn" hidden>Trips</button>
           <button type="button" id="experiencesBtn" class="secondary-btn" hidden>Experiences</button>
@@ -30,12 +30,13 @@
       </header>
 
       <section id="authPanel" class="panel auth-panel" hidden>
-        <div class="section-heading"><h2>Account</h2><span id="authModeLabel" class="hint">Sign in</span></div>
+        <div class="section-heading auth-switcher-heading">
+          <h2 id="authModeLabel">Log in</h2>
+        </div>
         <form id="authForm" class="auth-form">
           <input id="authUsername" type="text" placeholder="Username" autocomplete="username" pattern="[A-Za-z0-9_.\-]{3,32}" required />
           <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" minlength="6" required />
-          <button type="submit" id="authSubmitBtn" class="primary-btn">Sign in</button>
-          <button type="button" id="toggleAuthBtn" class="secondary-btn">Create account</button>
+          <button type="submit" id="authSubmitBtn" class="primary-btn">Log in</button>
         </form>
         <span id="authStatus" class="status-text" role="status"></span>
       </section>
