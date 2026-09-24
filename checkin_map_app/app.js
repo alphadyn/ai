@@ -1,16 +1,24 @@
 const STORAGE_KEY = "checkin-map-app:checkins";
 const MAX_CHECKINS = 10;
+const MAX_MEDIA_FILES = 5;
+const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
 const checkInBtn = document.getElementById("checkInBtn");
 const checkInStatus = document.getElementById("checkInStatus");
 const checkInListEl = document.getElementById("checkInList");
+const clearCheckInsBtn = document.getElementById("clearCheckInsBtn");
 const photoInput = document.getElementById("photoInput");
 const photoStatus = document.getElementById("photoStatus");
 const photoListEl = document.getElementById("photoList");
 
-const map = L.map("map").setView([20, 0], 2);
+const mapElement = document.getElementById("map");
+const worldFitZoom = Math.max(
+  0,
+  Math.min(Math.log2(mapElement.clientWidth / 256), Math.log2(mapElement.clientHeight / 256)) - 0.05
+);
+const map = L.map("map", { minZoom: worldFitZoom }).setView([0, 0], worldFitZoom);
 // OpenStreetMap's own tile servers block requests from most referers/origins that
 // aren't a registered production site (see https://wiki.openstreetmap.org/wiki/Blocked_tiles).
 // CARTO's free basemap tiles are built from OSM data and don't apply that restriction.
@@ -18,24 +26,59 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
   subdomains: "abcd",
   maxZoom: 19,
+  noWrap: true,
 }).addTo(map);
+
+const worldViewControl = L.control({ position: "topleft" });
+worldViewControl.onAdd = () => {
+  const button = L.DomUtil.create("button", "world-view-btn");
+  button.type = "button";
+  button.title = "Zoom all the way out";
+  button.setAttribute("aria-label", "Zoom all the way out");
+  button.textContent = "🌐";
+  L.DomEvent.disableClickPropagation(button);
+  L.DomEvent.on(button, "click", () => map.setView([0, 0], map.getMinZoom()));
+  return button;
+};
+worldViewControl.addTo(map);
+map.zoomControl.remove();
+map.zoomControl.addTo(map);
 
 const checkInLayer = L.layerGroup().addTo(map);
 
 let checkIns = loadCheckIns();
 let photoMarkers = [];
+let swipeStartX = null;
+let suppressNextListClick = false;
 
 function loadCheckIns() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeCheckIn) : [];
   } catch {
     return [];
   }
 }
 
+function createId() {
+  return window.crypto?.randomUUID?.() || `checkin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function normalizeCheckIn(checkIn) {
+  return {
+    ...checkIn,
+    id: checkIn.id || createId(),
+    media: Array.isArray(checkIn.media) ? checkIn.media : [],
+  };
+}
+
 function saveCheckIns() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(checkIns));
+}
+
+function updateClearCheckInsButton() {
+  clearCheckInsBtn.disabled = checkIns.length === 0;
 }
 
 function addCheckIn(checkIn) {
@@ -44,6 +87,7 @@ function addCheckIn(checkIn) {
   saveCheckIns();
   renderCheckInList();
   renderCheckInMarkers();
+  updateClearCheckInsButton();
 }
 
 function setStatus(el, message, kind) {
@@ -61,19 +105,35 @@ function formatTimestamp(isoString) {
 
 async function geocodeLocation(query) {
   const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}&limit=1`,
     { headers: { Accept: "application/json" } }
   );
   if (!response.ok) throw new Error("location lookup failed");
   const results = await response.json();
   if (results.length === 0) throw new Error(`No known location found for "${query}".`);
   const [result] = results;
-  return { lat: parseFloat(result.lat), lon: parseFloat(result.lon), label: result.display_name };
+  return { lat: parseFloat(result.lat), lon: parseFloat(result.lon), label: formatLocationLabel(result.address, result.display_name) };
+}
+
+async function reverseGeocodeLocation(lat, lon) {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lon}`,
+    { headers: { Accept: "application/json" } }
+  );
+  if (!response.ok) throw new Error("location lookup failed");
+  const result = await response.json();
+  return formatLocationLabel(result.address, result.display_name);
+}
+
+function formatLocationLabel(address = {}, fallback = "Map point") {
+  const city = address.city || address.town || address.village || address.municipality || address.county;
+  return [city, address.state, address.country].filter(Boolean).join(", ") || fallback;
 }
 
 function renderCheckInList() {
   if (checkIns.length === 0) {
     checkInListEl.innerHTML = '<li class="empty-state">No check-ins yet.</li>';
+    updateClearCheckInsButton();
     return;
   }
   checkInListEl.innerHTML = checkIns
@@ -84,10 +144,53 @@ function renderCheckInList() {
           <div>
             <p class="checkin-title">${checkIn.type === "photo" ? "Photo: " : ""}${escapeHtml(checkIn.label)}</p>
             <p class="checkin-meta">${checkIn.lat.toFixed(4)}, ${checkIn.lon.toFixed(4)} &middot; ${formatTimestamp(checkIn.timestamp)}</p>
+            ${renderAttachedMedia(checkIn)}
+            <label class="attach-media-btn" data-stop-map-click="true">
+              <span>Attach media</span>
+              <input class="media-input" type="file" accept="image/*,video/*,audio/*" multiple data-checkin-index="${index}" />
+            </label>
           </div>
+          <button type="button" class="delete-checkin-btn" data-delete-index="${index}" data-stop-map-click="true" aria-label="Delete ${escapeHtml(checkIn.label)}" title="Delete check-in">&times;</button>
         </li>`
     )
     .join("");
+  updateClearCheckInsButton();
+}
+
+function clearAllCheckIns() {
+  if (!checkIns.length || !window.confirm("Remove all check-ins and their attached media?")) return;
+  checkIns = [];
+  saveCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  setStatus(checkInStatus, "All check-ins removed.", "success");
+}
+
+function deleteCheckIn(index) {
+  const checkIn = checkIns[index];
+  if (!checkIn || !window.confirm(`Delete the check-in for ${checkIn.label}?`)) return;
+  checkIns.splice(index, 1);
+  saveCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  setStatus(checkInStatus, "Check-in deleted.", "success");
+}
+
+function deleteCheckInById(id) {
+  const index = checkIns.findIndex((checkIn) => checkIn.id === id);
+  if (index !== -1) deleteCheckIn(index);
+}
+
+function renderAttachedMedia(checkIn) {
+  if (!checkIn.media.length) return "";
+  return `<div class="attached-media">${checkIn.media
+    .map((media) => {
+      if (media.type.startsWith("image/")) {
+        return `<img class="attached-media-preview" src="${escapeHtml(media.dataUrl)}" alt="${escapeHtml(media.name)}" title="${escapeHtml(media.name)}" />`;
+      }
+      return `<a class="attached-media-link" href="${escapeHtml(media.dataUrl)}" target="_blank" rel="noopener">${escapeHtml(media.name)}</a>`;
+    })
+    .join("")}</div>`;
 }
 
 function centerMapOnCheckIn(index) {
@@ -96,6 +199,11 @@ function centerMapOnCheckIn(index) {
 }
 
 function handleCheckInListInteraction(event) {
+  if (event.target.closest("[data-stop-map-click]")) return;
+  if (suppressNextListClick && event.type === "click") {
+    suppressNextListClick = false;
+    return;
+  }
   const entry = event.target.closest("[data-checkin-index]");
   if (!entry) return;
 
@@ -104,13 +212,81 @@ function handleCheckInListInteraction(event) {
   centerMapOnCheckIn(Number(entry.dataset.checkinIndex));
 }
 
+function handleCheckInListAction(event) {
+  const deleteButton = event.target.closest("[data-delete-index]");
+  if (!deleteButton) return;
+  event.preventDefault();
+  event.stopPropagation();
+  deleteCheckIn(Number(deleteButton.dataset.deleteIndex));
+}
+
+function handleCheckInTouchStart(event) {
+  if (event.touches.length === 1) swipeStartX = event.touches[0].clientX;
+}
+
+function handleCheckInTouchEnd(event) {
+  if (swipeStartX === null) return;
+  const endX = event.changedTouches[0]?.clientX ?? swipeStartX;
+  const entry = event.target.closest("[data-checkin-index]");
+  const distance = endX - swipeStartX;
+  swipeStartX = null;
+  if (entry && distance < -70) {
+    suppressNextListClick = true;
+    deleteCheckIn(Number(entry.dataset.checkinIndex));
+  }
+}
+
+async function createMapCheckIn(lat, lng) {
+  setStatus(checkInStatus, "Finding the nearest city…");
+  let label;
+  try {
+    label = await reverseGeocodeLocation(lat, lng);
+  } catch {
+    label = `Map point (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+  }
+  addCheckIn({
+    id: createId(),
+    lat,
+    lon: lng,
+    label,
+    timestamp: new Date().toISOString(),
+    type: "location",
+    media: [],
+  });
+  setStatus(checkInStatus, `Checked in at ${label}.`, "success");
+}
+
+function handleMapContextMenu(event) {
+  L.popup()
+    .setLatLng(event.latlng)
+    .setContent(`<button type="button" class="drop-pin-btn" data-drop-pin-lat="${event.latlng.lat}" data-drop-pin-lng="${event.latlng.lng}">Drop pin</button>`)
+    .openOn(map);
+}
+
 function renderCheckInMarkers() {
   checkInLayer.clearLayers();
   checkIns.forEach((checkIn) => {
     L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
       .addTo(checkInLayer)
-      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}`);
+      .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>`);
   });
+}
+
+function handleMapPopupAction(event) {
+  const dropPinButton = event.target.closest("[data-drop-pin-lat]");
+  if (dropPinButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    map.closePopup();
+    createMapCheckIn(Number(dropPinButton.dataset.dropPinLat), Number(dropPinButton.dataset.dropPinLng));
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-delete-checkin-id]");
+  if (!deleteButton) return;
+  event.preventDefault();
+  event.stopPropagation();
+  deleteCheckInById(deleteButton.dataset.deleteCheckinId);
 }
 
 function renderPhotoList() {
@@ -146,7 +322,7 @@ async function handleCheckIn(event) {
   try {
     const { lat, lon, label } = await geocodeLocation(query);
 
-    addCheckIn({ lat, lon, label, timestamp: new Date().toISOString(), type: "location" });
+    addCheckIn({ id: createId(), lat, lon, label, timestamp: new Date().toISOString(), type: "location", media: [] });
     map.setView([lat, lon], 12);
 
     setStatus(checkInStatus, "Checked in!", "success");
@@ -210,13 +386,52 @@ function handlePhotoUpload(event) {
     const timestamp = new Date().toISOString();
     const previewUrl = await createPhotoPreview(file);
     photoMarkers.push({ name: file.name, lat, lon });
-    addCheckIn({ lat, lon, label: file.name, timestamp, type: "photo", previewUrl });
+    addCheckIn({ id: createId(), lat, lon, label: file.name, timestamp, type: "photo", previewUrl, media: [] });
     renderPhotoList();
 
     map.setView([lat, lon], 12);
 
     setStatus(photoStatus, `Mapped "${file.name}" at ${lat.toFixed(4)}, ${lon.toFixed(4)}.`, "success");
   });
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleMediaAttachment(event) {
+  const input = event.target;
+  const checkIn = checkIns[Number(input.dataset.checkinIndex)];
+  if (!checkIn || !input.files.length) return;
+
+  const availableSlots = MAX_MEDIA_FILES - checkIn.media.length;
+  const files = Array.from(input.files).slice(0, availableSlots);
+  const oversizedFile = files.find((file) => file.size > MAX_MEDIA_SIZE);
+  if (oversizedFile) {
+    setStatus(checkInStatus, `${oversizedFile.name} is larger than 5 MB.`, "error");
+    input.value = "";
+    return;
+  }
+
+  try {
+    const media = await Promise.all(
+      files.map(async (file) => ({ name: file.name, type: file.type || "application/octet-stream", dataUrl: await readFileAsDataUrl(file) }))
+    );
+    checkIn.media.push(...media);
+    saveCheckIns();
+    renderCheckInList();
+    renderCheckInMarkers();
+    setStatus(checkInStatus, `${media.length} file${media.length === 1 ? "" : "s"} attached to ${checkIn.label}.`, "success");
+  } catch (error) {
+    setStatus(checkInStatus, error.message, "error");
+  } finally {
+    input.value = "";
+  }
 }
 
 function photoIcon(previewUrl) {
@@ -240,8 +455,17 @@ function photoIcon(previewUrl) {
 }
 
 checkInForm.addEventListener("submit", handleCheckIn);
+clearCheckInsBtn.addEventListener("click", clearAllCheckIns);
+map.on("contextmenu", handleMapContextMenu);
+map.getContainer().addEventListener("click", handleMapPopupAction);
 checkInListEl.addEventListener("click", handleCheckInListInteraction);
+checkInListEl.addEventListener("click", handleCheckInListAction);
 checkInListEl.addEventListener("keydown", handleCheckInListInteraction);
+checkInListEl.addEventListener("touchstart", handleCheckInTouchStart, { passive: true });
+checkInListEl.addEventListener("touchend", handleCheckInTouchEnd, { passive: true });
+checkInListEl.addEventListener("change", (event) => {
+  if (event.target.matches(".media-input")) handleMediaAttachment(event);
+});
 photoInput.addEventListener("change", handlePhotoUpload);
 
 renderCheckInList();

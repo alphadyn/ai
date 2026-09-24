@@ -19,6 +19,7 @@
       <main class="app-grid">
         <section class="panel map-panel">
           <div id="map"></div>
+          <p class="map-hint">Right-click the map and select Drop pin to check in at that point.</p>
           <form id="checkInForm" class="panel-actions">
             <input
               id="locationInput"
@@ -34,7 +35,11 @@
         </section>
 
         <section class="panel">
-          <h2>Last 10 Check-Ins</h2>
+          <div class="section-heading">
+            <h2>Last 10 Check-Ins</h2>
+            <button type="button" id="clearCheckInsBtn" class="secondary-btn" disabled>Remove all</button>
+          </div>
+          <p class="hint">Attach images, video, or audio to any saved location.</p>
           <ol id="checkInList" class="checkin-list">
             <li class="empty-state">No check-ins yet.</li>
           </ol>

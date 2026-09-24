@@ -65,6 +65,17 @@ body {
   font-size: 1.1rem;
 }
 
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-heading h2 {
+  margin-bottom: 0;
+}
+
 #map {
   width: 100%;
   height: 380px;
@@ -72,6 +83,33 @@ body {
   overflow: hidden;
   border: 1px solid var(--border);
   margin-bottom: 1rem;
+}
+
+.world-view-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.world-view-btn:hover,
+.world-view-btn:focus-visible {
+  background: #eff6ff;
+  color: var(--accent);
+  outline: none;
+}
+
+.map-hint {
+  margin: -0.45rem 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .panel-actions {
@@ -114,6 +152,26 @@ body {
 .primary-btn:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+.secondary-btn {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.65rem;
+  background: #fff;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.secondary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .status-text {
@@ -194,6 +252,97 @@ body {
 
 .checkin-entry > div {
   min-width: 0;
+  flex: 1;
+}
+
+.delete-checkin-btn {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.delete-checkin-btn:hover,
+.delete-checkin-btn:focus-visible {
+  background: #fee2e2;
+  color: #b91c1c;
+  outline: none;
+}
+
+.map-delete-btn {
+  margin-top: 0.45rem;
+  border: 1px solid #fecaca;
+  border-radius: 5px;
+  padding: 0.3rem 0.5rem;
+  background: #fff;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.map-delete-btn:hover,
+.map-delete-btn:focus-visible {
+  background: #fee2e2;
+  outline: none;
+}
+
+.drop-pin-btn {
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  padding: 0.35rem 0.6rem;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.drop-pin-btn:hover,
+.drop-pin-btn:focus-visible {
+  background: #eff6ff;
+  outline: none;
+}
+
+.attached-media {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+}
+
+.attached-media-preview {
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.attached-media-link {
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.attach-media-btn {
+  display: inline-flex;
+  margin-top: 0.45rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.media-input {
+  display: none;
 }
 
 .photo-map-icon {
