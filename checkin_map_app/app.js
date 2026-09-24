@@ -1,7 +1,12 @@
-const STORAGE_KEY = "checkin-map-app:checkins";
 const MAX_CHECKINS = 100;
 const MAX_MEDIA_FILES = 5;
 const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
+const SUPABASE_CONFIG = window.CHECKIN_MAP_SUPABASE || {};
+const SUPABASE_URL = SUPABASE_CONFIG.url;
+const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
+const STORAGE_BUCKET = SUPABASE_CONFIG.storageBucket || "checkin-map-media";
+const LOCATIONS_TABLE = "checkin_map_locations";
+const MEDIA_TABLE = "checkin_map_media";
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
@@ -12,6 +17,10 @@ const clearCheckInsBtn = document.getElementById("clearCheckInsBtn");
 const photoInput = document.getElementById("photoInput");
 const photoStatus = document.getElementById("photoStatus");
 const photoListEl = document.getElementById("photoList");
+const mediaViewer = document.getElementById("mediaViewer");
+const mediaViewerClose = document.getElementById("mediaViewerClose");
+const mediaViewerContent = document.getElementById("mediaViewerContent");
+const mediaViewerName = document.getElementById("mediaViewerName");
 
 const mapElement = document.getElementById("map");
 const worldFitZoom = Math.max(
@@ -46,21 +55,11 @@ map.zoomControl.addTo(map);
 
 const checkInLayer = L.layerGroup().addTo(map);
 
-let checkIns = loadCheckIns();
+let checkIns = [];
 let photoMarkers = [];
 let swipeStartX = null;
 let suppressNextListClick = false;
 let editingCheckInIndex = null;
-
-function loadCheckIns() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.map(normalizeCheckIn) : [];
-  } catch {
-    return [];
-  }
-}
 
 function createId() {
   return window.crypto?.randomUUID?.() || `checkin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -74,18 +73,114 @@ function normalizeCheckIn(checkIn) {
   };
 }
 
-function saveCheckIns() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(checkIns));
+async function supabaseRequest(path, options = {}) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error("Supabase is not configured. Add credentials to supabase-config.js.");
+  }
+  try {
+    return await fetch(`${SUPABASE_URL.replace(/\/$/, "")}${path}`, {
+      ...options,
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new Error("Could not reach Supabase. Check the project URL and network connection.");
+  }
+}
+
+async function getSupabaseError(response, fallback) {
+  try {
+    const body = await response.json();
+    return body.message || body.error || `${fallback} (HTTP ${response.status}).`;
+  } catch {
+    return `${fallback} (HTTP ${response.status}).`;
+  }
+}
+
+function mapLocationRow(row, mediaByCheckIn) {
+  return normalizeCheckIn({
+    id: row.id,
+    lat: row.lat,
+    lon: row.lon,
+    label: row.label,
+    timestamp: row.timestamp,
+    type: row.type,
+    previewUrl: row.preview_url || "",
+    media: mediaByCheckIn.get(row.id) || [],
+  });
+}
+
+async function loadCheckIns() {
+  const locationsResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&order=timestamp.desc&limit=${MAX_CHECKINS}`);
+  if (!locationsResponse.ok) throw new Error(await getSupabaseError(locationsResponse, "Could not load check-ins from Supabase."));
+  const mediaResponse = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}?select=*&order=created_at.asc`);
+  if (!mediaResponse.ok) throw new Error(await getSupabaseError(mediaResponse, "Could not load check-in media from Supabase."));
+
+  const mediaByCheckIn = new Map();
+  (await mediaResponse.json()).forEach((row) => {
+    const media = { id: row.id, name: row.name, type: row.mime_type, storagePath: row.storage_path, dataUrl: row.public_url };
+    if (!mediaByCheckIn.has(row.checkin_id)) mediaByCheckIn.set(row.checkin_id, []);
+    mediaByCheckIn.get(row.checkin_id).push(media);
+  });
+  checkIns = (await locationsResponse.json()).map((row) => mapLocationRow(row, mediaByCheckIn));
+  photoMarkers = checkIns
+    .filter((checkIn) => checkIn.type === "photo")
+    .map((checkIn) => ({ name: checkIn.label, lat: checkIn.lat, lon: checkIn.lon }));
+}
+
+function mapCheckInToRow(checkIn) {
+  return {
+    id: checkIn.id,
+    lat: checkIn.lat,
+    lon: checkIn.lon,
+    label: checkIn.label,
+    timestamp: checkIn.timestamp,
+    type: checkIn.type,
+    preview_url: checkIn.previewUrl || null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function saveCheckIn(checkIn) {
+  const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?on_conflict=id`, {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify(mapCheckInToRow(checkIn)),
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not save the check-in to Supabase."));
+}
+
+async function deleteStoredMedia(media) {
+  if (!media.storagePath) return;
+  const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${media.storagePath.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not remove attached media from Supabase."));
+}
+
+async function deleteCheckInFromSupabase(checkIn) {
+  await Promise.all(checkIn.media.map(deleteStoredMedia));
+  const mediaResponse = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}?checkin_id=eq.${encodeURIComponent(checkIn.id)}`, { method: "DELETE" });
+  if (!mediaResponse.ok) throw new Error(await getSupabaseError(mediaResponse, "Could not remove check-in media from Supabase."));
+  const locationResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(checkIn.id)}`, { method: "DELETE" });
+  if (!locationResponse.ok) throw new Error(await getSupabaseError(locationResponse, "Could not remove the check-in from Supabase."));
+}
+
+async function deleteAllCheckInsFromSupabase() {
+  await Promise.all(checkIns.map((checkIn) => deleteCheckInFromSupabase(checkIn)));
 }
 
 function updateClearCheckInsButton() {
   clearCheckInsBtn.disabled = checkIns.length === 0;
 }
 
-function addCheckIn(checkIn) {
+async function addCheckIn(checkIn) {
+  await saveCheckIn(checkIn);
   checkIns.unshift(checkIn);
-  checkIns = checkIns.slice(0, MAX_CHECKINS);
-  saveCheckIns();
+  const removedCheckIns = checkIns.splice(MAX_CHECKINS);
+  await Promise.all(removedCheckIns.map(deleteCheckInFromSupabase));
   renderCheckInList();
   renderCheckInMarkers();
   updateClearCheckInsButton();
@@ -178,28 +273,39 @@ function formatDateTimeInput(isoString) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function clearAllCheckIns() {
+async function clearAllCheckIns() {
   if (!checkIns.length || !window.confirm("Remove all check-ins and their attached media?")) return;
-  checkIns = [];
-  saveCheckIns();
-  renderCheckInList();
-  renderCheckInMarkers();
-  setStatus(checkInStatus, "All check-ins removed.", "success");
+  clearCheckInsBtn.disabled = true;
+  setStatus(checkInStatus, "Removing check-ins from Supabase…");
+  try {
+    await deleteAllCheckInsFromSupabase();
+    checkIns = [];
+    renderCheckInList();
+    renderCheckInMarkers();
+    setStatus(checkInStatus, "All check-ins removed.", "success");
+  } catch (error) {
+    updateClearCheckInsButton();
+    setStatus(checkInStatus, error.message, "error");
+  }
 }
 
-function deleteCheckIn(index) {
+async function deleteCheckIn(index) {
   const checkIn = checkIns[index];
   if (!checkIn || !window.confirm(`Delete the check-in for ${checkIn.label}?`)) return;
-  checkIns.splice(index, 1);
-  saveCheckIns();
-  renderCheckInList();
-  renderCheckInMarkers();
-  setStatus(checkInStatus, "Check-in deleted.", "success");
+  try {
+    await deleteCheckInFromSupabase(checkIn);
+    checkIns.splice(index, 1);
+    renderCheckInList();
+    renderCheckInMarkers();
+    setStatus(checkInStatus, "Check-in deleted.", "success");
+  } catch (error) {
+    setStatus(checkInStatus, error.message, "error");
+  }
 }
 
-function deleteCheckInById(id) {
+async function deleteCheckInById(id) {
   const index = checkIns.findIndex((checkIn) => checkIn.id === id);
-  if (index !== -1) deleteCheckIn(index);
+  if (index !== -1) await deleteCheckIn(index);
 }
 
 function startEditCheckIn(index) {
@@ -208,7 +314,7 @@ function startEditCheckIn(index) {
   checkInListEl.querySelector("input[name=label]")?.focus();
 }
 
-function saveEditedCheckIn(event) {
+async function saveEditedCheckIn(event) {
   event.preventDefault();
   const form = event.target;
   const index = Number(form.dataset.editFormIndex);
@@ -219,11 +325,15 @@ function saveEditedCheckIn(event) {
 
   checkIn.label = label;
   checkIn.timestamp = timestamp.toISOString();
-  editingCheckInIndex = null;
-  saveCheckIns();
-  renderCheckInList();
-  renderCheckInMarkers();
-  setStatus(checkInStatus, "Check-in updated.", "success");
+  try {
+    await saveCheckIn(checkIn);
+    editingCheckInIndex = null;
+    renderCheckInList();
+    renderCheckInMarkers();
+    setStatus(checkInStatus, "Check-in updated.", "success");
+  } catch (error) {
+    setStatus(checkInStatus, error.message, "error");
+  }
 }
 
 function renderAttachedMedia(checkIn) {
@@ -305,16 +415,20 @@ async function createMapCheckIn(lat, lng) {
   } catch {
     label = `Map point (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
   }
-  addCheckIn({
-    id: createId(),
-    lat,
-    lon: lng,
-    label,
-    timestamp: new Date().toISOString(),
-    type: "location",
-    media: [],
-  });
-  setStatus(checkInStatus, `Checked in at ${label}.`, "success");
+  try {
+    await addCheckIn({
+      id: createId(),
+      lat,
+      lon: lng,
+      label,
+      timestamp: new Date().toISOString(),
+      type: "location",
+      media: [],
+    });
+    setStatus(checkInStatus, `Checked in at ${label}.`, "success");
+  } catch (error) {
+    setStatus(checkInStatus, error.message, "error");
+  }
 }
 
 function handleMapContextMenu(event) {
@@ -342,7 +456,7 @@ function renderPinMediaCarousel(checkIn) {
         : media.type.startsWith("video/")
           ? `<video src="${escapeHtml(media.dataUrl)}" controls></video>`
           : `<audio src="${escapeHtml(media.dataUrl)}" controls></audio>`;
-      return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}">${content}<span>${escapeHtml(media.name)}</span></div>`;
+      return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}" data-media-url="${escapeHtml(media.dataUrl)}" data-media-type="${escapeHtml(media.type)}" data-media-name="${escapeHtml(media.name)}">${content}<span>${escapeHtml(media.name)}</span></div>`;
     })
     .join("");
   return `<div class="pin-media-carousel" data-active-index="0"><div class="pin-media-slides">${slides}</div><div class="pin-media-controls"><button type="button" data-carousel-direction="prev" aria-label="Previous media">&#8249;</button><span>${checkIn.media.length} attached</span><button type="button" data-carousel-direction="next" aria-label="Next media">&#8250;</button></div></div>`;
@@ -357,12 +471,43 @@ function movePinCarousel(carousel, direction) {
   slides.forEach((slide, index) => slide.classList.toggle("active", index === nextIndex));
 }
 
+function openMediaViewer(slide) {
+  const mediaUrl = slide.dataset.mediaUrl;
+  const mediaType = slide.dataset.mediaType;
+  const mediaName = slide.dataset.mediaName;
+  const mediaElement = mediaType.startsWith("image/")
+    ? document.createElement("img")
+    : mediaType.startsWith("video/")
+      ? document.createElement("video")
+      : document.createElement("audio");
+  mediaElement.src = mediaUrl;
+  mediaElement.controls = true;
+  mediaElement.autoplay = mediaType.startsWith("video/") || mediaType.startsWith("audio/");
+  mediaElement.alt = mediaName;
+  mediaViewerContent.replaceChildren(mediaElement);
+  mediaViewerName.textContent = mediaName;
+  mediaViewer.hidden = false;
+}
+
+function closeMediaViewer() {
+  mediaViewer.hidden = true;
+  mediaViewerContent.replaceChildren();
+}
+
 function handleMapPopupAction(event) {
   const carouselButton = event.target.closest("[data-carousel-direction]");
   if (carouselButton) {
     event.preventDefault();
     event.stopPropagation();
     movePinCarousel(carouselButton.closest(".pin-media-carousel"), carouselButton.dataset.carouselDirection === "next" ? 1 : -1);
+    return;
+  }
+
+  const mediaSlide = event.target.closest("[data-media-url]");
+  if (mediaSlide) {
+    event.preventDefault();
+    event.stopPropagation();
+    openMediaViewer(mediaSlide);
     return;
   }
 
@@ -415,7 +560,7 @@ async function handleCheckIn(event) {
   try {
     const { lat, lon, label } = await geocodeLocation(query);
 
-    addCheckIn({ id: createId(), lat, lon, label, timestamp: new Date().toISOString(), type: "location", media: [] });
+    await addCheckIn({ id: createId(), lat, lon, label, timestamp: new Date().toISOString(), type: "location", media: [] });
     map.setView([lat, lon], 12);
 
     setStatus(checkInStatus, "Checked in!", "success");
@@ -479,7 +624,13 @@ function handlePhotoUpload(event) {
     const timestamp = new Date().toISOString();
     const previewUrl = await createPhotoPreview(file);
     photoMarkers.push({ name: file.name, lat, lon });
-    addCheckIn({ id: createId(), lat, lon, label: file.name, timestamp, type: "photo", previewUrl, media: [] });
+    const checkIn = { id: createId(), lat, lon, label: file.name, timestamp, type: "photo", previewUrl, media: [] };
+    await addCheckIn(checkIn);
+    await uploadMediaFile(checkIn, file).then((media) => {
+      checkIn.media.push(media);
+    });
+    renderCheckInList();
+    renderCheckInMarkers();
     renderPhotoList();
 
     map.setView([lat, lon], 12);
@@ -497,6 +648,35 @@ function readFileAsDataUrl(file) {
   });
 }
 
+async function uploadMediaFile(checkIn, file) {
+  const safeName = file.name.replace(/[^a-z0-9._-]/gi, "_");
+  const storagePath = `${checkIn.id}/${createId()}-${safeName}`;
+  const encodedPath = storagePath.split("/").map(encodeURIComponent).join("/");
+  const response = await supabaseRequest(`/storage/v1/object/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}`, {
+    method: "POST",
+    headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "false" },
+    body: file,
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not upload media to Supabase Storage."));
+
+  const publicUrl = `${SUPABASE_URL.replace(/\/$/, "")}/storage/v1/object/public/${encodeURIComponent(STORAGE_BUCKET)}/${encodedPath}`;
+  const media = { id: createId(), name: file.name, type: file.type || "application/octet-stream", storagePath, dataUrl: publicUrl };
+  const metadataResponse = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}`, {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      id: media.id,
+      checkin_id: checkIn.id,
+      name: media.name,
+      mime_type: media.type,
+      storage_path: media.storagePath,
+      public_url: media.dataUrl,
+    }),
+  });
+  if (!metadataResponse.ok) throw new Error(await getSupabaseError(metadataResponse, "Could not save media metadata to Supabase."));
+  return media;
+}
+
 async function handleMediaAttachment(event) {
   const input = event.target;
   const checkIn = checkIns[Number(input.dataset.checkinIndex)];
@@ -512,11 +692,9 @@ async function handleMediaAttachment(event) {
   }
 
   try {
-    const media = await Promise.all(
-      files.map(async (file) => ({ name: file.name, type: file.type || "application/octet-stream", dataUrl: await readFileAsDataUrl(file) }))
-    );
+    setStatus(checkInStatus, "Uploading media to Supabase…");
+    const media = await Promise.all(files.map((file) => uploadMediaFile(checkIn, file)));
     checkIn.media.push(...media);
-    saveCheckIns();
     renderCheckInList();
     renderCheckInMarkers();
     setStatus(checkInStatus, `${media.length} file${media.length === 1 ? "" : "s"} attached to ${checkIn.label}.`, "success");
@@ -561,10 +739,29 @@ checkInListEl.addEventListener("change", (event) => {
   if (event.target.matches(".media-input")) handleMediaAttachment(event);
 });
 photoInput.addEventListener("change", handlePhotoUpload);
+mediaViewerClose.addEventListener("click", closeMediaViewer);
+mediaViewer.addEventListener("click", (event) => {
+  if (event.target === mediaViewer) closeMediaViewer();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !mediaViewer.hidden) closeMediaViewer();
+});
 
-renderCheckInList();
-renderCheckInMarkers();
-renderPhotoList();
-if (checkIns.length > 0) {
-  map.setView([checkIns[0].lat, checkIns[0].lon], 10);
+async function initializeApp() {
+  renderCheckInList();
+  renderCheckInMarkers();
+  renderPhotoList();
+  setStatus(checkInStatus, "Loading check-ins…");
+  try {
+    await loadCheckIns();
+    renderCheckInList();
+    renderCheckInMarkers();
+    updateClearCheckInsButton();
+    if (checkIns.length > 0) map.setView([checkIns[0].lat, checkIns[0].lon], 10);
+    setStatus(checkInStatus, "Check-ins loaded from Supabase.", "success");
+  } catch (error) {
+    setStatus(checkInStatus, error.message, "error");
+  }
 }
+
+initializeApp();

@@ -60,8 +60,15 @@
       </main>
     </div>
 
+    <div id="mediaViewer" class="media-viewer" hidden>
+      <button type="button" id="mediaViewerClose" class="media-viewer-close" aria-label="Close media viewer">&times;</button>
+      <div id="mediaViewerContent" class="media-viewer-content"></div>
+      <p id="mediaViewerName" class="media-viewer-name"></p>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/exif-js@2.3.0/exif.js"></script>
+    <script src="supabase-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

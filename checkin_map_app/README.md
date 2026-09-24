@@ -8,8 +8,8 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
   and dropped as a pin on an interactive map — no browser location permission required
 - **Map display** built with [Leaflet](https://leafletjs.com/) and [CARTO](https://carto.com/basemaps) basemap tiles (built from OpenStreetMap data)
 - **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
-  persisted in the browser's local storage so they survive a page refresh
-- **Map click check-in**: click any point on the map to save that coordinate as a check-in
+  persisted permanently in Supabase so they are available across browsers and page refreshes
+- **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in
 - **Media attachments**: attach up to five local image, video, or audio files to each check-in
 - **Photo upload**: choose a JPEG photo with embedded GPS EXIF data and the app reads the coordinates
   and plots a separate marker for where the photo was taken
@@ -31,8 +31,8 @@ Then open http://localhost:8000 in your browser.
 1. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
    and click **Check In**. A marker appears on the map and the check-in is added to the top of the
   "Check-Ins" list.
-2. Click any point on the map to add a coordinate check-in, then use **Attach media** on that list item
-  to add image, video, or audio files to the location.
+2. Right-click any point on the map and choose **Drop pin** to add a coordinate check-in. Open its
+  Edit screen to add image, video, or audio files to the location.
 3. Click **Choose a photo** and pick a JPEG photo taken with a phone or camera that recorded GPS data.
   If the photo has location data, a marker appears on the map and the photo is added to both the
   "Check-Ins" history and the photo list below.
@@ -43,10 +43,12 @@ Then open http://localhost:8000 in your browser.
 - `styles.css` — layout and visual styling
 
 ## Notes
-- Check-in history is stored in the browser's local storage on the device you use, not on a server.
+- Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
+- Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
+- Set the project URL and anon key in [supabase-config.js](supabase-config.js).
 - Location search (turning a typed place name into coordinates) uses the free
   [Nominatim](https://nominatim.org/) API.
-- Photos are never uploaded anywhere — EXIF data is read entirely in the browser.
+- Photo EXIF data is read in the browser; the selected photo is uploaded to Supabase Storage when it is mapped.
 
 ## Test the project
 Run the repository-wide test suite from the project root:
