@@ -1139,7 +1139,8 @@ function updateAvatar(url) {
   userAvatar.hidden = !url;
 }
 
-function setAuthUi(isAuthenticated) {
+function setAuthUi(isAuthenticated, options = {}) {
+  const { keepAppVisible = false } = options;
   loginBtn.hidden = isAuthenticated;
   createProfileBtn.hidden = isAuthenticated;
   profileBtn.hidden = !isAuthenticated;
@@ -1148,11 +1149,13 @@ function setAuthUi(isAuthenticated) {
   if (!isAuthenticated) {
     userStatus.textContent = "Sign in to continue";
     updateAvatar("");
-    appContent.hidden = true;
+    if (!keepAppVisible) appContent.hidden = true;
     authPanel.hidden = true;
     closeProfile();
     tripPanel.hidden = true;
     document.body.classList.remove("trips-open");
+  } else {
+    appContent.hidden = false;
   }
 }
 
@@ -1381,17 +1384,34 @@ async function initializeApp() {
     appContent.hidden = false;
     document.body.classList.add("public-trip-view");
     try {
+      const restoredSession = await restoreSession();
+      if (restoredSession) {
+        session = restoredSession;
+        await loadProfile();
+        setAuthUi(true);
+        userStatus.textContent = profile.username || profile.display_name;
+        updateAvatar(profile.avatar_url);
+        adminPanel.hidden = profile.role !== "admin";
+      } else {
+        setAuthUi(false, { keepAppVisible: true });
+      }
       await loadTrips();
       await loadCheckIns();
       renderTripSelect();
       renderCheckInList();
       renderCheckInMarkers();
       renderPhotoList();
-      userStatus.textContent = `Trip: ${currentTrip.name}`;
-      tripsBtn.hidden = false;
+      if (!session) {
+        userStatus.textContent = `Trip: ${currentTrip.name}`;
+      }
+      tripsBtn.hidden = Boolean(session);
       setStatus(checkInStatus, "Viewing a public trip.", "success");
       window.setTimeout(() => map.invalidateSize(), 0);
     } catch (error) {
+      clearStoredSession();
+      session = null;
+      profile = null;
+      setAuthUi(false, { keepAppVisible: true });
       setStatus(checkInStatus, error.message, "error");
     }
     return;
