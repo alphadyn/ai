@@ -76,6 +76,7 @@ const adminStatus = document.getElementById("adminStatus");
 const refreshAdminBtn = document.getElementById("refreshAdminBtn");
 
 const mapElement = document.getElementById("map");
+const loggedOutPreviewImage = document.getElementById("loggedOutPreviewImage");
 const worldFitZoom = Math.max(
   0,
   Math.min(Math.log2(mapElement.clientWidth / 256), Math.log2(mapElement.clientHeight / 256)) - 0.05
@@ -1246,6 +1247,15 @@ function setAuthUi(isAuthenticated, options = {}) {
   }
 }
 
+function setLoggedOutPreview(enabled) {
+  document.body.classList.toggle("logged-out-preview", enabled);
+  loggedOutPreviewImage.hidden = !enabled;
+  if (enabled) {
+    appContent.hidden = false;
+    setStatus(checkInStatus, "");
+  }
+}
+
 async function uploadAvatar(file) {
   const extension = file.name.split(".").pop().replace(/[^a-z0-9]/gi, "") || "jpg";
   const storagePath = `avatars/${session.user.id}.${extension}`;
@@ -1288,6 +1298,7 @@ async function saveProfile(event) {
 
 async function enterApp(nextSession) {
   session = nextSession;
+  setLoggedOutPreview(false);
   await loadProfile();
   authPanel.hidden = true;
   appContent.hidden = false;
@@ -1406,7 +1417,8 @@ signOutBtn.addEventListener("click", () => {
   checkIns = [];
   renderCheckInList();
   renderCheckInMarkers();
-  setAuthUi(false);
+  setAuthUi(false, { keepAppVisible: true });
+  setLoggedOutPreview(true);
 });
 tripListEl.addEventListener("click", handleTripListAction);
 tripListEl.addEventListener("change", handleTripListAction);
@@ -1469,10 +1481,12 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 async function initializeApp() {
+  setLoggedOutPreview(false);
   setAuthUi(false);
   renderCheckInList();
   renderCheckInMarkers();
   renderPhotoList();
+  document.body.classList.remove("public-trip-view");
   if (isPublicTrip) {
     authPanel.hidden = true;
     appContent.hidden = false;
@@ -1481,6 +1495,7 @@ async function initializeApp() {
       const restoredSession = await restoreSession();
       if (restoredSession) {
         session = restoredSession;
+        setLoggedOutPreview(false);
         await loadProfile();
         setAuthUi(true);
         userStatus.textContent = profile.username || profile.display_name;
@@ -1490,6 +1505,8 @@ async function initializeApp() {
         authPanel.hidden = true;
       } else {
         setAuthUi(false, { keepAppVisible: true });
+        setLoggedOutPreview(true);
+        return;
       }
       await loadTrips();
       await loadCheckIns();
@@ -1510,7 +1527,7 @@ async function initializeApp() {
       session = null;
       profile = null;
       setAuthUi(false, { keepAppVisible: true });
-      setStatus(checkInStatus, error.message, "error");
+      setLoggedOutPreview(true);
     }
     return;
   }
@@ -1525,7 +1542,8 @@ async function initializeApp() {
       setStatus(authStatus, error.message, "error");
     }
   }
-  setStatus(checkInStatus, "Sign in to load your trips.");
+  setAuthUi(false, { keepAppVisible: true });
+  setLoggedOutPreview(true);
 }
 
 initializeApp();

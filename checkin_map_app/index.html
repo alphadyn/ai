@@ -77,7 +77,10 @@
             <div><p class="panel-kicker">Explore</p><h2>Trip map</h2></div>
             <span class="map-mode-label">Right-click to drop a pin</span>
           </div>
-          <div id="map"></div>
+          <div class="map-stage">
+            <div id="map"></div>
+            <img id="loggedOutPreviewImage" class="logged-out-preview-image" src="assets/logged-out-trip-preview.png" alt="Trip preview map" hidden />
+          </div>
           <p class="map-hint">Right-click the map and select Drop pin to check in at that point.</p>
           <form id="checkInForm" class="panel-actions">
             <input

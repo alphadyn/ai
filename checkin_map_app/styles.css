@@ -161,6 +161,22 @@ select:focus-visible {
   display: none !important;
 }
 
+.logged-out-preview #appContent > section:not(.map-panel) {
+  display: none !important;
+}
+
+.logged-out-preview #map,
+.logged-out-preview .map-hint,
+.logged-out-preview #checkInForm,
+.logged-out-preview #checkInStatus {
+  display: none !important;
+}
+
+.logged-out-preview .map-mode-label {
+  border-color: transparent;
+  background: var(--surface);
+}
+
 .auth-panel {
   margin-bottom: 1.25rem;
 }
@@ -617,6 +633,19 @@ body.profile-open::before {
   border: 1px solid var(--border);
   margin-bottom: 1.15rem;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 10px 25px rgba(31, 52, 45, 0.1);
+}
+
+.map-stage {
+  position: relative;
+  margin-bottom: 1.15rem;
+}
+
+.logged-out-preview-image {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 10px 25px rgba(31, 52, 45, 0.1);
+  display: block;
 }
 
 .leaflet-container {
