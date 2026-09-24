@@ -242,6 +242,11 @@ select:focus-visible {
   box-shadow: 0 28px 80px rgba(23, 33, 43, 0.25);
 }
 
+.experience-panel.experience-detail-open {
+  width: 95vw;
+  max-height: 95vh;
+}
+
 .experience-form,
 .experience-location-form,
 .experience-location-edit-form {
@@ -342,14 +347,17 @@ select:focus-visible {
 .experience-events-heading { justify-content: space-between; margin-top: 1rem; }
 .experience-events-heading h4 { margin: 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .experience-description { max-width: 64ch; margin: 0.35rem 0 0.9rem; color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
-.experience-map { width: 100%; height: 290px; margin: 0 0 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.experience-map { width: 100%; height: 440px; margin: 0 0 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
 .experience-map .leaflet-popup-content { max-width: 230px; }
 .experience-map .pin-media-carousel { width: 210px; }
+.experience-map-reset { width: 30px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--accent-dark); cursor: pointer; font-size: 1rem; line-height: 1; }
+.experience-map-reset:hover,
+.experience-map-reset:focus-visible { background: var(--accent-soft); outline: none; }
 .experience-marker-active { filter: hue-rotate(105deg) saturate(1.8) drop-shadow(0 0 5px rgba(15, 118, 110, 0.85)); transform: scale(1.18); transform-origin: bottom center; }
 
 .experience-location-form { grid-template-columns: minmax(0, 1fr) minmax(160px, 0.45fr) auto; align-items: end; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: #f7fbf8; }
-.experience-location-list { display: grid; gap: 0.65rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
-.experience-location-card { padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+.experience-location-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.65rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
+.experience-location-card { min-width: 0; padding: 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 .experience-location-card.selected { border-color: var(--accent); background: #f2fbf7; }
 .experience-location-card:hover { border-color: var(--accent); background: #f2fbf7; }
 .experience-location-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
@@ -362,10 +370,10 @@ select:focus-visible {
 .experience-location-actions { display: flex; gap: 0.25rem; }
 .event-remove-btn { color: var(--coral); font-size: 1.3rem; }
 .experience-location-card > p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
-.experience-location-card .pin-media-carousel { width: min(100%, 280px); }
+.experience-location-card .pin-media-carousel { width: 100%; }
 .experience-location-card .pin-media-slide img,
 .experience-location-card .pin-media-slide video,
-.experience-location-card .pin-media-slide audio { width: min(100%, 280px); }
+.experience-location-card .pin-media-slide audio { width: 100%; }
 
 .event-media-avatars { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.7rem; }
 .event-media-avatar { position: relative; display: grid; width: 48px; height: 48px; overflow: visible; border: 1px solid var(--border); border-radius: 7px; background: #edf5f1; place-items: center; }

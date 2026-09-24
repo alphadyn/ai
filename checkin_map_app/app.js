@@ -149,6 +149,18 @@ L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=
   noWrap: true,
 }).addTo(experienceMap);
 const experienceMapLayer = L.layerGroup().addTo(experienceMap);
+const experienceMapResetControl = L.control({ position: "topleft" });
+experienceMapResetControl.onAdd = () => {
+  const button = L.DomUtil.create("button", "experience-map-reset");
+  button.type = "button";
+  button.textContent = "↺";
+  button.title = "Reset event map view";
+  button.setAttribute("aria-label", "Reset event map view");
+  L.DomEvent.disableClickPropagation(button);
+  L.DomEvent.on(button, "click", fitExperienceMap);
+  return button;
+};
+experienceMapResetControl.addTo(experienceMap);
 
 let checkIns = [];
 let photoMarkers = [];
@@ -331,6 +343,7 @@ function showExperienceIndex() {
   experienceLocations = [];
   experienceViewMode = "view";
   experienceLayer.clearLayers();
+  experiencePanel.classList.remove("experience-detail-open");
   experienceIndexScreen.hidden = false;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = true;
@@ -343,6 +356,7 @@ function showExperienceCreate() {
   activeExperience = null;
   experienceLocations = [];
   experienceLayer.clearLayers();
+  experiencePanel.classList.remove("experience-detail-open");
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = false;
   experienceDetail.hidden = true;
@@ -490,6 +504,7 @@ async function openExperience(id, options = {}) {
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = false;
+  experiencePanel.classList.add("experience-detail-open");
   experienceEventEditScreen.hidden = true;
   await loadExperienceLocations();
   renderExperiences();
@@ -570,6 +585,7 @@ function focusExperienceLocation(id, options = {}) {
 function closeExperiences() {
   experiencePanel.hidden = true;
   experiencePanel.classList.remove("trip-panel-open");
+  experiencePanel.classList.remove("experience-detail-open");
   activeExperience = null;
   experienceLocations = [];
   experienceLayer.clearLayers();
