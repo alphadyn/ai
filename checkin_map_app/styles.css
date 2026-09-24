@@ -307,6 +307,7 @@ select:focus-visible {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.58);
+  cursor: pointer;
   overflow: visible;
 }
 
@@ -318,16 +319,17 @@ select:focus-visible {
   min-width: 0;
   gap: 0.2rem;
   padding: 1rem 1.1rem;
-  border: 0;
-  background: transparent;
   color: var(--ink);
-  cursor: pointer;
+  background: linear-gradient(90deg, #f2fbf7 0%, #f2fbf7 50%, transparent 50%, transparent 100%) right / 200% 100% no-repeat;
   text-align: left;
+  transition: background-position 0.3s ease, color 0.18s ease;
 }
 
-.experience-card-open:hover { background: #f2fbf7; }
 .experience-card-open strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; }
 .experience-card-open > span:last-child { display: -webkit-box; overflow: hidden; color: var(--muted); font-size: 0.84rem; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.experience-card:hover .experience-card-open { background-position: left; }
+.experience-card:hover .experience-card-open strong { color: var(--accent-dark); }
+.experience-card:hover .experience-card-open > span:last-child { color: var(--ink); }
 .experience-card-kicker { color: var(--accent); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
 .experience-card-actions { display: flex; align-items: center; align-self: center; gap: 0.35rem; flex-wrap: wrap; padding: 0.75rem 0.9rem 0.75rem 0; }
 .empty-experience-state { grid-column: 1 / -1; margin: 0; padding: 1rem; border: 1px dashed var(--border); border-radius: 8px; color: var(--muted); font-size: 0.85rem; text-align: center; }
@@ -340,15 +342,22 @@ select:focus-visible {
 .experience-events-heading { justify-content: space-between; margin-top: 1rem; }
 .experience-events-heading h4 { margin: 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .experience-description { max-width: 64ch; margin: 0.35rem 0 0.9rem; color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+.experience-map { width: 100%; height: 290px; margin: 0 0 1rem; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.experience-map .leaflet-popup-content { max-width: 230px; }
+.experience-map .pin-media-carousel { width: 210px; }
+.experience-marker-active { filter: hue-rotate(105deg) saturate(1.8) drop-shadow(0 0 5px rgba(15, 118, 110, 0.85)); transform: scale(1.18); transform-origin: bottom center; }
 
 .experience-location-form { grid-template-columns: minmax(0, 1fr) minmax(160px, 0.45fr) auto; align-items: end; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: #f7fbf8; }
 .experience-location-list { display: grid; gap: 0.65rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
 .experience-location-card { padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
 .experience-location-card.selected { border-color: var(--accent); background: #f2fbf7; }
+.experience-location-card:hover { border-color: var(--accent); background: #f2fbf7; }
 .experience-location-summary { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
 .experience-location-open { display: grid; gap: 0.12rem; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--ink); cursor: pointer; text-align: left; }
 .experience-location-open strong { font-size: 0.9rem; }
 .experience-location-open span { color: var(--muted); font-size: 0.76rem; }
+.experience-location-card:hover .experience-location-open strong,
+.experience-location-card:hover > p { color: var(--accent-dark); }
 .experience-location-open:hover strong { color: var(--accent-dark); text-decoration: underline; text-underline-offset: 2px; }
 .experience-location-actions { display: flex; gap: 0.25rem; }
 .event-remove-btn { color: var(--coral); font-size: 1.3rem; }

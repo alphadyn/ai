@@ -91,6 +91,7 @@ const experienceCancelEditBtn = document.getElementById("experienceCancelEditBtn
 const experienceStatus = document.getElementById("experienceStatus");
 const experienceList = document.getElementById("experienceList");
 const experienceDetail = document.getElementById("experienceDetail");
+const experienceDetailKicker = document.getElementById("experienceDetailKicker");
 const activeExperienceName = document.getElementById("activeExperienceName");
 const activeExperienceDescription = document.getElementById("activeExperienceDescription");
 const experienceDoneBtn = document.getElementById("experienceDoneBtn");
@@ -101,6 +102,11 @@ const experienceLocationInput = document.getElementById("experienceLocationInput
 const experienceTimeInput = document.getElementById("experienceTimeInput");
 const experienceEventDescriptionInput = document.getElementById("experienceEventDescriptionInput");
 const experienceLocationList = document.getElementById("experienceLocationList");
+const experienceEventEditScreen = document.getElementById("experienceEventEditScreen");
+const experienceEventEditName = document.getElementById("experienceEventEditName");
+const experienceEventEditContent = document.getElementById("experienceEventEditContent");
+const backFromExperienceEventEditBtn = document.getElementById("backFromExperienceEventEditBtn");
+const experienceMapElement = document.getElementById("experienceMap");
 
 const mapElement = document.getElementById("map");
 const loggedOutPreviewImage = document.getElementById("loggedOutPreviewImage");
@@ -136,6 +142,13 @@ map.zoomControl.addTo(map);
 
 const checkInLayer = L.layerGroup().addTo(map);
 const experienceLayer = L.layerGroup().addTo(map);
+const experienceMap = L.map(experienceMapElement, { zoomControl: true, attributionControl: false }).setView([0, 0], 1);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=cb1_2w0f_1_82cba88eb21776b6335fa821", {
+  subdomains: "abcd",
+  maxZoom: 19,
+  noWrap: true,
+}).addTo(experienceMap);
+const experienceMapLayer = L.layerGroup().addTo(experienceMap);
 
 let checkIns = [];
 let photoMarkers = [];
@@ -153,6 +166,8 @@ let experiences = [];
 let activeExperience = null;
 let experienceLocations = [];
 let editingExperienceLocationId = null;
+let experienceViewMode = "view";
+let experienceMarkersByLocationId = new Map();
 let tripPageScrollY = null;
 let draggedTripId = null;
 let authMode = "signin";
@@ -314,10 +329,12 @@ function resetExperienceForm() {
 function showExperienceIndex() {
   activeExperience = null;
   experienceLocations = [];
+  experienceViewMode = "view";
   experienceLayer.clearLayers();
   experienceIndexScreen.hidden = false;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = true;
+  experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   renderExperiences();
 }
@@ -329,6 +346,7 @@ function showExperienceCreate() {
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = false;
   experienceDetail.hidden = true;
+  experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   experienceNameInput.focus();
 }
@@ -336,12 +354,12 @@ function showExperienceCreate() {
 function renderExperiences() {
   experienceList.innerHTML = experiences.length ? experiences.map((experience) => `
     <article class="experience-card${activeExperience?.id === experience.id ? " active" : ""}">
-      <button type="button" class="experience-card-open" data-open-experience="${escapeHtml(experience.id)}">
+      <div class="experience-card-open">
         <span class="experience-card-kicker">${experience.is_public ? "Public experience" : "Private experience"}</span><strong>${escapeHtml(experience.name)}</strong>
         ${experience.description ? `<span>${escapeHtml(experience.description)}</span>` : ""}
-      </button>
+      </div>
       <div class="experience-card-actions">
-        ${canEditExperience(experience) ? `<label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button>${experience.is_public ? `<button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
+        ${canEditExperience(experience) ? `<label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
       </div>
     </article>`).join("") : '<p class="empty-experience-state">Create an experience, then collect its events, places, and media.</p>';
   experienceDetail.hidden = !activeExperience;
@@ -349,28 +367,23 @@ function renderExperiences() {
     activeExperienceName.textContent = activeExperience.name;
     activeExperienceDescription.textContent = activeExperience.description || "Add events, places, and media to this experience.";
     experienceLocationForm.hidden = true;
+    experienceDetailKicker.textContent = experienceViewMode === "edit" ? "Edit experience" : "Experience details";
+    experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
+    newExperienceEventBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode !== "edit";
   }
 }
 
 function renderExperienceLocations() {
   if (!activeExperience) return;
-  experienceLocationList.innerHTML = experienceLocations.length ? experienceLocations.map((location) => editingExperienceLocationId === location.id ? renderExperienceLocationEditor(location) : `
+  experienceLocationList.innerHTML = experienceLocations.length ? experienceLocations.map((location) => `
     <li class="experience-location-card" data-experience-location-id="${escapeHtml(location.id)}">
       <div class="experience-location-summary">
         <button type="button" class="experience-location-open" data-show-experience-location="${escapeHtml(location.id)}"><strong>${escapeHtml(location.label)}</strong><span>${formatTimestamp(location.timestamp)}</span></button>
-        ${canEditExperience(activeExperience) ? `<div class="experience-location-actions"><button type="button" class="secondary-btn" data-edit-experience-location="${escapeHtml(location.id)}">Edit</button><button type="button" class="secondary-btn icon-btn event-remove-btn" data-delete-experience-location="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(location.label)}" title="Delete event">&minus;</button></div>` : ""}
+        ${canEditExperience(activeExperience) ? `<div class="experience-location-actions"><button type="button" class="secondary-btn" data-edit-experience-location="${escapeHtml(location.id)}">Edit</button>${experienceViewMode === "edit" ? `<button type="button" class="secondary-btn icon-btn event-remove-btn" data-delete-experience-location="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(location.label)}" title="Delete event">&minus;</button>` : ""}</div>` : ""}
       </div>
       ${location.description ? `<p>${escapeHtml(location.description)}</p>` : ""}
       ${renderPinMediaCarousel(location)}
-      ${renderExperienceMediaAvatars(location)}
     </li>`).join("") : '<li class="empty-state">No locations yet. Add the first moment above.</li>';
-  experienceLocationList.querySelectorAll("[data-delete-experience-media-id]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      await deleteExperienceMedia(button.dataset.experienceLocationId, button.dataset.deleteExperienceMediaId);
-    });
-  });
 }
 
 function renderExperienceMediaAvatars(location) {
@@ -385,16 +398,14 @@ function renderExperienceMediaAvatars(location) {
 }
 
 function renderExperienceLocationEditor(location) {
-  return `<li class="experience-location-card experience-location-editor">
-    <form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
+  return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
       <label>Location name<input name="label" value="${escapeHtml(location.label)}" required /></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
       <label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>
       ${renderExperienceMediaAvatars(location)}
       <div class="edit-checkin-actions"><button type="submit" class="primary-btn">Save event</button><button type="button" class="secondary-btn" data-cancel-experience-location-edit>Cancel</button></div>
-    </form>
-  </li>`;
+    </form>`;
 }
 
 async function saveExperience(event) {
@@ -450,21 +461,39 @@ async function addExperienceEvent(event) {
 
 function renderExperienceMarkers() {
   experienceLayer.clearLayers();
+  experienceMapLayer.clearLayers();
+  experienceMarkersByLocationId = new Map();
   experienceLocations.forEach((location) => {
-    const marker = L.marker([location.lat, location.lon]).addTo(experienceLayer)
-      .bindPopup(`<strong>${escapeHtml(activeExperience?.name || "Event")}</strong><br>${escapeHtml(location.label)}<br>${formatTimestamp(location.timestamp)}${location.description ? `<br>${escapeHtml(location.description)}` : ""}${renderPinMediaCarousel(location)}`);
+    const popup = `<strong>${escapeHtml(location.label)}</strong><br>${formatTimestamp(location.timestamp)}${location.description ? `<br>${escapeHtml(location.description)}` : ""}${renderPinMediaCarousel(location)}`;
+    const marker = L.marker([location.lat, location.lon]).addTo(experienceLayer).bindPopup(popup);
     marker.on("click", () => map.flyTo([location.lat, location.lon], 12, { duration: 0.45 }));
+    const detailMarker = L.marker([location.lat, location.lon]).addTo(experienceMapLayer).bindPopup(popup);
+    experienceMarkersByLocationId.set(location.id, detailMarker);
+    detailMarker.on("click", () => focusExperienceLocation(location.id, { fromMap: true }));
   });
+  fitExperienceMap();
 }
 
-async function openExperience(id) {
+function fitExperienceMap() {
+  experienceMap.invalidateSize();
+  if (!experienceLocations.length) {
+    experienceMap.setView([0, 0], 1);
+    return;
+  }
+  experienceMap.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [28, 28], maxZoom: 12 });
+}
+
+async function openExperience(id, options = {}) {
   activeExperience = experiences.find((experience) => experience.id === id) || null;
+  experienceViewMode = options.edit ? "edit" : "view";
   editingExperienceLocationId = null;
   experienceIndexScreen.hidden = true;
   experienceCreateScreen.hidden = true;
   experienceDetail.hidden = false;
+  experienceEventEditScreen.hidden = true;
   await loadExperienceLocations();
   renderExperiences();
+  window.setTimeout(fitExperienceMap, 0);
   if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
 }
 
@@ -498,6 +527,8 @@ async function saveExperienceLocation(event) {
     const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ label: location.label, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
+    experienceEventEditScreen.hidden = true;
+    experienceDetail.hidden = false;
     renderExperienceLocations();
     renderExperienceMarkers();
     setStatus(experienceStatus, "Location updated.", "success");
@@ -521,11 +552,14 @@ async function handleExperienceMediaAttachment(event) {
   finally { input.value = ""; }
 }
 
-function focusExperienceLocation(id) {
+function focusExperienceLocation(id, options = {}) {
   const location = experienceLocations.find((item) => item.id === id);
   if (!location) return;
   map.flyTo([location.lat, location.lon], 12, { duration: 0.45 });
+  if (!options.fromMap) experienceMap.flyTo([location.lat, location.lon], 12, { duration: 0.45 });
   experienceLocationList.querySelectorAll(".experience-location-card").forEach((card) => card.classList.toggle("selected", card.dataset.experienceLocationId === id));
+  experienceMarkersByLocationId.forEach((marker, locationId) => marker.getElement()?.classList.toggle("experience-marker-active", locationId === id));
+  experienceMarkersByLocationId.get(id)?.openPopup();
   let markerIndex = 0;
   experienceLayer.eachLayer((marker) => {
     if (experienceLocations[markerIndex]?.id === id) marker.openPopup();
@@ -539,6 +573,7 @@ function closeExperiences() {
   activeExperience = null;
   experienceLocations = [];
   experienceLayer.clearLayers();
+  experienceEventEditScreen.hidden = true;
   resetExperienceForm();
   unlockTripPageScroll();
 }
@@ -565,17 +600,26 @@ function openExperienceDetailsForm() {
 }
 
 async function handleExperienceClick(event) {
-  const openButton = event.target.closest("[data-open-experience]");
-  if (openButton) { await openExperience(openButton.dataset.openExperience); return; }
+  const card = event.target.closest(".experience-card");
+  if (card && !event.target.closest("button, input, label")) {
+    const id = card.querySelector("[data-edit-experience]")?.dataset.editExperience;
+    if (id) await openExperience(id);
+    return;
+  }
   const editButton = event.target.closest("[data-edit-experience]");
   if (editButton) {
     const experience = experiences.find((item) => item.id === editButton.dataset.editExperience);
     if (!experience) return;
-    await openExperience(experience.id);
+    await openExperience(experience.id, { edit: true });
     return;
   }
   const deleteButton = event.target.closest("[data-delete-experience]");
   if (deleteButton) deleteExperience(deleteButton.dataset.deleteExperience);
+  const copyButton = event.target.closest("[data-copy-experience]");
+  if (copyButton) {
+    try { await copyExperienceUrl(copyButton.dataset.copyExperience); }
+    catch (error) { setStatus(experienceStatus, error.message, "error"); }
+  }
 }
 
 async function updateExperienceSharing(id, isPublic) {
@@ -593,9 +637,15 @@ async function updateExperienceSharing(id, isPublic) {
 
 async function copyExperienceUrl(id) {
   const experience = experiences.find((item) => item.id === id);
-  if (!experience?.is_public) return;
-  await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(experience.public_slug)}`);
-  setStatus(experienceStatus, "Public experience URL copied.", "success");
+  if (!experience || !canEditExperience(experience)) return;
+  const slug = experience.public_slug || createPublicSlug(experience.name);
+  if (!experience.public_slug) {
+    const response = await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ public_slug: slug, updated_at: new Date().toISOString() }) });
+    if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create the experience URL."));
+    experience.public_slug = slug;
+  }
+  await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`);
+  setStatus(experienceStatus, experience.is_public ? "Public experience URL copied." : "Experience URL copied. Enable Public before sharing it.", "success");
 }
 
 async function handleExperienceChange(event) {
@@ -615,9 +665,13 @@ async function handleExperienceLocationClick(event) {
   }
   const showButton = event.target.closest("[data-show-experience-location]");
   if (showButton) { focusExperienceLocation(showButton.dataset.showExperienceLocation); return; }
+  const card = event.target.closest("[data-experience-location-id]");
+  if (card && !event.target.closest("button, input, label")) {
+    focusExperienceLocation(card.dataset.experienceLocationId);
+    return;
+  }
   const editButton = event.target.closest("[data-edit-experience-location]");
-  if (editButton) { editingExperienceLocationId = editButton.dataset.editExperienceLocation; renderExperienceLocations(); return; }
-  if (event.target.closest("[data-cancel-experience-location-edit]")) { editingExperienceLocationId = null; renderExperienceLocations(); return; }
+  if (editButton) { openExperienceEventEdit(editButton.dataset.editExperienceLocation); return; }
   const deleteButton = event.target.closest("[data-delete-experience-location]");
   if (deleteButton) {
     const location = experienceLocations.find((item) => item.id === deleteButton.dataset.deleteExperienceLocation);
@@ -632,6 +686,24 @@ async function handleExperienceLocationClick(event) {
     return;
   }
   handleMapPopupAction(event);
+}
+
+function openExperienceEventEdit(id) {
+  const location = experienceLocations.find((item) => item.id === id);
+  if (!location || !canEditExperience(activeExperience)) return;
+  editingExperienceLocationId = id;
+  experienceEventEditName.textContent = location.label;
+  experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
+  experienceDetail.hidden = true;
+  experienceEventEditScreen.hidden = false;
+  experienceEventEditContent.querySelector("input[name=label]")?.focus();
+}
+
+function closeExperienceEventEdit() {
+  editingExperienceLocationId = null;
+  experienceEventEditScreen.hidden = true;
+  experienceDetail.hidden = false;
+  renderExperienceLocations();
 }
 
 function renderTripSelect() {
@@ -1862,6 +1934,15 @@ experienceLocationList?.addEventListener("submit", saveExperienceLocation);
 experienceLocationList?.addEventListener("change", (event) => {
   if (event.target.matches(".experience-media-input")) handleExperienceMediaAttachment(event);
 });
+experienceEventEditContent.addEventListener("click", (event) => {
+  if (event.target.closest("[data-cancel-experience-location-edit]")) closeExperienceEventEdit();
+  else handleExperienceLocationClick(event);
+});
+experienceEventEditContent.addEventListener("submit", saveExperienceLocation);
+experienceEventEditContent.addEventListener("change", (event) => {
+  if (event.target.matches(".experience-media-input")) handleExperienceMediaAttachment(event);
+});
+backFromExperienceEventEditBtn.addEventListener("click", closeExperienceEventEdit);
 authForm.addEventListener("submit", handleAuthSubmit);
 toggleAuthBtn.addEventListener("click", () => {
   authMode = authMode === "signin" ? "signup" : "signin";
@@ -1906,6 +1987,7 @@ adminContent.addEventListener("click", handleAdminAction);
 clearCheckInsBtn.addEventListener("click", clearAllCheckIns);
 map.on("contextmenu", handleMapContextMenu);
 map.getContainer().addEventListener("click", handleMapPopupAction);
+experienceMap.getContainer().addEventListener("click", handleMapPopupAction);
 checkInListEl.addEventListener("click", handleCheckInListInteraction);
 checkInListEl.addEventListener("click", handleCheckInListAction);
 checkInListEl.addEventListener("keydown", handleCheckInListInteraction);

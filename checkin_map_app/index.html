@@ -74,8 +74,9 @@
             </form>
           </section>
           <section id="experienceDetail" class="experience-detail" hidden>
-            <div class="experience-detail-heading"><div><p class="panel-kicker">Edit experience</p><h3 id="activeExperienceName"></h3></div><div class="experience-detail-actions"><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit details</button><button type="button" id="experienceDoneBtn" class="secondary-btn">Back</button></div></div>
+            <div class="experience-detail-heading"><div><p id="experienceDetailKicker" class="panel-kicker">Experience details</p><h3 id="activeExperienceName"></h3></div><div class="experience-detail-actions"><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit experience</button><button type="button" id="experienceDoneBtn" class="secondary-btn">Back</button></div></div>
             <p id="activeExperienceDescription" class="experience-description"></p>
+            <div id="experienceMap" class="experience-map" aria-label="Experience events map"></div>
             <form id="experienceLocationForm" class="experience-location-form" hidden>
               <label>Location<input id="experienceLocationInput" type="text" placeholder="Search for a location" required /></label>
               <label>When<input id="experienceTimeInput" type="datetime-local" required /></label>
@@ -84,6 +85,10 @@
             </form>
             <div class="experience-events-heading"><h4>Events</h4><button type="button" id="newExperienceEventBtn" class="secondary-btn icon-btn" aria-label="Add event" title="Add event">+</button></div>
             <ol id="experienceLocationList" class="experience-location-list"></ol>
+          </section>
+          <section id="experienceEventEditScreen" class="experience-detail" hidden>
+            <div class="experience-detail-heading"><div><p class="panel-kicker">Edit event</p><h3 id="experienceEventEditName"></h3></div><button type="button" id="backFromExperienceEventEditBtn" class="secondary-btn">Back</button></div>
+            <div id="experienceEventEditContent"></div>
           </section>
         </section>
 
