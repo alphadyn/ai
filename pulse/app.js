@@ -13,11 +13,10 @@ const MAX_POST_ATTACHMENTS = 4;
 const MAX_ATTACHMENT_TOTAL_BYTES = 5 * 1024 * 1024;
 const MAX_ATTACHMENT_BYTES = 1.5 * 1024 * 1024;
 
-function namespacedName(name, kind = 'table') {
+function namespacedName(name) {
   const value = String(name || '').trim();
   if (!value) return value;
-  const prefix = kind === 'rpc' ? 'pulse_' : 'pulse_';
-  return value.startsWith(prefix) ? value : `${prefix}${value}`;
+  return value.startsWith(TABLE_PREFIX) ? value : `${TABLE_PREFIX}${value}`;
 }
 
 function tableCandidates(name) {
@@ -29,7 +28,7 @@ function tableCandidates(name) {
 function functionCandidates(name) {
   const value = String(name || '').trim();
   if (!value) return [value];
-  return [namespacedName(value, 'rpc')];
+  return [namespacedName(value)];
 }
 
 function isMissingSchemaObjectError(message, candidate) {
@@ -127,64 +126,44 @@ async function authFetch(path, body) {
 async function restFetch(method, table, { params, body, prefer, headers } = {}) {
   const token = await getAccessToken();
   const qs = params ? `?${new URLSearchParams(params).toString()}` : '';
-  let lastError = null;
-
-  for (const targetTable of tableCandidates(table)) {
-    try {
-      const res = await fetch(`${CONFIG.url}/rest/v1/${targetTable}${qs}`, {
-        method,
-        headers: {
-          apikey: CONFIG.anonKey,
-          Authorization: `Bearer ${token || CONFIG.anonKey}`,
-          'Content-Type': 'application/json',
-          ...(prefer ? { Prefer: prefer } : {}),
-          ...(headers || {}),
-        },
-        body: body !== undefined ? JSON.stringify(body) : undefined,
-      });
-      const data = parseResponseBody(await res.text());
-      if (!res.ok) {
-        const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-        throw new Error(message);
-      }
-      return { data, headers: res.headers };
-    } catch (err) {
-      lastError = err;
-      throw err;
-    }
+  const [targetTable] = tableCandidates(table);
+  const res = await fetch(`${CONFIG.url}/rest/v1/${targetTable}${qs}`, {
+    method,
+    headers: {
+      apikey: CONFIG.anonKey,
+      Authorization: `Bearer ${token || CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+      ...(prefer ? { Prefer: prefer } : {}),
+      ...(headers || {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = parseResponseBody(await res.text());
+  if (!res.ok) {
+    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+    throw new Error(message);
   }
-
-  throw lastError || new Error(`Could not resolve table '${table}'`);
+  return { data, headers: res.headers };
 }
 
 async function rpcFetch(name, args) {
   const token = await getAccessToken();
-  let lastError = null;
-
-  for (const targetName of functionCandidates(name)) {
-    try {
-      const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${targetName}`, {
-        method: 'POST',
-        headers: {
-          apikey: CONFIG.anonKey,
-          Authorization: `Bearer ${token || CONFIG.anonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(args || {}),
-      });
-      const data = parseResponseBody(await res.text());
-      if (!res.ok) {
-        const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
-        throw new Error(message);
-      }
-      return data;
-    } catch (err) {
-      lastError = err;
-      throw err;
-    }
+  const [targetName] = functionCandidates(name);
+  const res = await fetch(`${CONFIG.url}/rest/v1/rpc/${targetName}`, {
+    method: 'POST',
+    headers: {
+      apikey: CONFIG.anonKey,
+      Authorization: `Bearer ${token || CONFIG.anonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(args || {}),
+  });
+  const data = parseResponseBody(await res.text());
+  if (!res.ok) {
+    const message = (data && (data.message || data.error_description)) || `Request failed (${res.status})`;
+    throw new Error(message);
   }
-
-  throw lastError || new Error(`Could not resolve function '${name}'`);
+  return data;
 }
 
 function anonId() {
@@ -207,13 +186,13 @@ function sanitizeRichText(raw) {
   let text = raw.replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '');
   text = text.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
   text = text.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '');
-    text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
-    text = text.replace(/<a\b([^>]*)>/gi, (match, attributes) => {
-      const cleanAttributes = attributes
-        .replace(/\s(target|rel)\s*=\s*("[^"]*"|'[^']*')/gi, '')
-        .trim();
-      return `<a${cleanAttributes ? ` ${cleanAttributes}` : ''} target="_blank" rel="noopener noreferrer">`;
-    });
+  text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
+  text = text.replace(/<a\b([^>]*)>/gi, (match, attributes) => {
+    const cleanAttributes = attributes
+      .replace(/\s(target|rel)\s*=\s*("[^"]*"|'[^']*')/gi, '')
+      .trim();
+    return `<a${cleanAttributes ? ` ${cleanAttributes}` : ''} target="_blank" rel="noopener noreferrer">`;
+  });
   return text;
 }
 
