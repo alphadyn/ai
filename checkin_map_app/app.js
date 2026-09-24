@@ -367,7 +367,7 @@ function renderExperiences() {
     activeExperienceName.textContent = activeExperience.name;
     activeExperienceDescription.textContent = activeExperience.description || "Add events, places, and media to this experience.";
     experienceLocationForm.hidden = true;
-    experienceDetailKicker.textContent = experienceViewMode === "edit" ? "Edit experience" : "Experience details";
+    experienceDetailKicker.textContent = experienceViewMode === "edit" ? "Edit experience" : "Experience";
     experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
     newExperienceEventBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode !== "edit";
   }
