@@ -258,6 +258,7 @@ async function supabaseRequest(path, options = {}) {
   try {
     return await fetch(`${SUPABASE_URL.replace(/\/$/, "")}${path}`, {
       ...options,
+      credentials: "omit",
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
@@ -273,6 +274,7 @@ async function supabaseRequest(path, options = {}) {
 async function authRequest(path, body) {
   const response = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/auth/v1/${path}`, {
     method: "POST",
+    credentials: "omit",
     headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -704,11 +706,14 @@ async function handleExperienceMediaAttachment(event) {
 function focusExperienceLocation(id, options = {}) {
   const location = experienceLocations.find((item) => item.id === id);
   if (!location) return;
-  map.flyTo([location.lat, location.lon], 12, { duration: 0.45 });
   if (!options.fromMap) experienceMap.flyTo([location.lat, location.lon], 12, { duration: 0.45 });
   experienceLocationList.querySelectorAll(".experience-location-card").forEach((card) => card.classList.toggle("selected", card.dataset.experienceLocationId === id));
   experienceMarkersByLocationId.forEach((marker, locationId) => marker.getElement()?.classList.toggle("experience-marker-active", locationId === id));
-  experienceMarkersByLocationId.get(id)?.openPopup();
+  const detailMarker = experienceMarkersByLocationId.get(id);
+  if (detailMarker) {
+    experienceMap.panTo([location.lat, location.lon], { animate: true, duration: 0.45 });
+    detailMarker.openPopup();
+  }
   let markerIndex = 0;
   experienceLayer.eachLayer((marker) => {
     if (experienceLocations[markerIndex]?.id === id) marker.openPopup();
