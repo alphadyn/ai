@@ -26,6 +26,7 @@ const mediaViewerPrev = document.getElementById("mediaViewerPrev");
 const mediaViewerNext = document.getElementById("mediaViewerNext");
 const mediaViewerContent = document.getElementById("mediaViewerContent");
 const mediaViewerName = document.getElementById("mediaViewerName");
+const mediaViewerDescription = document.getElementById("mediaViewerDescription");
 const authPanel = document.getElementById("authPanel");
 const appContent = document.getElementById("appContent");
 const authForm = document.getElementById("authForm");
@@ -52,6 +53,7 @@ const tripsBtn = document.getElementById("tripsBtn");
 const tripPanel = document.getElementById("tripPanel");
 const closeTripsBtn = document.getElementById("closeTripsBtn");
 const tripSelect = document.getElementById("tripSelect");
+const tripListEl = document.getElementById("tripList");
 const newTripBtn = document.getElementById("newTripBtn");
 const tripNameInput = document.getElementById("tripNameInput");
 const saveTripBtn = document.getElementById("saveTripBtn");
@@ -209,19 +211,85 @@ async function loadTrips() {
 }
 
 function renderTripSelect() {
-  tripSelect.innerHTML = trips.map((trip) => `<option value="${escapeHtml(trip.id)}">${escapeHtml(trip.name)}</option>`).join("");
-  if (currentTrip) tripSelect.value = currentTrip.id;
-  tripEditNameInput.value = currentTrip?.name || "";
+  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><input type="text" maxlength="100" value="${escapeHtml(trip.name)}" data-trip-name="${escapeHtml(trip.id)}" aria-label="Trip name" /><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
   updateTripSharingControls();
 }
 
 function updateTripSharingControls() {
+  if (tripListEl) return;
   const ownerView = Boolean(canEditTrip() && !isPublicTrip);
   toggleTripPublicBtn.hidden = !ownerView;
   shareTripBtn.hidden = !ownerView || !currentTrip.is_public;
   tripEditNameInput.hidden = !ownerView;
   saveTripDetailsBtn.hidden = !ownerView;
-  toggleTripPublicBtn.textContent = currentTrip?.is_public ? "Make private" : "Make public";
+  toggleTripPublicBtn.checked = Boolean(currentTrip?.is_public);
+}
+
+async function saveTripCard(tripId) {
+  const trip = trips.find((item) => item.id === tripId);
+  if (!trip || !canEditTrip()) return;
+  const name = tripListEl.querySelector(`[data-trip-name="${CSS.escape(tripId)}"]`).value.trim();
+  const isPublic = tripListEl.querySelector(`[data-trip-public="${CSS.escape(tripId)}"]`).checked;
+  if (!name) throw new Error("Enter a name for this trip.");
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name, is_public: isPublic }) });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the trip."));
+  trip.name = name;
+  trip.is_public = isPublic;
+  if (currentTrip?.id === tripId) currentTrip = trip;
+  renderTripSelect();
+  setStatus(tripStatus, "Trip details saved.", "success");
+}
+
+async function copyTripCardUrl(tripId) {
+  const trip = trips.find((item) => item.id === tripId);
+  if (!trip?.is_public) return;
+  await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(trip.public_slug)}`);
+  setStatus(tripStatus, "Public trip URL copied.", "success");
+}
+
+async function deleteTripCard(tripId) {
+  const trip = trips.find((item) => item.id === tripId);
+  if (!trip || !canEditTrip() || !window.confirm(`Delete the trip "${trip.name}" and all its check-ins?`)) return;
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "DELETE" });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not delete the trip."));
+  trips = trips.filter((item) => item.id !== tripId);
+  currentTrip = trips[0] || null;
+  renderTripSelect();
+  await loadCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  setStatus(tripStatus, "Trip deleted.", "success");
+}
+
+async function handleTripListAction(event) {
+  const openButton = event.target.closest("[data-open-trip]");
+  if (openButton) {
+    currentTrip = trips.find((trip) => trip.id === openButton.dataset.openTrip);
+    await loadCheckIns();
+    renderCheckInList();
+    renderCheckInMarkers();
+    renderTripSelect();
+    tripPanel.hidden = true;
+    tripPanel.classList.remove("trip-panel-open");
+    document.body.classList.remove("trips-open");
+    if (checkIns.length > 0) map.setView([checkIns[0].lat, checkIns[0].lon], 10);
+    setStatus(checkInStatus, `Opened trip "${currentTrip.name}".`, "success");
+    return;
+  }
+  const saveButton = event.target.closest("[data-save-trip]");
+  if (saveButton) {
+    try { await saveTripCard(saveButton.dataset.saveTrip); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+    return;
+  }
+  const copyButton = event.target.closest("[data-copy-trip]");
+  if (copyButton) {
+    try { await copyTripCardUrl(copyButton.dataset.copyTrip); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+    return;
+  }
+  const deleteButton = event.target.closest("[data-delete-trip]");
+  if (deleteButton) {
+    try { await deleteTripCard(deleteButton.dataset.deleteTrip); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+  }
 }
 
 function createPublicSlug(name) {
@@ -239,13 +307,16 @@ async function copyTripUrl() {
 
 async function toggleTripPublic() {
   if (!canEditTrip() || isPublicTrip) return;
-  const isPublic = !currentTrip.is_public;
+  const isPublic = toggleTripPublicBtn.checked;
   const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ is_public: isPublic }),
   });
-  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update trip visibility."));
+  if (!response.ok) {
+    toggleTripPublicBtn.checked = Boolean(currentTrip.is_public);
+    throw new Error(await getSupabaseError(response, "Could not update trip visibility."));
+  }
   currentTrip.is_public = isPublic;
   updateTripSharingControls();
   setStatus(tripStatus, isPublic ? "Trip is now public." : "Trip is now private.", "success");
@@ -301,6 +372,7 @@ function mapLocationRow(row, mediaByCheckIn) {
     lat: row.lat,
     lon: row.lon,
     label: row.label,
+    description: row.description || "",
     timestamp: row.timestamp,
     type: row.type,
     previewUrl: row.preview_url || "",
@@ -335,6 +407,7 @@ function mapCheckInToRow(checkIn) {
     lat: checkIn.lat,
     lon: checkIn.lon,
     label: checkIn.label,
+    description: checkIn.description || "",
     timestamp: checkIn.timestamp,
     type: checkIn.type,
     trip_id: checkIn.tripId || currentTrip.id,
@@ -466,6 +539,7 @@ function renderCheckInEditor(checkIn, index) {
     <form class="edit-checkin-form" data-edit-form-index="${index}" data-stop-map-click="true">
       <label>Location name<input name="label" type="text" value="${escapeHtml(checkIn.label)}" required /></label>
       <label>Date and time<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(checkIn.timestamp)}" required /></label>
+      <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="Add a note about this check-in">${escapeHtml(checkIn.description || "")}</textarea></label>
       <label class="attach-media-btn">
         <span>Attach media</span>
         <input class="media-input" type="file" accept="image/*,video/*,audio/*" multiple data-checkin-index="${index}" />
@@ -532,10 +606,12 @@ async function saveEditedCheckIn(event) {
   const index = Number(form.dataset.editFormIndex);
   const checkIn = checkIns[index];
   const label = form.elements.label.value.trim();
+  const description = form.elements.description.value.trim();
   const timestamp = new Date(form.elements.timestamp.value);
   if (!checkIn || !canEditCheckIn(checkIn) || !label || Number.isNaN(timestamp.getTime())) return;
 
   checkIn.label = label;
+  checkIn.description = description;
   checkIn.timestamp = timestamp.toISOString();
   try {
     await saveCheckIn(checkIn);
@@ -671,7 +747,7 @@ function renderPinMediaCarousel(checkIn) {
       return `<div class="pin-media-slide${index === 0 ? " active" : ""}" data-slide-index="${index}" data-media-url="${escapeHtml(media.dataUrl)}" data-media-type="${escapeHtml(media.type)}" data-media-name="${escapeHtml(media.name)}">${content}<span>${escapeHtml(media.name)}</span></div>`;
     })
     .join("");
-  return `<div class="pin-media-carousel" data-active-index="0"><div class="pin-media-slides">${slides}</div><div class="pin-media-controls"><button type="button" data-carousel-direction="prev" aria-label="Previous media">&#8249;</button><span>${checkIn.media.length} attached</span><button type="button" data-carousel-direction="next" aria-label="Next media">&#8250;</button></div></div>`;
+  return `<div class="pin-media-carousel" data-active-index="0" data-description="${escapeHtml(checkIn.description || "")}"><div class="pin-media-slides">${slides}</div><div class="pin-media-controls"><button type="button" data-carousel-direction="prev" aria-label="Previous media">&#8249;</button><span>${checkIn.media.length} attached</span><button type="button" data-carousel-direction="next" aria-label="Next media">&#8250;</button></div></div>`;
 }
 
 function movePinCarousel(carousel, direction) {
@@ -700,6 +776,7 @@ function updateMediaViewer() {
   mediaElement.alt = mediaName;
   mediaViewerContent.replaceChildren(mediaElement);
   mediaViewerName.textContent = mediaName;
+  mediaViewerDescription.textContent = slide.closest(".pin-media-carousel")?.dataset.description || "";
   mediaViewerPrev.disabled = mediaViewerSlides.length < 2;
   mediaViewerNext.disabled = mediaViewerSlides.length < 2;
   mediaViewer.hidden = false;
@@ -1139,7 +1216,7 @@ tripsBtn.addEventListener("click", () => {
   tripPanel.hidden = false;
   tripPanel.classList.add("trip-panel-open");
   document.body.classList.add("trips-open");
-  tripSelect.focus();
+  tripListEl.querySelector(".trip-card.active")?.focus();
 });
 closeTripsBtn.addEventListener("click", () => {
   tripPanel.hidden = true;
@@ -1157,21 +1234,7 @@ signOutBtn.addEventListener("click", () => {
   clearStoredSession();
   window.location.reload();
 });
-shareTripBtn.addEventListener("click", async () => {
-  try { await copyTripUrl(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
-});
-toggleTripPublicBtn.addEventListener("click", async () => {
-  try { await toggleTripPublic(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
-});
-tripSelect.addEventListener("change", async () => {
-  currentTrip = trips.find((trip) => trip.id === tripSelect.value);
-  updateTripSharingControls();
-  tripEditNameInput.value = currentTrip?.name || "";
-  await loadCheckIns();
-  renderCheckInList();
-  renderCheckInMarkers();
-  updateClearCheckInsButton();
-});
+tripListEl.addEventListener("click", handleTripListAction);
 newTripBtn.addEventListener("click", () => {
   tripNameInput.hidden = false;
   saveTripBtn.hidden = false;
@@ -1179,9 +1242,6 @@ newTripBtn.addEventListener("click", () => {
 });
 saveTripBtn.addEventListener("click", async () => {
   try { await createTrip(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
-});
-saveTripDetailsBtn.addEventListener("click", async () => {
-  try { await saveTripDetails(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
 });
 refreshAdminBtn.addEventListener("click", async () => {
   try { await loadAdminData(); setStatus(adminStatus, "Admin data refreshed.", "success"); } catch (error) { setStatus(adminStatus, error.message, "error"); }
@@ -1216,10 +1276,19 @@ mediaViewer.addEventListener("touchend", (event) => {
   if (Math.abs(distance) > 55) moveMediaViewer(distance < 0 ? 1 : -1);
 }, { passive: true });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !mediaViewer.hidden) closeMediaViewer();
-  if (!mediaViewer.hidden && event.key === "ArrowLeft") moveMediaViewer(-1);
-  if (!mediaViewer.hidden && event.key === "ArrowRight") moveMediaViewer(1);
-});
+  if (mediaViewer.hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    closeMediaViewer();
+    return;
+  }
+  if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    moveMediaViewer(event.key === "ArrowLeft" ? -1 : 1);
+  }
+}, true);
 
 async function initializeApp() {
   renderCheckInList();

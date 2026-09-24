@@ -48,9 +48,59 @@ body {
   flex-wrap: wrap;
 }
 
+.public-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.public-toggle input {
+  width: 2.35rem;
+  height: 1.3rem;
+  margin: 0;
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #d8e1dc;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.public-toggle input::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #fffdf8;
+  box-shadow: 0 1px 3px rgba(23, 33, 43, 0.2);
+  content: "";
+  transition: transform 0.18s ease;
+}
+
+.public-toggle input:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.public-toggle input:checked::after {
+  transform: translateX(1.05rem);
+}
+
+.public-toggle input:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
 .public-trip-view #newTripBtn,
 .public-trip-view #shareTripBtn,
-.public-trip-view #toggleTripPublicBtn,
+.public-trip-view .public-toggle,
 .public-trip-view #tripEditNameInput,
 .public-trip-view #saveTripDetailsBtn,
 .public-trip-view #tripNameInput,
@@ -260,6 +310,73 @@ body.profile-open::before {
   font-size: 0.7rem;
 }
 
+.trip-list {
+  display: grid;
+  gap: 0.7rem;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.trip-card {
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.trip-card.active {
+  border-color: var(--accent);
+  background: #f4fcf9;
+  box-shadow: 0 5px 15px rgba(15, 118, 110, 0.08);
+}
+
+.trip-card-main,
+.trip-card-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.trip-card-main {
+  justify-content: space-between;
+}
+
+.trip-card h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.1rem;
+}
+
+.trip-card-meta {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.trip-card-edit {
+  margin-top: 0.8rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.trip-card-edit input[type="text"] {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.trip-card-edit input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -439,6 +556,9 @@ body.profile-open::before {
 }
 
 .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.5rem 0.72rem;
@@ -447,6 +567,12 @@ body.profile-open::before {
   font-size: 0.78rem;
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.button-icon {
+  color: var(--accent);
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .secondary-btn:hover:not(:disabled) {
@@ -769,6 +895,17 @@ body.profile-open::before {
   color: #fff;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.media-viewer-description {
+  position: absolute;
+  bottom: 2.35rem;
+  max-width: min(80vw, 760px);
+  margin: 0;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .edit-checkin-form {

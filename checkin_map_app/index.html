@@ -50,8 +50,9 @@
       <main id="appContent" class="app-grid" hidden>
         <section id="tripPanel" class="panel trip-panel" hidden>
           <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><button type="button" id="closeTripsBtn" class="secondary-btn">Close</button></div>
-          <div class="trip-heading-actions"><button type="button" id="toggleTripPublicBtn" class="secondary-btn">Make public</button><button type="button" id="shareTripBtn" class="secondary-btn" hidden>Copy share URL</button><button type="button" id="newTripBtn" class="secondary-btn">New trip</button></div>
-          <div class="trip-actions"><select id="tripSelect" aria-label="Current trip"></select><input id="tripEditNameInput" type="text" maxlength="100" placeholder="Trip name" aria-label="Trip name" /><button type="button" id="saveTripDetailsBtn" class="secondary-btn">Save name</button><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
+          <div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn">New trip</button></div>
+          <div id="tripList" class="trip-list"></div>
+          <div class="trip-actions"><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
           <span id="tripStatus" class="status-text" role="status"></span>
         </section>
         <section class="panel map-panel">
@@ -75,7 +76,7 @@
           <span id="checkInStatus" class="status-text" role="status"></span>
         </section>
 
-        <section id="photoPanel" class="panel">
+        <section class="panel">
           <div class="section-heading">
             <div><p class="panel-kicker">Your trail</p><h2>Check-Ins</h2></div>
             <button type="button" id="clearCheckInsBtn" class="secondary-btn" disabled>Remove all</button>
@@ -86,7 +87,7 @@
           </ol>
         </section>
 
-        <section class="panel">
+        <section id="photoPanel" class="panel">
           <h2>Upload a Photo</h2>
           <p class="hint">Choose a JPEG photo that has embedded GPS data (most phone camera photos do) to plot where it was taken.</p>
           <label class="file-picker" for="photoInput">
@@ -112,6 +113,7 @@
       <button type="button" id="mediaViewerPrev" class="media-viewer-nav media-viewer-prev" aria-label="Previous media">&#8249;</button>
       <div id="mediaViewerContent" class="media-viewer-content"></div>
       <button type="button" id="mediaViewerNext" class="media-viewer-nav media-viewer-next" aria-label="Next media">&#8250;</button>
+      <p id="mediaViewerDescription" class="media-viewer-description"></p>
       <p id="mediaViewerName" class="media-viewer-name"></p>
     </div>
 
