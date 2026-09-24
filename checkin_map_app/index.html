@@ -50,11 +50,28 @@
 
       <main id="appContent" class="app-grid" hidden>
         <section id="tripPanel" class="panel trip-panel" hidden>
-          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><button type="button" id="closeTripsBtn" class="secondary-btn">Close</button></div>
-          <div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn">New trip</button></div>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn icon-btn" aria-label="New trip" title="New trip">+</button><button type="button" id="closeTripsBtn" class="secondary-btn">Close</button></div></div>
           <div id="tripList" class="trip-list"></div>
           <div class="trip-actions"><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
           <span id="tripStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section id="newTripPanel" class="panel new-trip-panel" hidden>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>New trip</h2></div><button type="button" id="backFromNewTripBtn" class="secondary-btn">Back</button></div>
+          <form id="newTripForm" class="new-trip-form">
+            <label>Trip name<input id="newTripNameInput" type="text" maxlength="100" placeholder="e.g. Summer in Japan" required /></label>
+            <div class="new-trip-actions"><button type="submit" class="primary-btn">Save trip</button><button type="button" id="cancelNewTripBtn" class="secondary-btn">Cancel</button></div>
+          </form>
+          <span id="newTripStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section id="renameTripPanel" class="panel new-trip-panel" hidden>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Rename trip</h2></div><button type="button" id="backFromRenameBtn" class="secondary-btn">Cancel</button></div>
+          <form id="renameTripForm" class="new-trip-form">
+            <label>Trip name<input id="renameTripNameInput" type="text" maxlength="100" required /></label>
+            <div class="new-trip-actions"><button type="submit" class="primary-btn">Save name</button><button type="button" id="cancelRenameBtn" class="secondary-btn">Cancel</button></div>
+          </form>
+          <span id="renameTripStatus" class="status-text" role="status"></span>
         </section>
         <section class="panel map-panel">
           <div class="map-panel-heading">

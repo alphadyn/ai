@@ -53,6 +53,18 @@ const profileAvatarInput = document.getElementById("profileAvatarInput");
 const tripsBtn = document.getElementById("tripsBtn");
 const tripPanel = document.getElementById("tripPanel");
 const closeTripsBtn = document.getElementById("closeTripsBtn");
+const newTripPanel = document.getElementById("newTripPanel");
+const newTripForm = document.getElementById("newTripForm");
+const newTripNameInput = document.getElementById("newTripNameInput");
+const backFromNewTripBtn = document.getElementById("backFromNewTripBtn");
+const cancelNewTripBtn = document.getElementById("cancelNewTripBtn");
+const newTripStatus = document.getElementById("newTripStatus");
+const renameTripPanel = document.getElementById("renameTripPanel");
+const renameTripForm = document.getElementById("renameTripForm");
+const renameTripNameInput = document.getElementById("renameTripNameInput");
+const backFromRenameBtn = document.getElementById("backFromRenameBtn");
+const cancelRenameBtn = document.getElementById("cancelRenameBtn");
+const renameTripStatus = document.getElementById("renameTripStatus");
 const tripSelect = document.getElementById("tripSelect");
 const tripListEl = document.getElementById("tripList");
 const newTripBtn = document.getElementById("newTripBtn");
@@ -212,7 +224,7 @@ async function loadTrips() {
 }
 
 function renderTripSelect() {
-  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><input type="text" maxlength="100" value="${escapeHtml(trip.name)}" data-trip-name="${escapeHtml(trip.id)}" aria-label="Trip name" /><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
+  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><input type="text" maxlength="100" value="${escapeHtml(trip.name)}" data-trip-name="${escapeHtml(trip.id)}" aria-label="Trip name" /><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
   updateTripSharingControls();
 }
 
@@ -232,10 +244,12 @@ async function saveTripCard(tripId) {
   const name = tripListEl.querySelector(`[data-trip-name="${CSS.escape(tripId)}"]`).value.trim();
   const isPublic = tripListEl.querySelector(`[data-trip-public="${CSS.escape(tripId)}"]`).checked;
   if (!name) throw new Error("Enter a name for this trip.");
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name, is_public: isPublic }) });
+  const publicSlug = trip.public_slug || createPublicSlug(name);
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name, is_public: isPublic, public_slug: publicSlug }) });
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the trip."));
   trip.name = name;
   trip.is_public = isPublic;
+  trip.public_slug = publicSlug;
   if (currentTrip?.id === tripId) currentTrip = trip;
   renderTripSelect();
   setStatus(tripStatus, "Trip details saved.", "success");
@@ -263,6 +277,12 @@ async function deleteTripCard(tripId) {
 }
 
 async function handleTripListAction(event) {
+  const publicToggle = event.target.closest("[data-trip-public]");
+  if (publicToggle && event.type === "change") {
+    try { await saveTripCard(publicToggle.dataset.tripPublic); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+    return;
+  }
+
   const openButton = event.target.closest("[data-open-trip]");
   if (openButton) {
     currentTrip = trips.find((trip) => trip.id === openButton.dataset.openTrip);
@@ -280,6 +300,11 @@ async function handleTripListAction(event) {
   const saveButton = event.target.closest("[data-save-trip]");
   if (saveButton) {
     try { await saveTripCard(saveButton.dataset.saveTrip); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+    return;
+  }
+  const renameButton = event.target.closest("[data-rename-trip]");
+  if (renameButton) {
+    openRenameTripScreen(renameButton.dataset.renameTrip);
     return;
   }
   const copyButton = event.target.closest("[data-copy-trip]");
@@ -1098,6 +1123,77 @@ function closeProfile() {
   document.body.classList.remove("profile-open");
 }
 
+function openNewTripScreen() {
+  tripPanel.hidden = true;
+  newTripPanel.hidden = false;
+  newTripPanel.classList.add("profile-panel-open");
+  newTripNameInput.focus();
+}
+
+function closeNewTripScreen() {
+  newTripPanel.hidden = true;
+  newTripPanel.classList.remove("profile-panel-open");
+  newTripNameInput.value = "";
+  setStatus(newTripStatus, "");
+  tripPanel.hidden = false;
+}
+
+function openRenameTripScreen(tripId) {
+  const trip = trips.find((item) => item.id === tripId);
+  if (!trip || !canEditTrip()) return;
+  currentTrip = trip;
+  tripPanel.hidden = true;
+  renameTripPanel.hidden = false;
+  renameTripNameInput.value = trip.name;
+  renameTripNameInput.focus();
+}
+
+function closeRenameTripScreen() {
+  renameTripPanel.hidden = true;
+  renameTripNameInput.value = "";
+  setStatus(renameTripStatus, "");
+  tripPanel.hidden = false;
+}
+
+async function saveRenamedTrip(event) {
+  event.preventDefault();
+  const name = renameTripNameInput.value.trim();
+  if (!name || !currentTrip || !canEditTrip()) return;
+  try {
+    const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name }) });
+    if (!response.ok) throw new Error(await getSupabaseError(response, "Could not rename the trip."));
+    currentTrip.name = name;
+    const trip = trips.find((item) => item.id === currentTrip.id);
+    if (trip) trip.name = name;
+    renderTripSelect();
+    closeRenameTripScreen();
+    setStatus(tripStatus, "Trip renamed.", "success");
+  } catch (error) {
+    setStatus(renameTripStatus, error.message, "error");
+  }
+}
+
+async function saveNewTrip(event) {
+  event.preventDefault();
+  const name = newTripNameInput.value.trim();
+  if (!name) return;
+  try {
+    const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ name, is_public: false, public_slug: createPublicSlug(name) }) });
+    if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create trip."));
+    const [trip] = await response.json();
+    trips.push(trip);
+    currentTrip = trip;
+    renderTripSelect();
+    await loadCheckIns();
+    renderCheckInList();
+    renderCheckInMarkers();
+    closeNewTripScreen();
+    setStatus(tripStatus, `Trip "${trip.name}" created.`, "success");
+  } catch (error) {
+    setStatus(newTripStatus, error.message, "error");
+  }
+}
+
 function updateAvatar(url) {
   userAvatar.src = url || "";
   userAvatar.hidden = !url;
@@ -1280,11 +1376,14 @@ signOutBtn.addEventListener("click", () => {
   setAuthUi(false);
 });
 tripListEl.addEventListener("click", handleTripListAction);
-newTripBtn.addEventListener("click", () => {
-  tripNameInput.hidden = false;
-  saveTripBtn.hidden = false;
-  tripNameInput.focus();
-});
+tripListEl.addEventListener("change", handleTripListAction);
+newTripBtn.addEventListener("click", openNewTripScreen);
+backFromNewTripBtn.addEventListener("click", closeNewTripScreen);
+cancelNewTripBtn.addEventListener("click", closeNewTripScreen);
+newTripForm.addEventListener("submit", saveNewTrip);
+backFromRenameBtn.addEventListener("click", closeRenameTripScreen);
+cancelRenameBtn.addEventListener("click", closeRenameTripScreen);
+renameTripForm.addEventListener("submit", saveRenamedTrip);
 saveTripBtn.addEventListener("click", async () => {
   try { await createTrip(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
 });
