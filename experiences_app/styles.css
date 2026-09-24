@@ -172,6 +172,7 @@ select:focus-visible {
 
 .public-experience-view { background: var(--bg); }
 .public-experience-view .topbar { margin-bottom: 1rem; }
+.public-experience-view #userStatus { display: none; }
 .public-experience-view #appContent { display: block; }
 .public-experience-view .experience-panel {
   position: relative;
