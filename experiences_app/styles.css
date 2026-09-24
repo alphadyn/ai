@@ -161,6 +161,29 @@ select:focus-visible {
   display: none !important;
 }
 
+.public-experience-view .topbar,
+.public-experience-view #authPanel,
+.public-experience-view #appContent > section:not(#experiencePanel) {
+  display: none !important;
+}
+
+.public-experience-view .page-shell { max-width: none; padding: 0; }
+.public-experience-view #appContent { display: block; }
+.public-experience-view .experience-panel {
+  position: relative;
+  top: 0;
+  inset: auto;
+  width: min(1400px, calc(100vw - 2rem));
+  max-height: none;
+  min-height: 100vh;
+  margin: 0 auto;
+  overflow: visible;
+  transform: none;
+  animation: none;
+  box-shadow: none;
+}
+.public-experience-view .experience-panel.experience-detail-open { width: min(1400px, calc(100vw - 2rem)); max-height: none; }
+
 .logged-out-preview #appContent > section:not(.map-panel) {
   display: none !important;
 }

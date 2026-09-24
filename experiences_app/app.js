@@ -327,10 +327,11 @@ async function loadTrips() {
 }
 
 async function loadExperiences() {
-  const response = await supabaseRequest(isPublicExperience && !session ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`);
+  const publicRequest = { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } };
+  const response = await supabaseRequest(isPublicExperience ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`, isPublicExperience ? publicRequest : undefined);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load experiences."));
   experiences = await response.json();
-  if (isPublicExperience && !session && !experiences.length) throw new Error("This public experience does not exist or is no longer shared.");
+  if (isPublicExperience && !experiences.length) throw new Error("This public experience does not exist or is no longer shared.");
   if (activeExperience) activeExperience = experiences.find((experience) => experience.id === activeExperience.id) || null;
   renderExperiences();
 }
@@ -341,8 +342,8 @@ async function loadExperienceLocations() {
     return;
   }
   const [locationsResponse, mediaResponse] = await Promise.all([
-    supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&experience_id=eq.${encodeURIComponent(activeExperience.id)}&order=timestamp.asc`),
-    supabaseRequest(`/rest/v1/${MEDIA_TABLE}?select=*&order=created_at.asc`),
+    supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&experience_id=eq.${encodeURIComponent(activeExperience.id)}&order=timestamp.asc`, isPublicExperience ? { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } } : undefined),
+    supabaseRequest(`/rest/v1/${MEDIA_TABLE}?select=*&order=created_at.asc`, isPublicExperience ? { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } } : undefined),
   ]);
   if (!locationsResponse.ok) throw new Error(await getSupabaseError(locationsResponse, "Could not load experience locations."));
   if (!mediaResponse.ok) throw new Error(await getSupabaseError(mediaResponse, "Could not load experience media."));
@@ -411,7 +412,8 @@ function renderExperiences() {
     experienceLocationForm.hidden = true;
     experienceDetailKicker.textContent = experienceViewMode === "edit" ? "Edit experience" : "Experience";
     experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
-    newExperienceEventBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode !== "edit";
+    const canAddEvent = canEditExperience(activeExperience) || (isPublicExperience && activeExperience.is_public);
+    newExperienceEventBtn.hidden = !canAddEvent || (experienceViewMode !== "edit" && !isPublicExperience);
   }
 }
 
@@ -485,7 +487,7 @@ function renderExperienceLocations() {
     <li class="experience-location-card" data-experience-location-id="${escapeHtml(location.id)}">
       <div class="experience-location-summary">
         <button type="button" class="experience-location-open" data-show-experience-location="${escapeHtml(location.id)}"><strong>${escapeHtml(location.eventName || location.label)}</strong><span>${escapeHtml(location.label)} &middot; ${formatTimestamp(location.timestamp)}</span></button>
-        ${canEditExperience(activeExperience) ? `<div class="experience-location-actions"><button type="button" class="secondary-btn" data-edit-experience-location="${escapeHtml(location.id)}">Edit</button>${experienceViewMode === "edit" ? `<button type="button" class="secondary-btn icon-btn event-remove-btn" data-delete-experience-location="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(location.label)}" title="Delete event">&minus;</button>` : ""}</div>` : ""}
+        ${canEditExperience(activeExperience) || (isPublicExperience && activeExperience.is_public) ? `<div class="experience-location-actions"><button type="button" class="secondary-btn" data-edit-experience-location="${escapeHtml(location.id)}">Edit</button>${canEditExperience(activeExperience) && experienceViewMode === "edit" ? `<button type="button" class="secondary-btn icon-btn event-remove-btn" data-delete-experience-location="${escapeHtml(location.id)}" aria-label="Delete ${escapeHtml(location.label)}" title="Delete event">&minus;</button>` : ""}</div>` : ""}
       </div>
       ${location.description ? `<p>${escapeHtml(location.description)}</p>` : ""}
       ${renderPinMediaCarousel(location)}
@@ -504,13 +506,13 @@ function renderExperienceMediaAvatars(location) {
 }
 
 function renderExperienceLocationEditor(location) {
+  const canManageAttachments = canEditExperience(activeExperience);
   return `<form class="experience-location-edit-form" data-experience-location-form="${escapeHtml(location.id)}">
   <label>Event name<input name="eventName" value="${escapeHtml(location.eventName || location.label)}" required /></label>
   <label>Location<input name="label" value="${escapeHtml(location.label)}" required /><button type="button" class="secondary-btn event-location-find-btn" data-find-event-location>Find location</button></label>
       <label>When<input name="timestamp" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" required /></label>
       <label>Description<textarea name="description" rows="3" maxlength="500" placeholder="What made this moment memorable?">${escapeHtml(location.description || "")}</textarea></label>
-      <label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>
-      ${renderExperienceMediaAvatars(location)}
+      ${canManageAttachments ? `<label class="event-attachment-picker"><span>Attachments</span><input class="experience-media-input" type="file" accept="image/*,video/*,audio/*" multiple data-experience-location-id="${escapeHtml(location.id)}" /></label>${renderExperienceMediaAvatars(location)}` : ""}
       <div class="edit-checkin-actions"><button type="submit" class="primary-btn">Save event</button><button type="button" class="secondary-btn" data-cancel-experience-location-edit>Cancel</button></div>
     </form>`;
 }
@@ -527,7 +529,7 @@ async function saveExperience(event) {
     const response = await supabaseRequest(id ? `/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(id)}` : `/rest/v1/${EXPERIENCES_TABLE}`, {
       method: id ? "PATCH" : "POST",
       headers: { Prefer: "return=representation" },
-      body: JSON.stringify({ name, description, ...(id ? { updated_at: new Date().toISOString() } : { is_public: false, public_slug: createPublicSlug(name), sort_order: sortOrder }) }),
+      body: JSON.stringify({ name, description, ...(id ? { updated_at: new Date().toISOString() } : { trip_id: currentTrip?.id, is_public: false, public_slug: createPublicSlug(name), sort_order: sortOrder }) }),
     });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not save the experience."));
     const [savedExperience] = await response.json();
@@ -545,13 +547,15 @@ async function saveExperience(event) {
 
 async function addExperienceEvent(event) {
   event.preventDefault();
-  if (!activeExperience || !currentTrip || !canEditExperience(activeExperience)) return;
+  const canAddPublicEvent = isPublicExperience && activeExperience?.is_public;
+  if (!activeExperience || (!canAddPublicEvent && (!currentTrip || !canEditExperience(activeExperience)))) return;
   const eventName = experienceEventNameInput.value.trim();
   const query = experienceLocationInput.value.trim();
   const timestamp = new Date(experienceTimeInput.value);
   const description = experienceEventDescriptionInput.value.trim();
   if (!eventName || !query || Number.isNaN(timestamp.getTime())) return;
-  const oversizedFile = pendingExperienceEventFiles.find((file) => file.size > MAX_MEDIA_SIZE);
+  const files = canAddPublicEvent ? [] : pendingExperienceEventFiles;
+  const oversizedFile = files.find((file) => file.size > MAX_MEDIA_SIZE);
   if (oversizedFile) {
     setStatus(experienceStatus, `${oversizedFile.name} is larger than 5 MB.`, "error");
     return;
@@ -560,10 +564,12 @@ async function addExperienceEvent(event) {
     setStatus(experienceStatus, `Looking up "${query}"…`);
     const foundLocation = experienceEventCreateCoordinates ? { ...experienceEventCreateCoordinates, label: query } : await geocodeLocation(query);
     const { lat, lon, label } = foundLocation;
-    const location = { id: createId(), lat, lon, label, eventName, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: currentTrip.id, userId: session.user.id };
-    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ...mapCheckInToRow(location), experience_id: activeExperience.id }) });
+    const location = { id: createId(), lat, lon, label, eventName, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: activeExperience.trip_id || currentTrip?.id, userId: session?.user?.id || activeExperience.user_id };
+    const response = canAddPublicEvent
+      ? await supabaseRequest("/rest/v1/rpc/checkin_map_add_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: publicExperienceSlug, event_id: location.id, event_name: eventName, event_label: label, event_lat: lat, event_lon: lon, event_timestamp: location.timestamp, event_description: description }) })
+      : await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ...mapCheckInToRow(location), experience_id: activeExperience.id }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not add the event."));
-    if (pendingExperienceEventFiles.length) location.media.push(...await Promise.all(pendingExperienceEventFiles.map((file) => uploadMediaFile(location, file))));
+    if (files.length) location.media.push(...await Promise.all(files.map((file) => uploadMediaFile(location, file))));
     experienceLocations.push(location);
     experienceLocationForm.reset();
     pendingExperienceEventFiles = [];
@@ -654,7 +660,9 @@ async function saveExperienceLocation(event) {
     location.lon = experienceEventEditCoordinates.lon;
   }
   try {
-    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, lat: location.lat, lon: location.lon, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
+    const response = isPublicExperience
+      ? await supabaseRequest("/rest/v1/rpc/checkin_map_update_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: publicExperienceSlug, event_id: id, event_name: location.eventName, event_label: location.label, event_lat: location.lat, event_lon: location.lon, event_timestamp: location.timestamp, event_description: location.description }) })
+      : await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, lat: location.lat, lon: location.lon, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
     experienceEventEditScreen.hidden = true;
@@ -711,7 +719,8 @@ function closeExperiences() {
 }
 
 function openExperienceEventForm() {
-  if (!activeExperience || !canEditExperience(activeExperience)) return;
+  const canAddPublicEvent = isPublicExperience && activeExperience?.is_public;
+  if (!activeExperience || (!canAddPublicEvent && !canEditExperience(activeExperience))) return;
   experienceLocationForm.reset();
   pendingExperienceEventFiles = [];
   renderPendingExperienceEventFiles();
@@ -725,6 +734,8 @@ function openExperienceEventForm() {
   experienceEventEditScreen.hidden = true;
   experienceLocationForm.hidden = false;
   experienceEventCreateScreen.hidden = false;
+  experienceEventMediaInput.closest(".event-attachment-picker").hidden = isPublicExperience;
+  experienceEventMediaPreview.hidden = isPublicExperience;
   window.setTimeout(() => experienceEventCreateMap.invalidateSize(), 0);
   experienceLocationInput.focus();
 }
@@ -888,7 +899,8 @@ async function handleExperienceLocationClick(event) {
 
 function openExperienceEventEdit(id) {
   const location = experienceLocations.find((item) => item.id === id);
-  if (!location || !canEditExperience(activeExperience)) return;
+  const canEditPublicEvent = isPublicExperience && activeExperience?.is_public;
+  if (!location || (!canEditPublicEvent && !canEditExperience(activeExperience))) return;
   editingExperienceLocationId = id;
   experienceEventEditName.textContent = location.eventName || location.label;
   experienceEventEditContent.innerHTML = renderExperienceLocationEditor(location);
@@ -2292,22 +2304,32 @@ async function initializeApp() {
   renderCheckInMarkers();
   renderPhotoList();
   document.body.classList.remove("public-trip-view");
+  document.body.classList.remove("public-experience-view");
   if (isPublicExperience) {
     authPanel.hidden = true;
     appContent.hidden = false;
     setAuthUi(false, { keepAppVisible: true });
     setLoggedOutPreview(false);
     document.body.classList.add("public-trip-view");
+    document.body.classList.add("public-experience-view");
     try {
       await loadExperiences();
       activeExperience = experiences[0] || null;
+      experienceViewMode = "view";
+      experienceIndexScreen.hidden = true;
+      experienceCreateScreen.hidden = true;
+      experienceEventCreateScreen.hidden = true;
+      experienceEventEditScreen.hidden = true;
+      experienceDetail.hidden = false;
+      experiencePanel.classList.add("experience-detail-open");
       renderExperiences();
       await loadExperienceLocations();
       experiencePanel.hidden = false;
-      experiencePanel.classList.add("trip-panel-open");
+      experiencePanel.classList.remove("trip-panel-open");
       userStatus.textContent = `Experience: ${activeExperience.name}`;
       window.setTimeout(() => {
         map.invalidateSize();
+        fitExperienceMap();
         if (experienceLocations.length) map.fitBounds(L.latLngBounds(experienceLocations.map((location) => [location.lat, location.lon])), { padding: [40, 40], maxZoom: 12 });
       }, 0);
     } catch (error) {

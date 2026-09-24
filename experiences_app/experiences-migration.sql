@@ -2,6 +2,7 @@
 create table if not exists public.checkin_map_experiences (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  trip_id uuid references public.checkin_map_trips(id) on delete cascade,
   name text not null,
   description text not null default '',
   public_slug text unique not null default gen_random_uuid()::text,
@@ -19,6 +20,13 @@ alter table public.checkin_map_locations
 alter table public.checkin_map_experiences add column if not exists public_slug text;
 alter table public.checkin_map_experiences add column if not exists is_public boolean not null default false;
 alter table public.checkin_map_experiences add column if not exists sort_order integer not null default 0;
+alter table public.checkin_map_experiences add column if not exists trip_id uuid references public.checkin_map_trips(id) on delete cascade;
+update public.checkin_map_experiences e set trip_id = source.trip_id from (
+  select distinct on (experience_id) experience_id, trip_id
+  from public.checkin_map_locations
+  where experience_id is not null
+  order by experience_id, created_at asc
+) source where e.id = source.experience_id and e.trip_id is null;
 update public.checkin_map_experiences set public_slug = coalesce(public_slug, gen_random_uuid()::text) where public_slug is null;
 with ranked_experiences as (
   select id, row_number() over (partition by user_id order by created_at asc) as position
@@ -43,6 +51,58 @@ create policy "Anyone can read public experiences" on public.checkin_map_experie
 create policy "Check-in Map can create experiences" on public.checkin_map_experiences for insert to authenticated with check (user_id = auth.uid());
 create policy "Check-in Map can update experiences" on public.checkin_map_experiences for update to authenticated using (user_id = auth.uid() or public.checkin_map_is_admin()) with check (user_id = auth.uid() or public.checkin_map_is_admin());
 create policy "Check-in Map can delete experiences" on public.checkin_map_experiences for delete to authenticated using (user_id = auth.uid() or public.checkin_map_is_admin());
+
+create or replace function public.checkin_map_add_public_experience_event(
+  experience_slug text,
+  event_id text,
+  event_name text,
+  event_label text,
+  event_lat double precision,
+  event_lon double precision,
+  event_timestamp timestamptz,
+  event_description text default ''
+)
+returns void language plpgsql security definer set search_path = public
+as $$
+declare shared_experience public.checkin_map_experiences%rowtype;
+begin
+  select * into shared_experience from public.checkin_map_experiences where public_slug = experience_slug and is_public = true;
+  if not found or shared_experience.trip_id is null then raise exception 'This public experience cannot accept events.'; end if;
+  insert into public.checkin_map_locations (id, user_id, trip_id, experience_id, event_name, lat, lon, label, description, timestamp, type)
+  values (event_id, shared_experience.user_id, shared_experience.trip_id, shared_experience.id, event_name, event_lat, event_lon, event_label, event_description, event_timestamp, 'event');
+end;
+$$;
+revoke execute on function public.checkin_map_add_public_experience_event(text, text, text, text, double precision, double precision, timestamptz, text) from public;
+grant execute on function public.checkin_map_add_public_experience_event(text, text, text, text, double precision, double precision, timestamptz, text) to anon, authenticated;
+
+create or replace function public.checkin_map_update_public_experience_event(
+  experience_slug text,
+  event_id text,
+  event_name text,
+  event_label text,
+  event_lat double precision,
+  event_lon double precision,
+  event_timestamp timestamptz,
+  event_description text default ''
+)
+returns void language plpgsql security definer set search_path = public
+as $$
+begin
+  update public.checkin_map_locations l
+  set event_name = checkin_map_update_public_experience_event.event_name,
+      label = event_label,
+      lat = event_lat,
+      lon = event_lon,
+      timestamp = event_timestamp,
+      description = event_description,
+      updated_at = now()
+  from public.checkin_map_experiences e
+  where l.id = event_id and l.experience_id = e.id and e.public_slug = experience_slug and e.is_public = true;
+  if not found then raise exception 'This public experience event cannot be updated.'; end if;
+end;
+$$;
+revoke execute on function public.checkin_map_update_public_experience_event(text, text, text, text, double precision, double precision, timestamptz, text) from public;
+grant execute on function public.checkin_map_update_public_experience_event(text, text, text, text, double precision, double precision, timestamptz, text) to anon, authenticated;
 
 drop policy if exists "Anyone can read public experience locations" on public.checkin_map_locations;
 create policy "Anyone can read public experience locations" on public.checkin_map_locations for select to anon using (exists (select 1 from public.checkin_map_experiences where id = experience_id and is_public = true));
