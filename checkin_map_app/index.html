@@ -14,9 +14,29 @@
           <p class="eyebrow">Location Journal</p>
           <h1>Check-In Map</h1>
         </div>
+        <div class="account-bar">
+          <span id="userStatus" class="status-text">Sign in to continue</span>
+          <button type="button" id="signOutBtn" class="secondary-btn" hidden>Sign out</button>
+        </div>
       </header>
 
-      <main class="app-grid">
+      <section id="authPanel" class="panel auth-panel">
+        <div class="section-heading"><h2>Account</h2><span id="authModeLabel" class="hint">Sign in</span></div>
+        <form id="authForm" class="auth-form">
+          <input id="authEmail" type="email" placeholder="Email" autocomplete="email" required />
+          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" minlength="6" required />
+          <button type="submit" id="authSubmitBtn" class="primary-btn">Sign in</button>
+          <button type="button" id="toggleAuthBtn" class="secondary-btn">Create account</button>
+        </form>
+        <span id="authStatus" class="status-text" role="status"></span>
+      </section>
+
+      <main id="appContent" class="app-grid" hidden>
+        <section class="panel trip-panel">
+          <div class="section-heading"><h2>Trip</h2><div class="trip-heading-actions"><button type="button" id="toggleTripPublicBtn" class="secondary-btn">Make public</button><button type="button" id="shareTripBtn" class="secondary-btn" hidden>Copy share URL</button><button type="button" id="newTripBtn" class="secondary-btn">New trip</button></div></div>
+          <div class="trip-actions"><select id="tripSelect" aria-label="Current trip"></select><input id="tripNameInput" type="text" placeholder="New trip name" hidden /><button type="button" id="saveTripBtn" class="primary-btn" hidden>Create trip</button></div>
+          <span id="tripStatus" class="status-text" role="status"></span>
+        </section>
         <section class="panel map-panel">
           <div id="map"></div>
           <p class="map-hint">Right-click the map and select Drop pin to check in at that point.</p>
@@ -56,6 +76,12 @@
           <ol id="photoList" class="checkin-list">
             <li class="empty-state">No photos mapped yet.</li>
           </ol>
+        </section>
+
+        <section id="adminPanel" class="panel admin-panel" hidden>
+          <div class="section-heading"><h2>Admin</h2><span class="hint">Manage users, trips, and check-ins</span></div>
+          <div class="admin-toolbar"><button type="button" id="refreshAdminBtn" class="secondary-btn">Refresh</button><span id="adminStatus" class="status-text" role="status"></span></div>
+          <div id="adminContent"></div>
         </section>
       </main>
     </div>

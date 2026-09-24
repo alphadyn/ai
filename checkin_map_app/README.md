@@ -9,6 +9,10 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
 - **Map display** built with [Leaflet](https://leafletjs.com/) and [CARTO](https://carto.com/basemaps) basemap tiles (built from OpenStreetMap data)
 - **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
   persisted permanently in Supabase so they are available across browsers and page refreshes
+- **Multi-user accounts**: sign up and sign in with Supabase Auth; each user has private trips and check-ins
+- **Trips**: create and switch between multiple groups of check-ins
+- **Public trip links**: copy a URL to share a read-only trip with anyone
+- **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in
 - **Media attachments**: attach up to five local image, video, or audio files to each check-in
 - **Photo upload**: choose a JPEG photo with embedded GPS EXIF data and the app reads the coordinates
@@ -28,7 +32,7 @@ python3 -m http.server 8000
 Then open http://localhost:8000 in your browser.
 
 ## How to use
-1. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
+1. Create an account or sign in, then choose an existing trip or create a new one. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
    and click **Check In**. A marker appears on the map and the check-in is added to the top of the
   "Check-Ins" list.
 2. Right-click any point on the map and choose **Drop pin** to add a coordinate check-in. Open its
@@ -46,6 +50,9 @@ Then open http://localhost:8000 in your browser.
 - Check-in locations are stored in Supabase, and media files are stored in the configured Supabase Storage bucket.
 - Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL editor before using the app.
 - Set the project URL and anon key in [supabase-config.js](supabase-config.js).
+- Enable email/password authentication in Supabase Auth. Promote the first administrator by changing their
+  profile `role` to `admin` in `checkin_map_profiles`.
+- The schema includes a backfill for users that existed before the profile trigger was installed.
 - Location search (turning a typed place name into coordinates) uses the free
   [Nominatim](https://nominatim.org/) API.
 - Photo EXIF data is read in the browser; the selected photo is uploaded to Supabase Storage when it is mapped.

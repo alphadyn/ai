@@ -7,6 +7,8 @@ const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
 const STORAGE_BUCKET = SUPABASE_CONFIG.storageBucket || "checkin-map-media";
 const LOCATIONS_TABLE = "checkin_map_locations";
 const MEDIA_TABLE = "checkin_map_media";
+const TRIPS_TABLE = "checkin_map_trips";
+const PROFILES_TABLE = "checkin_map_profiles";
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
@@ -21,6 +23,28 @@ const mediaViewer = document.getElementById("mediaViewer");
 const mediaViewerClose = document.getElementById("mediaViewerClose");
 const mediaViewerContent = document.getElementById("mediaViewerContent");
 const mediaViewerName = document.getElementById("mediaViewerName");
+const authPanel = document.getElementById("authPanel");
+const appContent = document.getElementById("appContent");
+const authForm = document.getElementById("authForm");
+const authEmail = document.getElementById("authEmail");
+const authPassword = document.getElementById("authPassword");
+const authSubmitBtn = document.getElementById("authSubmitBtn");
+const toggleAuthBtn = document.getElementById("toggleAuthBtn");
+const authModeLabel = document.getElementById("authModeLabel");
+const authStatus = document.getElementById("authStatus");
+const userStatus = document.getElementById("userStatus");
+const signOutBtn = document.getElementById("signOutBtn");
+const tripSelect = document.getElementById("tripSelect");
+const newTripBtn = document.getElementById("newTripBtn");
+const tripNameInput = document.getElementById("tripNameInput");
+const saveTripBtn = document.getElementById("saveTripBtn");
+const tripStatus = document.getElementById("tripStatus");
+const adminPanel = document.getElementById("adminPanel");
+const adminContent = document.getElementById("adminContent");
+const adminStatus = document.getElementById("adminStatus");
+const refreshAdminBtn = document.getElementById("refreshAdminBtn");
+const shareTripBtn = document.getElementById("shareTripBtn");
+const toggleTripPublicBtn = document.getElementById("toggleTripPublicBtn");
 
 const mapElement = document.getElementById("map");
 const worldFitZoom = Math.max(
@@ -60,6 +84,13 @@ let photoMarkers = [];
 let swipeStartX = null;
 let suppressNextListClick = false;
 let editingCheckInIndex = null;
+let session = null;
+let profile = null;
+let trips = [];
+let currentTrip = null;
+let authMode = "signin";
+const publicTripSlug = new URLSearchParams(window.location.search).get("trip");
+const isPublicTrip = Boolean(publicTripSlug);
 
 function createId() {
   return window.crypto?.randomUUID?.() || `checkin-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -82,7 +113,7 @@ async function supabaseRequest(path, options = {}) {
       ...options,
       headers: {
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
         "Content-Type": "application/json",
         ...(options.headers || {}),
       },
@@ -90,6 +121,90 @@ async function supabaseRequest(path, options = {}) {
   } catch {
     throw new Error("Could not reach Supabase. Check the project URL and network connection.");
   }
+}
+
+async function authRequest(path, body) {
+  const response = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/auth/v1/${path}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Authentication failed."));
+  return response.json();
+}
+
+async function loadProfile() {
+  const response = await supabaseRequest(`/rest/v1/${PROFILES_TABLE}?select=*&id=eq.${encodeURIComponent(session.user.id)}&limit=1`);
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load your profile."));
+  [profile] = await response.json();
+  if (!profile) throw new Error("Your account profile is missing.");
+}
+
+async function loadTrips() {
+  const response = await supabaseRequest(isPublicTrip ? `/rest/v1/${TRIPS_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicTripSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${TRIPS_TABLE}?select=*&order=created_at.asc`);
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load trips."));
+  trips = await response.json();
+  currentTrip = trips[0] || null;
+  if (isPublicTrip && !currentTrip) throw new Error("This public trip does not exist or is no longer shared.");
+  renderTripSelect();
+}
+
+function renderTripSelect() {
+  tripSelect.innerHTML = trips.map((trip) => `<option value="${escapeHtml(trip.id)}">${escapeHtml(trip.name)}</option>`).join("");
+  if (currentTrip) tripSelect.value = currentTrip.id;
+  updateTripSharingControls();
+}
+
+function updateTripSharingControls() {
+  const ownerView = Boolean(currentTrip && !isPublicTrip);
+  toggleTripPublicBtn.hidden = !ownerView;
+  shareTripBtn.hidden = !ownerView || !currentTrip.is_public;
+  toggleTripPublicBtn.textContent = currentTrip?.is_public ? "Make private" : "Make public";
+}
+
+function createPublicSlug(name) {
+  return `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "trip"}-${createId().slice(-8)}`;
+}
+
+async function copyTripUrl() {
+  if (!currentTrip) return;
+  if (!currentTrip.is_public) throw new Error("Make this trip public before copying its URL.");
+  const slug = currentTrip.public_slug;
+  const url = `${window.location.origin}${window.location.pathname}?trip=${encodeURIComponent(slug)}`;
+  await navigator.clipboard.writeText(url);
+  setStatus(tripStatus, "Public trip URL copied.", "success");
+}
+
+async function toggleTripPublic() {
+  if (!currentTrip || isPublicTrip) return;
+  const isPublic = !currentTrip.is_public;
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(currentTrip.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ is_public: isPublic }),
+  });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update trip visibility."));
+  currentTrip.is_public = isPublic;
+  updateTripSharingControls();
+  setStatus(tripStatus, isPublic ? "Trip is now public." : "Trip is now private.", "success");
+}
+
+async function createTrip() {
+  const name = tripNameInput.value.trim();
+  if (!name) return;
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ name, is_public: false, public_slug: createPublicSlug(name) }) });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create trip."));
+  const [trip] = await response.json();
+  trips.push(trip);
+  currentTrip = trip;
+  renderTripSelect();
+  await loadCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  tripNameInput.value = "";
+  tripNameInput.hidden = true;
+  saveTripBtn.hidden = true;
+  setStatus(tripStatus, `Trip "${trip.name}" created.`, "success");
 }
 
 async function getSupabaseError(response, fallback) {
@@ -111,11 +226,13 @@ function mapLocationRow(row, mediaByCheckIn) {
     type: row.type,
     previewUrl: row.preview_url || "",
     media: mediaByCheckIn.get(row.id) || [],
+    tripId: row.trip_id,
   });
 }
 
 async function loadCheckIns() {
-  const locationsResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&order=timestamp.desc&limit=${MAX_CHECKINS}`);
+  if (!currentTrip) { checkIns = []; return; }
+  const locationsResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&trip_id=eq.${encodeURIComponent(currentTrip.id)}&order=timestamp.desc&limit=${MAX_CHECKINS}`);
   if (!locationsResponse.ok) throw new Error(await getSupabaseError(locationsResponse, "Could not load check-ins from Supabase."));
   const mediaResponse = await supabaseRequest(`/rest/v1/${MEDIA_TABLE}?select=*&order=created_at.asc`);
   if (!mediaResponse.ok) throw new Error(await getSupabaseError(mediaResponse, "Could not load check-in media from Supabase."));
@@ -140,6 +257,8 @@ function mapCheckInToRow(checkIn) {
     label: checkIn.label,
     timestamp: checkIn.timestamp,
     type: checkIn.type,
+    trip_id: checkIn.tripId || currentTrip.id,
+    user_id: session.user.id,
     preview_url: checkIn.previewUrl || null,
     updated_at: new Date().toISOString(),
   };
@@ -177,6 +296,7 @@ function updateClearCheckInsButton() {
 }
 
 async function addCheckIn(checkIn) {
+  checkIn.tripId = currentTrip.id;
   await saveCheckIn(checkIn);
   checkIns.unshift(checkIn);
   const removedCheckIns = checkIns.splice(MAX_CHECKINS);
@@ -667,6 +787,7 @@ async function uploadMediaFile(checkIn, file) {
     body: JSON.stringify({
       id: media.id,
       checkin_id: checkIn.id,
+      user_id: session.user.id,
       name: media.name,
       mime_type: media.type,
       storage_path: media.storagePath,
@@ -705,6 +826,104 @@ async function handleMediaAttachment(event) {
   }
 }
 
+async function loadAdminData() {
+  if (profile?.role !== "admin") return;
+  const [usersResponse, tripsResponse, locationsResponse] = await Promise.all([
+    supabaseRequest(`/rest/v1/${PROFILES_TABLE}?select=*&order=created_at.asc`),
+    supabaseRequest(`/rest/v1/${TRIPS_TABLE}?select=*&order=created_at.desc`),
+    supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=id,label,timestamp,trip_id,user_id&order=timestamp.desc&limit=100`),
+  ]);
+  if (!usersResponse.ok || !tripsResponse.ok || !locationsResponse.ok) throw new Error("Could not load admin data.");
+  const users = await usersResponse.json();
+  const allTrips = await tripsResponse.json();
+  const allLocations = await locationsResponse.json();
+  adminContent.innerHTML = `<h3>Users</h3><div class="admin-table">${users.map((user) => `<div class="admin-row"><input data-admin-user-id="${escapeHtml(user.id)}" value="${escapeHtml(user.display_name || "")}" aria-label="Display name" /><select data-admin-role-id="${escapeHtml(user.id)}" aria-label="Role"><option value="user" ${user.role === "user" ? "selected" : ""}>User</option><option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option></select><button type="button" class="secondary-btn" data-save-user="${escapeHtml(user.id)}">Save</button></div>`).join("")}</div><h3>Trips</h3><div class="admin-table">${allTrips.map((trip) => `<div class="admin-row"><input data-admin-trip-name="${escapeHtml(trip.id)}" value="${escapeHtml(trip.name)}" aria-label="Trip name" /><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><button type="button" class="delete-checkin-btn" data-admin-delete-trip="${escapeHtml(trip.id)}">Delete trip</button></div>`).join("")}</div><h3>Check-Ins</h3><div class="admin-table">${allLocations.map((location) => `<div class="admin-row"><input data-admin-label="${escapeHtml(location.id)}" value="${escapeHtml(location.label)}" aria-label="Check-in label" /><input data-admin-time="${escapeHtml(location.id)}" type="datetime-local" value="${formatDateTimeInput(location.timestamp)}" aria-label="Check-in date and time" /><button type="button" class="secondary-btn" data-save-checkin="${escapeHtml(location.id)}">Save</button><button type="button" class="delete-checkin-btn" data-admin-delete-checkin="${escapeHtml(location.id)}">Delete</button></div>`).join("")}</div>`;
+}
+
+async function handleAdminAction(event) {
+  const saveUser = event.target.closest("[data-save-user]");
+  if (saveUser) {
+    const id = saveUser.dataset.saveUser;
+    const name = adminContent.querySelector(`[data-admin-user-id="${CSS.escape(id)}"]`).value.trim();
+    const role = adminContent.querySelector(`[data-admin-role-id="${CSS.escape(id)}"]`).value;
+    const response = await supabaseRequest(`/rest/v1/${PROFILES_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ display_name: name, role }) });
+    setStatus(adminStatus, response.ok ? "User updated." : await getSupabaseError(response, "Could not update user."), response.ok ? "success" : "error");
+    return;
+  }
+  const deleteTrip = event.target.closest("[data-admin-delete-trip]");
+  const saveTrip = event.target.closest("[data-save-trip]");
+  if (saveTrip) {
+    const id = saveTrip.dataset.saveTrip;
+    const name = adminContent.querySelector(`[data-admin-trip-name="${CSS.escape(id)}"]`).value.trim();
+    const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name }) });
+    setStatus(adminStatus, response.ok ? "Trip updated." : await getSupabaseError(response, "Could not update trip."), response.ok ? "success" : "error");
+    return;
+  }
+  if (deleteTrip && window.confirm("Delete this trip and all its check-ins?")) {
+    const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(deleteTrip.dataset.adminDeleteTrip)}`, { method: "DELETE" });
+    setStatus(adminStatus, response.ok ? "Trip deleted." : await getSupabaseError(response, "Could not delete trip."), response.ok ? "success" : "error");
+    await loadAdminData();
+    return;
+  }
+  const deleteLocation = event.target.closest("[data-admin-delete-checkin]");
+  const saveLocation = event.target.closest("[data-save-checkin]");
+  if (saveLocation) {
+    const id = saveLocation.dataset.saveCheckin;
+    const label = adminContent.querySelector(`[data-admin-label="${CSS.escape(id)}"]`).value.trim();
+    const timestamp = new Date(adminContent.querySelector(`[data-admin-time="${CSS.escape(id)}"]`).value).toISOString();
+    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ label, timestamp }) });
+    setStatus(adminStatus, response.ok ? "Check-in updated." : await getSupabaseError(response, "Could not update check-in."), response.ok ? "success" : "error");
+    return;
+  }
+  if (deleteLocation && window.confirm("Delete this check-in?")) {
+    const response = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(deleteLocation.dataset.adminDeleteCheckin)}`, { method: "DELETE" });
+    setStatus(adminStatus, response.ok ? "Check-in deleted." : await getSupabaseError(response, "Could not delete check-in."), response.ok ? "success" : "error");
+    await loadAdminData();
+  }
+}
+
+async function enterApp(nextSession) {
+  session = nextSession;
+  await loadProfile();
+  authPanel.hidden = true;
+  appContent.hidden = false;
+  signOutBtn.hidden = false;
+  userStatus.textContent = profile.display_name || session.user.email;
+  adminPanel.hidden = profile.role !== "admin";
+  await loadTrips();
+  if (!currentTrip) {
+    await createTripRecord("My first trip");
+    await loadTrips();
+  }
+  await loadCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  renderPhotoList();
+  updateClearCheckInsButton();
+  if (profile.role === "admin") await loadAdminData();
+  window.setTimeout(() => map.invalidateSize(), 0);
+}
+
+async function createTripRecord(name) {
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name }) });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create your first trip."));
+}
+
+async function handleAuthSubmit(event) {
+  event.preventDefault();
+  authSubmitBtn.disabled = true;
+  try {
+    const data = authMode === "signin" ? await authRequest("token?grant_type=password", { email: authEmail.value, password: authPassword.value }) : await authRequest("signup", { email: authEmail.value, password: authPassword.value });
+    if (!data.access_token) throw new Error("Account created. Confirm your email, then sign in.");
+    await enterApp(data);
+    setStatus(authStatus, "Signed in.", "success");
+  } catch (error) {
+    setStatus(authStatus, error.message, "error");
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
+}
+
 function photoIcon(previewUrl) {
   if (previewUrl) {
     return L.divIcon({
@@ -726,6 +945,40 @@ function photoIcon(previewUrl) {
 }
 
 checkInForm.addEventListener("submit", handleCheckIn);
+authForm.addEventListener("submit", handleAuthSubmit);
+toggleAuthBtn.addEventListener("click", () => {
+  authMode = authMode === "signin" ? "signup" : "signin";
+  authSubmitBtn.textContent = authMode === "signin" ? "Sign in" : "Create account";
+  toggleAuthBtn.textContent = authMode === "signin" ? "Create account" : "Back to sign in";
+  authModeLabel.textContent = authMode === "signin" ? "Sign in" : "Create account";
+});
+signOutBtn.addEventListener("click", () => window.location.reload());
+shareTripBtn.addEventListener("click", async () => {
+  try { await copyTripUrl(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+});
+toggleTripPublicBtn.addEventListener("click", async () => {
+  try { await toggleTripPublic(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+});
+tripSelect.addEventListener("change", async () => {
+  currentTrip = trips.find((trip) => trip.id === tripSelect.value);
+  updateTripSharingControls();
+  await loadCheckIns();
+  renderCheckInList();
+  renderCheckInMarkers();
+  updateClearCheckInsButton();
+});
+newTripBtn.addEventListener("click", () => {
+  tripNameInput.hidden = false;
+  saveTripBtn.hidden = false;
+  tripNameInput.focus();
+});
+saveTripBtn.addEventListener("click", async () => {
+  try { await createTrip(); } catch (error) { setStatus(tripStatus, error.message, "error"); }
+});
+refreshAdminBtn.addEventListener("click", async () => {
+  try { await loadAdminData(); setStatus(adminStatus, "Admin data refreshed.", "success"); } catch (error) { setStatus(adminStatus, error.message, "error"); }
+});
+adminContent.addEventListener("click", handleAdminAction);
 clearCheckInsBtn.addEventListener("click", clearAllCheckIns);
 map.on("contextmenu", handleMapContextMenu);
 map.getContainer().addEventListener("click", handleMapPopupAction);
@@ -751,17 +1004,26 @@ async function initializeApp() {
   renderCheckInList();
   renderCheckInMarkers();
   renderPhotoList();
-  setStatus(checkInStatus, "Loading check-ins…");
-  try {
-    await loadCheckIns();
-    renderCheckInList();
-    renderCheckInMarkers();
-    updateClearCheckInsButton();
-    if (checkIns.length > 0) map.setView([checkIns[0].lat, checkIns[0].lon], 10);
-    setStatus(checkInStatus, "Check-ins loaded from Supabase.", "success");
-  } catch (error) {
-    setStatus(checkInStatus, error.message, "error");
+  if (isPublicTrip) {
+    authPanel.hidden = true;
+    appContent.hidden = false;
+    document.body.classList.add("public-trip-view");
+    try {
+      await loadTrips();
+      await loadCheckIns();
+      renderTripSelect();
+      renderCheckInList();
+      renderCheckInMarkers();
+      renderPhotoList();
+      userStatus.textContent = `Public trip: ${currentTrip.name}`;
+      setStatus(checkInStatus, "Viewing a public trip.", "success");
+      window.setTimeout(() => map.invalidateSize(), 0);
+    } catch (error) {
+      setStatus(checkInStatus, error.message, "error");
+    }
+    return;
   }
+  setStatus(checkInStatus, "Sign in to load your trips.");
 }
 
 initializeApp();
