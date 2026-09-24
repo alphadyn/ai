@@ -219,19 +219,16 @@ async function loadTrips() {
 }
 
 function renderTripSelect() {
-  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><input type="text" maxlength="100" value="${escapeHtml(trip.name)}" data-trip-name="${escapeHtml(trip.id)}" aria-label="Trip name" /><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
+  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
 }
 
 async function saveTripCard(tripId) {
   const trip = trips.find((item) => item.id === tripId);
   if (!trip || !canEditTrip()) return;
-  const name = tripListEl.querySelector(`[data-trip-name="${CSS.escape(tripId)}"]`).value.trim();
   const isPublic = tripListEl.querySelector(`[data-trip-public="${CSS.escape(tripId)}"]`).checked;
-  if (!name) throw new Error("Enter a name for this trip.");
-  const publicSlug = trip.public_slug || createPublicSlug(name);
-  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name, is_public: isPublic, public_slug: publicSlug }) });
+  const publicSlug = trip.public_slug || createPublicSlug(trip.name);
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(tripId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ name: trip.name, is_public: isPublic, public_slug: publicSlug }) });
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the trip."));
-  trip.name = name;
   trip.is_public = isPublic;
   trip.public_slug = publicSlug;
   if (currentTrip?.id === tripId) currentTrip = trip;
