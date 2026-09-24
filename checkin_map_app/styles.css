@@ -499,16 +499,34 @@ body.profile-open::before {
 
 .topbar h1 {
   margin: 0;
-  color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2rem, 5vw, 3.2rem);
-  letter-spacing: -0.045em;
-  line-height: 0.95;
+  color: var(--accent-dark);
+  font-family: Baskerville, "Iowan Old Style", Georgia, serif;
+  font-size: clamp(2.15rem, 5vw, 3.45rem);
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .topbar h1 a {
   color: inherit;
+  display: inline-block;
+  padding-bottom: 0.14em;
+  position: relative;
   text-decoration: none;
+}
+
+.topbar h1 a::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 2.9rem;
+  height: 0.16rem;
+  background: var(--coral);
+  content: "";
+  transition: width 0.2s ease;
+}
+
+.topbar h1 a:hover::after {
+  width: 100%;
 }
 
 .topbar h1 a:focus-visible {
