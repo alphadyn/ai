@@ -737,9 +737,10 @@ function handleMapContextMenu(event) {
 function renderCheckInMarkers() {
   checkInLayer.clearLayers();
   checkIns.forEach((checkIn) => {
-    L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
+    const marker = L.marker([checkIn.lat, checkIn.lon], checkIn.type === "photo" ? { icon: photoIcon(checkIn.previewUrl) } : {})
       .addTo(checkInLayer)
       .bindPopup(`<strong>${checkIn.type === "photo" ? "Photo" : "Check-in"}</strong><br>${escapeHtml(checkIn.label)}<br>${formatTimestamp(checkIn.timestamp)}${renderPinMediaCarousel(checkIn)}${canEditCheckIn(checkIn) ? `<br><button type="button" class="map-delete-btn" data-delete-checkin-id="${escapeHtml(checkIn.id)}">Delete pin</button>` : ""}`);
+    marker.on("click", () => map.flyTo([checkIn.lat, checkIn.lon], 12, { duration: 0.45 }));
   });
 }
 
@@ -1319,6 +1320,7 @@ document.addEventListener("keydown", (event) => {
 }, true);
 
 async function initializeApp() {
+  setAuthUi(false);
   renderCheckInList();
   renderCheckInMarkers();
   renderPhotoList();
