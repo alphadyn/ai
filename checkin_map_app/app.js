@@ -119,6 +119,7 @@ let session = null;
 let profile = null;
 let trips = [];
 let currentTrip = null;
+let draggedTripId = null;
 let authMode = "signin";
 const publicTripSlug = new URLSearchParams(window.location.search).get("trip");
 const isPublicTrip = Boolean(publicTripSlug);
@@ -209,7 +210,7 @@ async function loadProfile() {
 }
 
 async function loadTrips() {
-  const response = await supabaseRequest(isPublicTrip ? `/rest/v1/${TRIPS_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicTripSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${TRIPS_TABLE}?select=*&order=created_at.asc`);
+  const response = await supabaseRequest(isPublicTrip ? `/rest/v1/${TRIPS_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicTripSlug)}&is_public=eq.true&limit=1` : `/rest/v1/${TRIPS_TABLE}?select=*&order=sort_order.asc,created_at.asc`);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load trips."));
   trips = await response.json();
   currentTrip = trips[0] || null;
@@ -219,7 +220,78 @@ async function loadTrips() {
 }
 
 function renderTripSelect() {
-  tripListEl.innerHTML = trips.map((trip) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
+  tripListEl.innerHTML = trips.map((trip, index) => `<article class="trip-card${currentTrip?.id === trip.id ? " active" : ""}" data-trip-id="${escapeHtml(trip.id)}" draggable="${canEditTrip()}"><div class="trip-card-main"><div><p class="panel-kicker">${trip.is_public ? "Public trip" : "Private trip"}${index === 0 ? " · Default on login" : ""}</p><h3>${escapeHtml(trip.name)}</h3><p class="trip-card-meta">Created ${formatTimestamp(trip.created_at)}</p></div><button type="button" class="primary-btn trip-open-btn" data-open-trip="${escapeHtml(trip.id)}">Open</button></div>${canEditTrip() ? `<div class="trip-card-edit"><div class="trip-order-controls" aria-label="Reorder ${escapeHtml(trip.name)}"><button type="button" class="secondary-btn icon-btn" data-move-trip="up" data-trip-id="${escapeHtml(trip.id)}" aria-label="Move ${escapeHtml(trip.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-trip="down" data-trip-id="${escapeHtml(trip.id)}" aria-label="Move ${escapeHtml(trip.name)} down" title="Move down" ${index === trips.length - 1 ? "disabled" : ""}>&darr;</button></div><button type="button" class="secondary-btn" data-rename-trip="${escapeHtml(trip.id)}">Rename</button><button type="button" class="secondary-btn" data-save-trip="${escapeHtml(trip.id)}">Save</button><label class="public-toggle"><input type="checkbox" ${trip.is_public ? "checked" : ""} data-trip-public="${escapeHtml(trip.id)}" /><span>Public</span></label>${trip.is_public ? `<button type="button" class="secondary-btn" data-copy-trip="${escapeHtml(trip.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button>` : ""}<button type="button" class="delete-checkin-btn" data-delete-trip="${escapeHtml(trip.id)}" aria-label="Delete ${escapeHtml(trip.name)}" title="Delete trip">&times;</button></div>` : ""}</article>`).join("");
+}
+
+async function moveTrip(tripId, direction) {
+  const currentIndex = trips.findIndex((trip) => trip.id === tripId);
+  const targetIndex = currentIndex + (direction === "up" ? -1 : 1);
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= trips.length || !canEditTrip()) return;
+
+  const reorderedTrips = [...trips];
+  [reorderedTrips[currentIndex], reorderedTrips[targetIndex]] = [reorderedTrips[targetIndex], reorderedTrips[currentIndex]];
+  await saveTripOrder(reorderedTrips);
+}
+
+async function saveTripOrder(reorderedTrips) {
+  const responses = await Promise.all(reorderedTrips.map((trip, index) => supabaseRequest(
+    `/rest/v1/${TRIPS_TABLE}?id=eq.${encodeURIComponent(trip.id)}`,
+    { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ sort_order: index + 1 }) }
+  )));
+  const failedResponse = responses.find((response) => !response.ok);
+  if (failedResponse) throw new Error(await getSupabaseError(failedResponse, "Could not reorder trips."));
+
+  trips = reorderedTrips.map((trip, index) => ({ ...trip, sort_order: index + 1 }));
+  currentTrip = trips.find((trip) => trip.id === currentTrip?.id) || null;
+  renderTripSelect();
+  setStatus(tripStatus, "Trip order saved.", "success");
+}
+
+function clearTripDragState() {
+  draggedTripId = null;
+  tripListEl.querySelectorAll(".is-dragging, .drag-over-before, .drag-over-after").forEach((card) => card.classList.remove("is-dragging", "drag-over-before", "drag-over-after"));
+}
+
+function handleTripDragStart(event) {
+  const card = event.target.closest('.trip-card[draggable="true"]');
+  if (!card || event.target.closest("button, input, label")) {
+    event.preventDefault();
+    return;
+  }
+  draggedTripId = card.dataset.tripId;
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", draggedTripId);
+  card.classList.add("is-dragging");
+}
+
+function handleTripDragOver(event) {
+  if (!draggedTripId) return;
+  const card = event.target.closest(".trip-card");
+  if (!card || card.dataset.tripId === draggedTripId) return;
+  event.preventDefault();
+  tripListEl.querySelectorAll(".drag-over-before, .drag-over-after").forEach((item) => item.classList.remove("drag-over-before", "drag-over-after"));
+  card.classList.add(event.clientY < card.getBoundingClientRect().top + card.offsetHeight / 2 ? "drag-over-before" : "drag-over-after");
+  event.dataTransfer.dropEffect = "move";
+}
+
+async function handleTripDrop(event) {
+  const targetCard = event.target.closest(".trip-card");
+  if (!draggedTripId || !targetCard || targetCard.dataset.tripId === draggedTripId) return;
+  event.preventDefault();
+  const sourceIndex = trips.findIndex((trip) => trip.id === draggedTripId);
+  let targetIndex = trips.findIndex((trip) => trip.id === targetCard.dataset.tripId);
+  if (event.clientY >= targetCard.getBoundingClientRect().top + targetCard.offsetHeight / 2) targetIndex += 1;
+  const reorderedTrips = [...trips];
+  const [draggedTrip] = reorderedTrips.splice(sourceIndex, 1);
+  if (sourceIndex < targetIndex) targetIndex -= 1;
+  reorderedTrips.splice(targetIndex, 0, draggedTrip);
+  try {
+    await saveTripOrder(reorderedTrips);
+  } catch (error) {
+    setStatus(tripStatus, error.message, "error");
+  } finally {
+    clearTripDragState();
+  }
 }
 
 async function saveTripCard(tripId) {
@@ -277,6 +349,11 @@ async function handleTripListAction(event) {
     document.body.classList.remove("trips-open");
     fitMapToCheckIns();
     setStatus(checkInStatus, `Opened trip "${currentTrip.name}".`, "success");
+    return;
+  }
+  const moveButton = event.target.closest("[data-move-trip]");
+  if (moveButton) {
+    try { await moveTrip(moveButton.dataset.tripId, moveButton.dataset.moveTrip); } catch (error) { setStatus(tripStatus, error.message, "error"); }
     return;
   }
   const saveButton = event.target.closest("[data-save-trip]");
@@ -1120,9 +1197,7 @@ async function saveNewTrip(event) {
   const name = newTripNameInput.value.trim();
   if (!name) return;
   try {
-    const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ name, is_public: false, public_slug: createPublicSlug(name) }) });
-    if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create trip."));
-    const [trip] = await response.json();
+    const trip = await createTripRecord(name);
     trips.push(trip);
     currentTrip = trip;
     updateCheckInTripName();
@@ -1135,6 +1210,14 @@ async function saveNewTrip(event) {
   } catch (error) {
     setStatus(newTripStatus, error.message, "error");
   }
+}
+
+async function createTripRecord(name) {
+  const sortOrder = Math.max(0, ...trips.map((trip) => trip.sort_order || 0)) + 1;
+  const response = await supabaseRequest(`/rest/v1/${TRIPS_TABLE}`, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ name, is_public: false, public_slug: createPublicSlug(name), sort_order: sortOrder }) });
+  if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create trip."));
+  const [trip] = await response.json();
+  return trip;
 }
 
 function updateAvatar(url) {
@@ -1222,7 +1305,10 @@ async function enterApp(nextSession) {
   renderPhotoList();
   updateClearCheckInsButton();
   if (profile.role === "admin") await loadAdminData();
-  window.setTimeout(() => map.invalidateSize(), 0);
+  window.setTimeout(() => {
+    map.invalidateSize();
+    fitMapToCheckIns();
+  }, 0);
 }
 
 async function handleAuthSubmit(event) {
@@ -1323,6 +1409,10 @@ signOutBtn.addEventListener("click", () => {
 });
 tripListEl.addEventListener("click", handleTripListAction);
 tripListEl.addEventListener("change", handleTripListAction);
+tripListEl.addEventListener("dragstart", handleTripDragStart);
+tripListEl.addEventListener("dragover", handleTripDragOver);
+tripListEl.addEventListener("drop", handleTripDrop);
+tripListEl.addEventListener("dragend", clearTripDragState);
 newTripBtn.addEventListener("click", openNewTripScreen);
 backFromNewTripBtn.addEventListener("click", closeNewTripScreen);
 cancelNewTripBtn.addEventListener("click", closeNewTripScreen);
@@ -1410,7 +1500,10 @@ async function initializeApp() {
         userStatus.textContent = `Trip: ${currentTrip.name}`;
       }
       setStatus(checkInStatus, "Viewing a public trip.", "success");
-      window.setTimeout(() => map.invalidateSize(), 0);
+      window.setTimeout(() => {
+        map.invalidateSize();
+        fitMapToCheckIns();
+      }, 0);
     } catch (error) {
       clearStoredSession();
       session = null;

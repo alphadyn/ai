@@ -413,6 +413,23 @@ body.profile-open::before {
   box-shadow: 0 5px 15px rgba(15, 118, 110, 0.08);
 }
 
+.trip-card[draggable="true"] {
+  cursor: grab;
+}
+
+.trip-card.is-dragging {
+  cursor: grabbing;
+  opacity: 0.45;
+}
+
+.trip-card.drag-over-before {
+  border-top: 3px solid var(--accent);
+}
+
+.trip-card.drag-over-after {
+  border-bottom: 3px solid var(--accent);
+}
+
 .trip-card-main,
 .trip-card-edit {
   display: flex;
@@ -441,6 +458,17 @@ body.profile-open::before {
   margin-top: 0.8rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
+}
+
+.trip-order-controls {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.trip-order-controls .icon-btn {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.1rem;
 }
 
 .trip-card-edit input[type="text"] {
@@ -476,6 +504,17 @@ body.profile-open::before {
   font-size: clamp(2rem, 5vw, 3.2rem);
   letter-spacing: -0.045em;
   line-height: 0.95;
+}
+
+.topbar h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar h1 a:focus-visible {
+  border-radius: 3px;
+  outline: 3px solid rgba(15, 118, 110, 0.24);
+  outline-offset: 4px;
 }
 
 .topbar-subtitle {

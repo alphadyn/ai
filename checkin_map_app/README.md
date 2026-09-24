@@ -10,7 +10,7 @@ your last 100 check-ins, and mapping the GPS location embedded in uploaded photo
 - **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
   persisted permanently in Supabase so they are available across browsers and page refreshes
 - **Multi-user accounts**: sign up and sign in with a unique username; each user has private trips and check-ins
-- **Trips**: create and switch between multiple groups of check-ins
+- **Trips**: create, reorder, and switch between multiple groups of check-ins; the first trip is the default shown at login
 - **Public trip links**: copy a URL to share a read-only trip with anyone
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in

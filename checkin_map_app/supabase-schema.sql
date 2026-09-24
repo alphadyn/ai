@@ -34,6 +34,7 @@ create table if not exists public.checkin_map_trips (
   name text not null,
   public_slug text unique not null default gen_random_uuid()::text,
   is_public boolean not null default false,
+  sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -69,7 +70,13 @@ alter table public.checkin_map_media add column if not exists user_id uuid refer
 alter table public.checkin_map_media alter column user_id set default auth.uid();
 alter table public.checkin_map_trips add column if not exists public_slug text;
 alter table public.checkin_map_trips add column if not exists is_public boolean not null default false;
+alter table public.checkin_map_trips add column if not exists sort_order integer not null default 0;
 update public.checkin_map_trips set public_slug = coalesce(public_slug, gen_random_uuid()::text) where public_slug is null;
+with ranked_trips as (
+  select id, row_number() over (partition by user_id order by created_at asc) as position
+  from public.checkin_map_trips
+)
+update public.checkin_map_trips t set sort_order = ranked_trips.position from ranked_trips where t.id = ranked_trips.id and t.sort_order = 0;
 alter table public.checkin_map_trips alter column public_slug set not null;
 create unique index if not exists checkin_map_trips_public_slug_idx on public.checkin_map_trips(public_slug);
 
