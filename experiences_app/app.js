@@ -816,22 +816,13 @@ async function handleExperienceClick(event) {
     const experience = experiences.find((item) => item.id === card.dataset.experienceId);
     if (!experience) return;
     if (experience.public_slug) {
-      window.open(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(experience.public_slug)}`, "_blank", "noopener");
+      window.location.assign(`${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(experience.public_slug)}`);
       return;
     }
-    const experienceTab = window.open("about:blank", "_blank");
-    if (!experienceTab) {
-      setStatus(experienceStatus, "Your browser blocked the Experience tab.", "error");
-      return;
-    }
-    experienceTab.opener = null;
     try {
       const url = await experienceUrl(experience);
-      experienceTab.location.replace(url);
-    } catch (error) {
-      experienceTab.close();
-      setStatus(experienceStatus, error.message, "error");
-    }
+      window.location.assign(url);
+    } catch (error) { setStatus(experienceStatus, error.message, "error"); }
     return;
   }
   const editButton = event.target.closest("[data-edit-experience]");
