@@ -367,6 +367,9 @@ select:focus-visible {
 .experience-create-screen { max-width: 720px; margin: 0 auto; padding: 0.35rem 0 0.85rem; }
 .experience-create-screen .section-heading { padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .experience-create-screen .section-heading h2 { font-size: 1.42rem; }
+.experience-create-heading { position: relative; }
+.experience-create-actions { display: flex; align-items: center; gap: 0.45rem; }
+.experience-create-actions .primary-btn { min-width: 4.1rem; padding: 0 0.85rem; font-size: 0.8rem; }
 .experience-create-form {
   grid-template-columns: 1fr;
   gap: 1rem;

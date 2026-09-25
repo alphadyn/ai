@@ -92,12 +92,11 @@
             <div id="experienceList" class="experience-list"></div>
           </section>
           <section id="experienceCreateScreen" class="experience-create-screen" hidden>
-            <div class="section-heading"><div><p class="panel-kicker">Remember</p><h2>New experience</h2></div><button type="button" id="backFromExperienceCreateBtn" class="secondary-btn icon-btn" aria-label="Back to experiences" title="Back to experiences">&larr;</button></div>
+            <div class="section-heading experience-create-heading"><div><p class="panel-kicker">Remember</p><h2>New experience</h2></div><div class="experience-create-actions"><button type="submit" form="experienceForm" id="experienceSaveBtn" class="primary-btn">Save</button><button type="button" id="backFromExperienceCreateBtn" class="secondary-btn icon-btn" aria-label="Back to experiences" title="Back to experiences">&larr;</button></div></div>
             <form id="experienceForm" class="experience-form experience-create-form">
               <input id="experienceIdInput" type="hidden" />
               <label>Experience name<input id="experienceNameInput" type="text" maxlength="100" placeholder="e.g. Sunset in Lisbon" required /></label>
               <label>Story or description<textarea id="experienceDescriptionInput" rows="3" maxlength="1000" placeholder="Capture the feeling, people, or details you want to remember."></textarea></label>
-              <div class="experience-form-actions"><button type="submit" id="experienceSaveBtn" class="primary-btn">Create experience</button><button type="button" id="experienceCancelEditBtn" class="secondary-btn" hidden>Cancel edit</button></div>
             </form>
           </section>
           <section id="experienceDetail" class="experience-detail" hidden>

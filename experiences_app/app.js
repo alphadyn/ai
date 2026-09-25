@@ -90,7 +90,6 @@ const experienceIdInput = document.getElementById("experienceIdInput");
 const experienceNameInput = document.getElementById("experienceNameInput");
 const experienceDescriptionInput = document.getElementById("experienceDescriptionInput");
 const experienceSaveBtn = document.getElementById("experienceSaveBtn");
-const experienceCancelEditBtn = document.getElementById("experienceCancelEditBtn");
 const experienceStatus = document.getElementById("experienceStatus");
 const experienceList = document.getElementById("experienceList");
 const experienceDetail = document.getElementById("experienceDetail");
@@ -375,8 +374,7 @@ async function loadExperienceLocations() {
 function resetExperienceForm() {
   experienceForm.reset();
   experienceIdInput.value = "";
-  experienceSaveBtn.textContent = "Create experience";
-  experienceCancelEditBtn.hidden = true;
+  experienceSaveBtn.textContent = "Save";
 }
 
 function showExperienceScreen(screen) {
@@ -736,6 +734,7 @@ function closeExperiences() {
   showExperienceScreen("index");
   resetExperienceForm();
   unlockTripPageScroll();
+  if (session && !isExperienceUrl) showWelcome();
 }
 
 function openExperienceEventForm() {
@@ -806,8 +805,7 @@ function openExperienceDetailsForm() {
   experienceIdInput.value = activeExperience.id;
   experienceNameInput.value = activeExperience.name;
   experienceDescriptionInput.value = activeExperience.description || "";
-  experienceSaveBtn.textContent = "Save experience";
-  experienceCancelEditBtn.hidden = false;
+  experienceSaveBtn.textContent = "Save";
   showExperienceScreen("create");
   experienceNameInput.focus();
 }
@@ -2296,7 +2294,6 @@ activeExperienceName.addEventListener("click", openExperienceDetailsForm);
 newExperienceEventBtn.addEventListener("click", openExperienceEventForm);
 backFromExperienceEventCreateBtn.addEventListener("click", closeExperienceEventCreate);
 experienceForm.addEventListener("submit", saveExperience);
-experienceCancelEditBtn.addEventListener("click", resetExperienceForm);
 experienceLocationForm.addEventListener("submit", addExperienceEvent);
 findExperienceEventLocationBtn.addEventListener("click", findNewExperienceEventLocation);
 experienceLocationInput.addEventListener("input", () => {
