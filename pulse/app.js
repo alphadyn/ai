@@ -941,13 +941,42 @@ document.getElementById('auth-form').addEventListener('submit', async (e) => {
 /* Modals: generic close handling                                         */
 /* ---------------------------------------------------------------------- */
 
-document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-  btn.addEventListener('click', () => btn.closest('dialog').close());
+const carouselModal = document.getElementById('carousel-modal');
+function setScrollLock(locked) {
+  document.body.style.overflow = locked ? 'hidden' : '';
+  document.documentElement.style.overflow = locked ? 'hidden' : '';
+}
+
+function closeCarouselModal() {
+  if (carouselModal.open) {
+    carouselModal.close();
+  }
+  setScrollLock(false);
+}
+
+carouselModal.addEventListener('close', () => {
+  setScrollLock(false);
 });
-document.getElementById('carousel-modal').addEventListener('keydown', (event) => {
+carouselModal.addEventListener('cancel', (event) => {
+  event.preventDefault();
+  closeCarouselModal();
+});
+
+document.querySelectorAll('[data-close-modal]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const dialog = btn.closest('dialog');
+    if (!dialog) return;
+    if (dialog === carouselModal) {
+      closeCarouselModal();
+      return;
+    }
+    dialog.close();
+  });
+});
+carouselModal.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     event.preventDefault();
-    event.currentTarget.close();
+    closeCarouselModal();
     return;
   }
   if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -1198,6 +1227,7 @@ function openCarouselModal(carousel) {
   });
   content.replaceChildren(maximizedCarousel);
   bindAttachmentCarousels(content);
+  setScrollLock(true);
   modal.showModal();
 }
 
