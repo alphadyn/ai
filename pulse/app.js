@@ -508,25 +508,29 @@ const pulse = {
 
   async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
     const pageLimit = Math.min(Math.max(30, limit) + offset + 50, 300);
-    const { data: rows } = await restFetch('GET', 'posts', {
-      params: {
-        is_deleted: 'eq.false',
-        select: '*',
-        order: 'created_at.desc',
-        limit: String(pageLimit),
-      },
-    });
+    const [{ data: rows }, { data: commentRows }, voterKey] = await Promise.all([
+      restFetch('GET', 'posts', {
+        params: {
+          is_deleted: 'eq.false',
+          select: '*',
+          order: 'created_at.desc',
+          limit: String(pageLimit),
+        },
+      }),
+      restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id', limit: '500' } }),
+      currentVoterKey(),
+    ]);
     const posts = rows || [];
-    const { data: commentRows } = await restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id', limit: '500' } });
     const counts = {};
     (commentRows || []).forEach((c) => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
 
-    const voterKey = await currentVoterKey();
-    const { data: voteRows } = await restFetch('GET', 'post_votes', { params: { voter_key: `eq.${voterKey}`, select: 'post_id,value' } });
+    const [{ data: voteRows }, avatars] = await Promise.all([
+      restFetch('GET', 'post_votes', { params: { voter_key: `eq.${voterKey}`, select: 'post_id,value' } }),
+      fetchAvatars(posts.map((p) => p.author_id)),
+    ]);
     const myVotes = {};
     (voteRows || []).forEach((v) => { myVotes[v.post_id] = v.value; });
 
-    const avatars = await fetchAvatars(posts.map((p) => p.author_id));
     let items = posts.map((row) => mapPostRow(row, counts[row.id] || 0, myVotes[row.id] || 0, avatars[row.author_id]));
 
     if (tag) {
