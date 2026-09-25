@@ -425,12 +425,13 @@ function renderExperiences() {
         ${experience.description ? `<span>${escapeHtml(experience.description)}</span>` : ""}
       </div>
       <div class="experience-card-actions">
-        ${canEditExperience(experience) ? `<div class="experience-order-controls" aria-label="Reorder ${escapeHtml(experience.name)}"><button type="button" class="secondary-btn icon-btn" data-move-experience="up" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-experience="down" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} down" title="Move down" ${index === experiences.length - 1 ? "disabled" : ""}>&darr;</button></div><label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
+        ${canEditExperience(experience) ? `<div class="experience-order-controls" aria-label="Reorder ${escapeHtml(experience.name)}"><button type="button" class="secondary-btn icon-btn" data-move-experience="up" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-experience="down" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} down" title="Move down" ${index === experiences.length - 1 ? "disabled" : ""}>&darr;</button></div><label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-duplicate-experience="${escapeHtml(experience.id)}">Duplicate</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
       </div>
     </article>`).join("") : '<p class="empty-experience-state">Create an experience, then collect its events, places, and media.</p>';
   experienceDetail.hidden = !activeExperience;
   if (activeExperience) {
     activeExperienceName.textContent = activeExperience.name;
+    activeExperienceName.disabled = !canEditExperience(activeExperience);
     activeExperienceDescription.textContent = activeExperience.description || "Add events, places, and media to this experience.";
     experienceLocationForm.hidden = true;
     experienceDetailKicker.textContent = "Experience";
@@ -848,6 +849,12 @@ async function handleExperienceClick(event) {
     catch (error) { setStatus(experienceStatus, error.message, "error"); }
     return;
   }
+  const duplicateButton = event.target.closest("[data-duplicate-experience]");
+  if (duplicateButton) {
+    try { await duplicateExperience(duplicateButton.dataset.duplicateExperience); }
+    catch (error) { setStatus(experienceStatus, error.message, "error"); }
+    return;
+  }
   const deleteButton = event.target.closest("[data-delete-experience]");
   if (deleteButton) deleteExperience(deleteButton.dataset.deleteExperience);
   const copyButton = event.target.closest("[data-copy-experience]");
@@ -855,6 +862,54 @@ async function handleExperienceClick(event) {
     try { await copyExperienceUrl(copyButton.dataset.copyExperience); }
     catch (error) { setStatus(experienceStatus, error.message, "error"); }
   }
+}
+
+async function duplicateExperience(id) {
+  const source = experiences.find((experience) => experience.id === id);
+  if (!source || !canEditExperience(source) || !session?.user?.id) return;
+  const copyName = `${source.name} - copy`;
+  const sortOrder = Math.max(0, ...experiences.map((experience) => experience.sort_order || 0)) + 1;
+  setStatus(experienceStatus, `Duplicating "${source.name}"…`);
+  const experienceResponse = await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}`, {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({ name: copyName, description: source.description || "", trip_id: source.trip_id || currentTrip?.id, user_id: session.user.id, is_public: false, public_slug: createPublicSlug(copyName), sort_order: sortOrder }),
+  });
+  if (!experienceResponse.ok) throw new Error(await getSupabaseError(experienceResponse, "Could not duplicate the experience."));
+  const [copy] = await experienceResponse.json();
+  try {
+    const locationsResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?select=*&experience_id=eq.${encodeURIComponent(source.id)}&order=timestamp.asc`);
+    if (!locationsResponse.ok) throw new Error(await getSupabaseError(locationsResponse, "Could not load the experience events."));
+    const locations = await locationsResponse.json();
+    if (locations.length) {
+      const eventResponse = await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(locations.map((location) => ({
+          id: createId(),
+          lat: location.lat,
+          lon: location.lon,
+          label: location.label,
+          event_name: location.event_name,
+          description: location.description || "",
+          timestamp: location.timestamp,
+          type: location.type || "event",
+          trip_id: copy.trip_id || currentTrip?.id,
+          user_id: session.user.id,
+          experience_id: copy.id,
+          preview_url: location.preview_url || null,
+          updated_at: new Date().toISOString(),
+        }))),
+      });
+      if (!eventResponse.ok) throw new Error(await getSupabaseError(eventResponse, "Could not duplicate the experience events."));
+    }
+  } catch (error) {
+    await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(copy.id)}`, { method: "DELETE" });
+    throw error;
+  }
+  await loadExperiences();
+  await openExperience(copy.id, { edit: true });
+  setStatus(experienceStatus, `Created "${copyName}".`, "success");
 }
 
 async function updateExperienceSharing(id, isPublic) {
@@ -2237,6 +2292,7 @@ newExperienceBtn.addEventListener("click", showExperienceCreate);
 backFromExperienceCreateBtn.addEventListener("click", showExperienceIndex);
 experienceDoneBtn.addEventListener("click", showExperienceIndex);
 experienceEditDetailsBtn.addEventListener("click", openExperienceDetailsForm);
+activeExperienceName.addEventListener("click", openExperienceDetailsForm);
 newExperienceEventBtn.addEventListener("click", openExperienceEventForm);
 backFromExperienceEventCreateBtn.addEventListener("click", closeExperienceEventCreate);
 experienceForm.addEventListener("submit", saveExperience);

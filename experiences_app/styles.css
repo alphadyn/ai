@@ -2,13 +2,14 @@
   --accent: #0f766e;
   --accent-dark: #115e59;
   --accent-soft: #dff4ef;
+  --accent-wash: #edf8f4;
   --coral: #c85c45;
   --ink: #17212b;
   --muted: #68756f;
   --border: #d8e1dc;
   --bg: #f3f6f1;
   --surface: #fffdf8;
-  --shadow: 0 18px 45px rgba(31, 52, 45, 0.09);
+  --shadow: 0 14px 34px rgba(31, 52, 45, 0.08);
 }
 
 * {
@@ -55,7 +56,9 @@ select:focus-visible {
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.35rem;
+  border-bottom: 1px solid rgba(216, 225, 220, 0.9);
 }
 
 .checkin-trip-name {
@@ -78,6 +81,7 @@ select:focus-visible {
 .account-bar {
   justify-content: flex-end;
   align-items: center;
+  min-height: 2.45rem;
 }
 
 .auth-tab {
@@ -455,6 +459,9 @@ select:focus-visible {
 .experience-detail { margin-top: 1.2rem; padding-top: 1.15rem; border-top: 1px solid var(--border); }
 .experience-detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .experience-detail-heading h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.16rem; }
+.experience-name-button { display: block; max-width: 100%; margin: 0; padding: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-family: Georgia, "Times New Roman", serif; font-size: 1.16rem; font-weight: 700; text-align: left; cursor: pointer; }
+.experience-name-button:hover { color: var(--accent-dark); text-decoration: underline; text-decoration-color: var(--coral); text-underline-offset: 0.18rem; }
+.experience-name-button:disabled { color: var(--ink); cursor: default; }
 .experience-detail-actions,
 .experience-events-heading { display: flex; align-items: center; gap: 0.45rem; }
 .experience-events-heading { justify-content: space-between; margin-top: 1rem; }
@@ -965,7 +972,9 @@ body.profile-open::before {
   border-radius: 12px;
   background: rgba(255, 253, 248, 0.78);
   box-shadow: 0 8px 20px rgba(31, 52, 45, 0.05);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
+.welcome-feature-card:hover { transform: translateY(-2px); border-color: #b8d3c9; box-shadow: 0 12px 24px rgba(31, 52, 45, 0.08); }
 .welcome-feature-icon {
   display: grid;
   width: 2.7rem;
@@ -987,8 +996,8 @@ body.profile-open::before {
 .panel {
   background: rgba(255, 253, 248, 0.94);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 1.35rem;
+  border-radius: 14px;
+  padding: 1.3rem;
   box-shadow: var(--shadow);
 }
 
@@ -1034,6 +1043,11 @@ body.profile-open::before {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.section-heading > div:first-child h2,
+.map-panel-heading h2 {
+  letter-spacing: -0.015em;
 }
 
 .section-heading h2 {
@@ -1162,9 +1176,10 @@ body.profile-open::before {
   background: var(--accent);
   color: #fff;
   border: none;
-  padding: 0.78rem 1.25rem;
+  min-height: 2.45rem;
+  padding: 0.68rem 1.1rem;
   border-radius: 9px;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 5px 12px rgba(15, 118, 110, 0.18);
@@ -1186,12 +1201,14 @@ body.profile-open::before {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  min-height: 2.25rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 0.5rem 0.72rem;
+  padding: 0.45rem 0.72rem;
   background: var(--surface);
   color: var(--ink);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   cursor: pointer;
   transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
