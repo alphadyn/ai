@@ -1,3 +1,5 @@
+const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api';
+const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
 const chart = document.querySelector('#performance-chart');
 const loadingPanel = document.querySelector('#chart-loading');
 const errorPanel = document.querySelector('#chart-error');
@@ -155,7 +157,7 @@ async function loadAnalysis(security) {
     const params = new URLSearchParams({ symbol });
     if (selectedCompany?.company) params.set('company', selectedCompany.company);
     if (selectedCompany?.exchange) params.set('exchange', selectedCompany.exchange);
-    const response = await fetch(`/api/analysis?${params}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    const response = await fetch(`${API}/analysis?${params}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Could not load ${symbol} history.`);
     if (requestId !== requestSequence) return;
@@ -170,7 +172,7 @@ async function loadAnalysis(security) {
 
 async function loadCompanies() {
   try {
-    const response = await fetch('/api/companies', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || 'Could not load S&P 500 company rankings.');
     sp500Companies = payload.companies || [];
@@ -260,7 +262,7 @@ async function searchTicker(query) {
   renderSearchResults([], 'Searching listed stocks…');
 
   try {
-    const response = await fetch(`/api/search?q=${encodeURIComponent(normalizedQuery)}`, {
+    const response = await fetch(`${API}/search?q=${encodeURIComponent(normalizedQuery)}`, {
       headers: { Accept: 'application/json' },
       cache: 'no-store',
       signal: controller.signal,
