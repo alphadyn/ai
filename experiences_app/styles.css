@@ -842,31 +842,29 @@ body.profile-open::before {
   color: var(--accent-dark);
   font-family: Baskerville, "Iowan Old Style", Georgia, serif;
   font-size: clamp(2.15rem, 5vw, 3.45rem);
-  letter-spacing: 0;
-  line-height: 1;
+  line-height: 0;
 }
 
 .topbar h1 a {
   color: inherit;
   display: inline-block;
-  padding-bottom: 0.14em;
+  padding: 0;
   position: relative;
   text-decoration: none;
 }
 
+.brand-logo {
+  display: block;
+  width: min(27.5rem, 72vw);
+  height: auto;
+}
+
 .topbar h1 a::after {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 2.9rem;
-  height: 0.16rem;
-  background: var(--coral);
-  content: "";
-  transition: width 0.2s ease;
+  display: none;
 }
 
 .topbar h1 a:hover::after {
-  width: 100%;
+  display: none;
 }
 
 .topbar h1 a:focus-visible {
