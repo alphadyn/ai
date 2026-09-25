@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Alphadyn AI</title>
+  <desc id="description">An alpha monogram with a rising signal.</desc>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#11182c" stroke="#2b3858" stroke-width="2"/>
+  <path d="M13 47 28.5 15h7L51 47h-9.5L32 25 22.5 47H13Z" fill="#f4f7ff"/>
+  <path d="m17 46 9-9 6 5 10-15 7 6" fill="none" stroke="#6ee7d2" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="42" cy="27" r="3.5" fill="#8aa7ff"/>
+</svg>

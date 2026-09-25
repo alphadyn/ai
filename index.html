@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Alphadyn AI Apps</title>
   <meta name="description" content="Interactive apps, reports, dashboards, and experiments by Alphadyn AI.">
+  <link rel="icon" href="alphadyn-ai-mark.svg" type="image/svg+xml">
   <style>
     :root { color-scheme: dark; --bg: #0b1020; --panel: #151d33; --line: #293653; --text: #f4f7ff; --muted: #9ba9c5; --accent: #6ee7d2; --accent-2: #8aa7ff; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top right, #263d69 0, transparent 35%), var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0 56px; }
     header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 42px; }
+    .brand-lockup { display: flex; align-items: center; gap: 20px; }
+    .brand-mark { width: clamp(62px, 8vw, 92px); height: auto; flex: 0 0 auto; filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .28)); }
+    .brand-kicker { display: block; margin-bottom: 10px; color: var(--accent); font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
     h1 { margin: 0; font-size: clamp(2.5rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.04em; }
     .intro { max-width: 580px; color: var(--muted); font-size: 1.08rem; }
     .intro a { color: var(--accent); }
@@ -48,14 +52,18 @@
     .app p { margin: 0; color: var(--muted); font-size: .92rem; }
     footer { margin-top: 40px; color: var(--muted); font-size: .9rem; }
     @media (max-width: 900px) { .featured .apps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 680px) { main { width: min(100% - 28px, 1180px); padding-top: 42px; } header { display: block; } .intro { margin-top: 20px; } .section-heading { display: block; } .section-heading p { margin-top: 6px; } .featured .apps { grid-template-columns: 1fr; } }
+    @media (max-width: 680px) { main { width: min(100% - 28px, 1180px); padding-top: 42px; } header { display: block; } .brand-lockup { gap: 14px; } .brand-kicker { margin-bottom: 7px; font-size: .64rem; } .intro { margin-top: 24px; } .section-heading { display: block; } .section-heading p { margin-top: 6px; } .featured .apps { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <main>
     <header>
-      <div>
-        <h1>Alphadyn<br>AI apps.</h1>
+      <div class="brand-lockup">
+        <img class="brand-mark" src="alphadyn-ai-mark.svg" alt="">
+        <div>
+          <span class="brand-kicker">Applied intelligence</span>
+          <h1>Alphadyn<br>AI apps.</h1>
+        </div>
       </div>
       <div class="intro">
         A collection of interactive tools, reports, dashboards, and experiments. Select an app to open it.
