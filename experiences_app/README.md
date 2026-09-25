@@ -1,6 +1,6 @@
 # Experiences
 
-A browser-based app for recording trips, Experiences, and named Events with maps, locations, and media.
+A browser-based app for recording trips, Experiences, and named Events with maps, locations, and media. The logged-out home page introduces the app through a welcome screen; sign-in is required before creating or exploring private content.
 
 ## Features
 - **Check in** by typing a known place name (city, address, landmark); it's geocoded into coordinates
@@ -9,6 +9,7 @@ A browser-based app for recording trips, Experiences, and named Events with maps
 - **Check-ins** are listed with place name or photo filename, coordinates, and timestamp, and
   persisted permanently in Supabase so they are available across browsers and page refreshes
 - **Multi-user accounts**: sign up and sign in with a unique username; each user has private trips and check-ins
+- **Welcome and access control**: anyone can view the home-page welcome screen, while continuing into trips or Experiences requires signing in or creating an account
 - **Trips**: create, reorder, and switch between multiple groups of check-ins; the first trip is the default shown at login
 - **Experiences and events**: build private or public Experience collections, then add named Events with a date/time, location, description, and photo, video, or audio attachments
 - **Event maps**: open an Experience to see all Event pins on a dedicated map, select an Event card to focus its pin, and reset the map to show every Event
@@ -35,7 +36,7 @@ python3 -m http.server 8000
 Then open http://localhost:8000 in your browser.
 
 ## How to use
-1. Create an account or sign in, then choose an existing trip or create a new one. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
+1. Open the app to view the welcome screen. Choose **Log in** or **Sign up** before starting a trip or exploring Experiences, then choose an existing trip or create a new one. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box
    and click **Check In**. A marker appears on the map and the check-in is added to the top of the
   "Check-Ins" list.
 2. Right-click any point on the map and choose **Drop pin** to add a coordinate check-in. Open its

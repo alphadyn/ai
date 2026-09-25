@@ -8,12 +8,13 @@ The root landing page in [index.html](index.html) links to the most relevant app
 
 The current top apps featured on the main landing page are:
 
-1. [pulse](pulse/) — Social
-2. [nexus](nexus/) — Workspace
+1. [experiences_app](experiences_app/) — Maps and authenticated trip journal
+2. [pulse](pulse/) — Social
 3. [market_lens_app](market_lens_app/) — Finance
-4. [online_store_app](online_store_app/) — Commerce
-5. [photo_gallery_app](photo_gallery_app/) — Gallery
-6. [video_conference_app](video_conference_app/) — Communication
+4. [nexus](nexus/) — Workspace
+5. [online_store_app](online_store_app/) — Commerce
+6. [photo_gallery_app](photo_gallery_app/) — Gallery
+7. [video_conference_app](video_conference_app/) — Communication
 
 ## Repository layout
 
