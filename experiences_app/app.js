@@ -734,7 +734,7 @@ function closeExperiences() {
   showExperienceScreen("index");
   resetExperienceForm();
   unlockTripPageScroll();
-  if (session && !isExperienceUrl) showWelcome();
+  if (session) showWelcome();
 }
 
 function openExperienceEventForm() {
@@ -2098,6 +2098,7 @@ function setLoggedOutPreview(enabled) {
 }
 
 function showWelcome() {
+  document.body.classList.add("home-page");
   welcomePanel.hidden = false;
 }
 
