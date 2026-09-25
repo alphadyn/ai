@@ -62,7 +62,7 @@ h1, h2, h3, h4 { font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* Topbar */
-.topbar { position: sticky; top: 0; z-index: 20; background: rgba(7, 17, 23, .82); backdrop-filter: saturate(140%) blur(18px); -webkit-backdrop-filter: saturate(140%) blur(18px); border-bottom: 1px solid var(--line-soft); box-shadow: 0 10px 30px rgba(0, 0, 0, .12); }
+.topbar { background: rgba(7, 17, 23, .82); backdrop-filter: saturate(140%) blur(18px); -webkit-backdrop-filter: saturate(140%) blur(18px); border-bottom: 1px solid var(--line-soft); box-shadow: 0 10px 30px rgba(0, 0, 0, .12); }
 .topbar-inner { max-width: 1240px; margin: 0 auto; padding: 15px 28px; display: flex; align-items: center; gap: 22px; }
 .brand {
   font-size: 1.28rem; font-weight: 800; text-decoration: none; letter-spacing: -.03em;
