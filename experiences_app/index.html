@@ -53,6 +53,32 @@
       </section>
 
       <main id="appContent" class="app-grid" hidden>
+        <section id="welcomePanel" class="welcome-panel" hidden>
+          <div class="welcome-panel-main">
+            <p class="welcome-kicker">Your place-based journal</p>
+            <h2>Make every place part of your story.</h2>
+            <p class="welcome-intro">Capture the moments that matter, keep them organized, and turn your travels into a living atlas you can return to.</p>
+            <div class="welcome-actions">
+              <button type="button" id="welcomeNewTripBtn" class="primary-btn">Start a trip</button>
+              <button type="button" id="welcomeExploreBtn" class="secondary-btn">Explore Experiences</button>
+              <button type="button" id="welcomeDismissBtn" class="text-btn">Continue to dashboard</button>
+            </div>
+          </div>
+          <div class="welcome-features" aria-label="Application features">
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">+</span>
+              <div><h3>Check in anywhere</h3><p>Drop a pin, add context, and build a personal map of the places you have been.</p></div>
+            </article>
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">◈</span>
+              <div><h3>Build Experiences</h3><p>Group events, photos, and memories into rich stories that are easy to revisit.</p></div>
+            </article>
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">↗</span>
+              <div><h3>Share your view</h3><p>Give friends a beautiful public link to an experience while keeping your private journal yours.</p></div>
+            </article>
+          </div>
+        </section>
         <section id="tripPanel" class="panel trip-panel" hidden>
           <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn icon-btn" aria-label="New trip" title="New trip">+</button><button type="button" id="closeTripsBtn" class="secondary-btn icon-btn" aria-label="Close trips" title="Close trips">&times;</button></div></div>
           <div id="tripList" class="trip-list"></div>

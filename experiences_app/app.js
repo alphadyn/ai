@@ -11,7 +11,6 @@ const TRIPS_TABLE = "checkin_map_trips";
 const PROFILES_TABLE = "checkin_map_profiles";
 const EXPERIENCES_TABLE = "checkin_map_experiences";
 const AUTH_SESSION_KEY = "checkin-map-app:auth-session";
-const DEFAULT_PUBLIC_TRIP_SLUG = "test-69250751";
 
 const checkInForm = document.getElementById("checkInForm");
 const locationInput = document.getElementById("locationInput");
@@ -32,6 +31,10 @@ const mediaViewerName = document.getElementById("mediaViewerName");
 const mediaViewerDescription = document.getElementById("mediaViewerDescription");
 const authPanel = document.getElementById("authPanel");
 const appContent = document.getElementById("appContent");
+const welcomePanel = document.getElementById("welcomePanel");
+const welcomeNewTripBtn = document.getElementById("welcomeNewTripBtn");
+const welcomeExploreBtn = document.getElementById("welcomeExploreBtn");
+const welcomeDismissBtn = document.getElementById("welcomeDismissBtn");
 const authForm = document.getElementById("authForm");
 const authUsername = document.getElementById("authUsername");
 const authPassword = document.getElementById("authPassword");
@@ -211,7 +214,7 @@ let authMode = "signin";
 const pageParams = new URLSearchParams(window.location.search);
 const publicExperienceSlug = pageParams.get("experience");
 const isExperienceUrl = Boolean(publicExperienceSlug);
-const publicTripSlug = pageParams.get("trip") || (isExperienceUrl ? null : DEFAULT_PUBLIC_TRIP_SLUG);
+const publicTripSlug = pageParams.get("trip");
 const isPublicTrip = Boolean(publicTripSlug);
 let isPublicExperience = false;
 
@@ -2047,6 +2050,14 @@ function setLoggedOutPreview(enabled) {
   }
 }
 
+function showWelcome() {
+  welcomePanel.hidden = false;
+}
+
+function closeWelcome() {
+  welcomePanel.hidden = true;
+}
+
 async function uploadAvatar(file) {
   const extension = file.name.split(".").pop().replace(/[^a-z0-9]/gi, "") || "jpg";
   const storagePath = `avatars/${session.user.id}.${extension}`;
@@ -2110,6 +2121,7 @@ async function enterApp(nextSession) {
   renderPhotoList();
   updateClearCheckInsButton();
   if (profile.role === "admin") await loadAdminData();
+  showWelcome();
   window.setTimeout(() => {
     map.invalidateSize();
     fitMapToCheckIns();
@@ -2170,6 +2182,21 @@ function photoIcon(previewUrl) {
 checkInForm.addEventListener("submit", handleCheckIn);
 loginBtn.addEventListener("click", () => setAuthMode("signin"));
 createProfileBtn.addEventListener("click", () => setAuthMode("signup"));
+welcomeNewTripBtn.addEventListener("click", () => {
+  closeWelcome();
+  openNewTripScreen();
+});
+welcomeExploreBtn.addEventListener("click", async () => {
+  closeWelcome();
+  try {
+    await loadExperiences();
+    experiencePanel.hidden = false;
+    experiencePanel.classList.add("trip-panel-open");
+    lockTripPageScroll();
+    showExperienceIndex();
+  } catch (error) { setStatus(checkInStatus, error.message, "error"); }
+});
+welcomeDismissBtn.addEventListener("click", closeWelcome);
 profileBtn.addEventListener("click", openProfile);
 closeProfileBtn.addEventListener("click", closeProfile);
 profileForm.addEventListener("submit", async (event) => {
@@ -2338,7 +2365,9 @@ async function initializeApp() {
   renderPhotoList();
   document.body.classList.remove("public-trip-view");
   document.body.classList.remove("public-experience-view");
+  document.body.classList.add("home-page");
   if (isExperienceUrl) {
+    document.body.classList.remove("home-page");
     const restoredSession = await restoreSession();
     if (restoredSession) {
       session = restoredSession;
@@ -2397,6 +2426,7 @@ async function initializeApp() {
     return;
   }
   if (isPublicTrip) {
+    document.body.classList.remove("home-page");
     authPanel.hidden = true;
     appContent.hidden = false;
     document.body.classList.add("public-trip-view");
@@ -2440,6 +2470,7 @@ async function initializeApp() {
     }
     return;
   }
+  showWelcome();
   const restoredSession = await restoreSession();
   if (restoredSession) {
     try {
