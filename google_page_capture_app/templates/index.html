@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f2">
+  <title>Signal — Google News Capture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Signal home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span>signal<span class="brand-period">.</span></span>
+      </a>
+      <div class="topbar-right">
+        <span class="local-indicator"><span class="live-dot" aria-hidden="true"></span> LOCAL WORKSPACE</span>
+        <a class="source-link" href="https://news.google.com/" target="_blank" rel="noopener noreferrer">Google News <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> YOUR DAILY BRIEFING, STRUCTURED</div>
+          <h1 id="page-title">Headlines,<br><span>in focus.</span></h1>
+          <p class="hero-description">Collect the latest stories from Google News and turn the noise into a clean, structured reading list.</p>
+          <button class="capture-button" id="capture-button" type="button">
+            <span class="button-label">Capture today’s headlines</span>
+            <span class="button-icon" aria-hidden="true">↗</span>
+          </button>
+          <p class="button-note"><span class="tiny-lock" aria-hidden="true">⌑</span> Runs privately on this device. No account needed.</p>
+        </div>
+
+        <aside class="hero-aside" aria-label="Capture details">
+          <div class="aside-top"><span class="aside-label">THE PROCESS</span><span class="aside-index">01 — 03</span></div>
+          <div class="process-step"><span class="step-number">01</span><div><strong>Open the feed</strong><small>Google News, live</small></div><span class="step-check" aria-hidden="true">✓</span></div>
+          <div class="process-step"><span class="step-number">02</span><div><strong>Gather stories</strong><small>Headlines + related reads</small></div><span class="step-check" aria-hidden="true">✓</span></div>
+          <div class="process-step"><span class="step-number">03</span><div><strong>Save your brief</strong><small>Download as structured JSON</small></div><span class="step-check" aria-hidden="true">✓</span></div>
+          <div class="aside-foot"><span class="sparkle" aria-hidden="true">✳</span> A little more signal. A little less scroll.</div>
+        </aside>
+      </section>
+
+      <section class="results-section" aria-labelledby="results-title">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow section-eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> YOUR COLLECTION</div>
+            <h2 id="results-title">Latest capture</h2>
+          </div>
+          <a class="download-button" id="download-button" href="/api/download" hidden><span aria-hidden="true">↓</span> Download JSON</a>
+        </div>
+        <div class="status-panel" id="status-panel" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
+          <span class="status-icon" id="status-icon" aria-hidden="true">✳</span>
+          <div class="status-copy">
+            <strong id="status-title">Ready when you are</strong>
+            <span id="status-message">Your captured headlines will appear here.</span>
+          </div>
+          <span class="status-meta" id="status-meta">NO CAPTURE YET</span>
+        </div>
+        <div class="error-message" id="error-message" role="alert" hidden></div>
+        <div class="story-list" id="story-list" aria-label="Captured headlines"></div>
+        <div class="empty-note" id="empty-note"><span class="empty-star" aria-hidden="true">✳</span><span>Nothing in your briefing yet.<br>Start a capture to bring today’s stories into focus.</span></div>
+        <div class="capture-footer" id="capture-footer" hidden></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Signal Capture <span class="footer-separator">/</span> A focused way to follow the news.</span>
+      <span>MADE FOR THE CURIOUS <span class="footer-spark" aria-hidden="true">✳</span></span>
+    </footer>
+  </div>
+</body>
+</html>

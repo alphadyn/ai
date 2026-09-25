@@ -58,6 +58,7 @@ The current top apps featured on the main landing page are:
 ### Python utilities and tooling
 
 - [crawler_indexer](crawler_indexer/) — Domain-scoped crawler and indexer utility.
+- [google_page_capture_app](google_page_capture_app/) — Local Flask web app that captures Google News headlines and related stories, displays them in a browser, and downloads the results as JSON.
 - [secure_file_tool](secure_file_tool/) — Encryption and decryption utility with CLI and GUI options.
 
 ## Quick start
@@ -118,9 +119,14 @@ Run utility scripts from the repo root or from the project folder as needed:
 
 ```bash
 python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
+python3 -m pip install -r google_page_capture_app/requirements.txt
+python3 -m playwright install chromium
+python3 google_page_capture_app/app.py
 python3 secure_file_tool/file_crypto.py encrypt /path/to/input.txt /path/to/output.bin --password "your-strong-password"
 python3 secure_file_tool/gui_app.py
 ```
+
+The Google News Capture app runs as a local web app. After starting it, open <http://127.0.0.1:5000> to capture and view headlines, then download the structured JSON results.
 
 ## Testing
 
