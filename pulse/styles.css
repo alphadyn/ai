@@ -176,22 +176,70 @@ h1, h2, h3, h4 { font-family: "Avenir Next", -apple-system, BlinkMacSystemFont, 
 .attachment-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--panel-3); }
 .attachment-media { max-width: 100%; border-radius: var(--radius-sm); margin-top: 8px; display: block; border: 1px solid var(--line-soft); }
 
-.attachment-carousel { display: grid; gap: 10px; margin-top: 10px; }
-.attachment-carousel-track { position: relative; min-height: 220px; overflow: hidden; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--panel-2); cursor: zoom-in; }
+.attachment-carousel {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+}
+.attachment-carousel-track {
+  position: relative;
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  cursor: zoom-in;
+}
 .attachment-carousel-track:focus-visible { outline-offset: 3px; }
 .attachment-slide { display: none; width: 100%; min-height: 220px; align-items: center; justify-content: center; padding: 12px; }
 .attachment-slide.is-active { display: flex; }
 .attachment-slide .attachment-media { width: 100%; max-height: 360px; object-fit: contain; margin-top: 0; }
 .attachment-slide .attachment-chip { margin: 0; }
-.attachment-carousel-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.attachment-carousel-btn {
-  border: 1px solid var(--line); border-radius: 999px; background: var(--panel-2); color: var(--text); width: 32px; height: 32px;
-  cursor: pointer; font-size: .8rem; transition: all .15s var(--ease);
+.attachment-carousel-controls {
+  position: absolute;
+  inset: 50% 12px auto 12px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 2;
+  pointer-events: none;
 }
-.attachment-carousel-btn:hover { border-color: var(--accent); color: var(--accent); }
-.attachment-carousel-dots { display: flex; align-items: center; justify-content: center; flex: 1; gap: 8px; }
+.attachment-carousel-btn {
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 999px;
+  background: rgba(7, 17, 23, .34);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  pointer-events: auto;
+  font-size: .8rem;
+  transition: all .15s var(--ease);
+}
+.attachment-carousel-btn:hover { border-color: rgba(143, 231, 171, .5); color: var(--accent); background: rgba(10, 18, 24, .5); }
+.attachment-carousel-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px 0;
+  border-radius: 0 0 8px 8px;
+  background: transparent;
+  border: none;
+  z-index: 2;
+}
 .attachment-dot {
-  width: 9px; height: 9px; border-radius: 999px; border: none; background: rgba(255,255,255,.25); cursor: pointer; padding: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,.25);
+  cursor: pointer;
+  padding: 0;
 }
 .attachment-dot.is-active { background: var(--accent); }
 
@@ -294,12 +342,54 @@ label input[type="file"] { padding: 8px 10px; cursor: pointer; }
 .carousel-modal::backdrop { background: rgba(4, 7, 16, .88); backdrop-filter: blur(5px); animation: fade-in .18s var(--ease); }
 .carousel-modal-shell { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
 .carousel-modal-close { position: absolute; z-index: 2; top: 10px; right: 10px; width: 40px; height: 40px; background: rgba(10, 14, 26, .82); border: 1px solid var(--line); }
-#carousel-modal-content { width: 100%; height: 100%; min-height: 0; }
-#carousel-modal-content .attachment-carousel { width: 100%; height: 100%; margin: 0; grid-template-rows: minmax(0, 1fr) auto; }
-#carousel-modal-content .attachment-carousel-track { min-height: 0; cursor: default; border: 0; background: transparent; touch-action: pan-y; }
-#carousel-modal-content .attachment-slide { height: 100%; min-height: 0; padding: 24px 56px 12px; }
-#carousel-modal-content .attachment-media { width: auto; max-width: 100%; height: auto; max-height: 100%; }
-#carousel-modal-content .attachment-carousel-controls { padding: 8px 12px 12px; }
+#carousel-modal-content { width: 100%; height: 100%; min-height: 0; display: grid; place-items: center; }
+#carousel-modal-content .attachment-carousel {
+  width: min(100%, 1100px);
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+#carousel-modal-content .attachment-carousel-track {
+  width: min(92vw, 1100px);
+  min-height: 0;
+  height: min(72vh, 760px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  border: 0;
+  background: transparent;
+  touch-action: pan-y;
+}
+#carousel-modal-content .attachment-slide {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 24px 56px 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#carousel-modal-content .attachment-slide.is-active { display: flex; }
+#carousel-modal-content .attachment-media {
+  width: auto;
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  object-fit: contain;
+}
+#carousel-modal-content .attachment-carousel-controls {
+  inset: 50% 18px auto 18px;
+  transform: translateY(-50%);
+}
+#carousel-modal-content .attachment-carousel-dots {
+  padding-top: 10px;
+  background: transparent;
+  border-radius: 0;
+}
 
 .toast {
   position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--panel-3);

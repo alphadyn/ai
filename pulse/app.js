@@ -1173,9 +1173,9 @@ function renderAttachments(attachments) {
       </div>
       <div class="attachment-carousel-controls">
         <button type="button" class="attachment-carousel-btn" data-carousel-prev aria-label="Previous attachment">◀</button>
-        <div class="attachment-carousel-dots">${dots}</div>
         <button type="button" class="attachment-carousel-btn" data-carousel-next aria-label="Next attachment">▶</button>
       </div>
+      <div class="attachment-carousel-dots">${dots}</div>
     </div>
   `;
 }
@@ -1237,20 +1237,20 @@ function bindAttachmentCarousels(root = document) {
       });
     }
 
-    if (carousel.closest('#carousel-modal-content')) {
-      let touchStartX = 0;
-      let touchStartY = 0;
-      track?.addEventListener('touchstart', (event) => {
-        touchStartX = event.changedTouches[0].clientX;
-        touchStartY = event.changedTouches[0].clientY;
-      }, { passive: true });
-      track?.addEventListener('touchend', (event) => {
-        const deltaX = event.changedTouches[0].clientX - touchStartX;
-        const deltaY = event.changedTouches[0].clientY - touchStartY;
-        if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-        update(slides.findIndex((slide) => slide.classList.contains('is-active')) + (deltaX < 0 ? 1 : -1));
-      }, { passive: true });
-    }
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    track?.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('a, button, audio, video')) return;
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+    }, { passive: true });
+    track?.addEventListener('pointerup', (event) => {
+      if (event.target.closest('a, button, audio, video')) return;
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      if (Math.abs(deltaX) < 50 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+      update(slides.findIndex((slide) => slide.classList.contains('is-active')) + (deltaX < 0 ? 1 : -1));
+    }, { passive: true });
   });
 }
 
