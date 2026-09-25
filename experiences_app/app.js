@@ -34,7 +34,6 @@ const appContent = document.getElementById("appContent");
 const welcomePanel = document.getElementById("welcomePanel");
 const welcomeNewTripBtn = document.getElementById("welcomeNewTripBtn");
 const welcomeExploreBtn = document.getElementById("welcomeExploreBtn");
-const welcomeDismissBtn = document.getElementById("welcomeDismissBtn");
 const authForm = document.getElementById("authForm");
 const authUsername = document.getElementById("authUsername");
 const authPassword = document.getElementById("authPassword");
@@ -2196,7 +2195,6 @@ welcomeExploreBtn.addEventListener("click", async () => {
     showExperienceIndex();
   } catch (error) { setStatus(checkInStatus, error.message, "error"); }
 });
-welcomeDismissBtn.addEventListener("click", closeWelcome);
 profileBtn.addEventListener("click", openProfile);
 closeProfileBtn.addEventListener("click", closeProfile);
 profileForm.addEventListener("submit", async (event) => {
