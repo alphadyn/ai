@@ -2190,6 +2190,14 @@ function setAuthMode(mode) {
   if (!authPanel.hidden && authUsername.value) authUsername.focus();
 }
 
+function requireAuthentication() {
+  if (session) return true;
+  setAuthMode("signin");
+  setStatus(authStatus, "Log in to continue.", "error");
+  authUsername.focus();
+  return false;
+}
+
 async function handleAuthSubmit(event) {
   event.preventDefault();
   authSubmitBtn.disabled = true;
@@ -2234,10 +2242,12 @@ checkInForm.addEventListener("submit", handleCheckIn);
 loginBtn.addEventListener("click", () => setAuthMode("signin"));
 createProfileBtn.addEventListener("click", () => setAuthMode("signup"));
 welcomeNewTripBtn.addEventListener("click", () => {
+  if (!requireAuthentication()) return;
   closeWelcome();
   openNewTripScreen();
 });
 welcomeExploreBtn.addEventListener("click", async () => {
+  if (!requireAuthentication()) return;
   closeWelcome();
   try {
     await loadExperiences();
