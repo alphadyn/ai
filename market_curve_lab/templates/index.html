@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111916">
+  <title>Market Curve Lab — S&amp;P 500 Trend Analysis</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='curve-logo') }}">
+  <script src="{{ url_for('static', filename='app.js', v='sp500-full') }}" defer></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="wordmark" href="/" aria-label="Market Curve Lab home"><img class="brand-logo" src="{{ url_for('static', filename='market-curve-logo.svg') }}" alt=""></a>
+      <div class="header-note"><span class="market-pulse" aria-hidden="true"></span> THE COMPLETE S&amp;P 500 UNIVERSE</div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div class="intro-copy">
+          <p class="eyebrow"><span>01</span> PRICE HISTORY / TREND ANALYSIS</p>
+          <h1 id="page-title">Company,<br><em>over time.</em></h1>
+          <p class="lede">Explore all 500 S&amp;P companies, ranked by market capitalization, or search for any other listed stock by ticker or name. Compare all-time performance, least-squares trendlines, and recent curvature.</p>
+        </div>
+        <div class="ticker-card" aria-label="Selected company stock summary">
+          <label class="company-picker-label" for="ticker-search">SEARCH A TICKER OR COMPANY <span id="company-rank">S&amp;P 500</span></label>
+          <div class="ticker-search-wrap">
+            <span class="search-icon" aria-hidden="true">⌕</span>
+            <input id="ticker-search" type="search" value="AAPL" placeholder="e.g. AAPL or Apple" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ticker-results" aria-label="Search stocks by ticker or company name">
+            <span class="search-shortcut" aria-hidden="true">↵</span>
+            <div class="ticker-results" id="ticker-results" role="listbox" aria-label="Matching stocks" hidden></div>
+          </div>
+          <div class="ticker-head"><span class="ticker-mark" aria-hidden="true">●</span><span id="ticker-company">SELECTED COMPANY</span><span class="ticker-symbol" id="ticker-symbol">NASDAQ · —</span></div>
+          <div class="ticker-price" id="ticker-price">—</div>
+          <div class="ticker-foot"><span id="ticker-currency">USD · LATEST QUOTE</span><span id="data-asof">Waiting for data</span></div>
+          <div class="ticker-rule"><span></span></div>
+          <div class="ticker-caption">The long arc, adjusted for corporate actions.</div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="All-time performance summary">
+        <article class="metric metric-primary">
+          <div class="metric-label"><span class="metric-number">A</span> ALL-TIME TOTAL RETURN</div>
+          <div class="metric-value" id="total-return">—</div>
+          <div class="metric-detail" id="history-period">Loading historical prices…</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label"><span class="metric-number">B</span> CLOSEST FULL-PERIOD FIT</div>
+          <div class="metric-value metric-fit" id="best-fit">—</div>
+          <div class="metric-detail" id="fit-quality">Comparing least-squares models</div>
+        </article>
+        <article class="metric metric-concavity" id="concavity-card">
+          <div class="metric-label"><span class="metric-number">C</span> CURRENT CONCAVITY</div>
+          <div class="concavity-line"><span class="concavity-symbol" id="concavity-symbol" aria-hidden="true">↗</span><div class="metric-value" id="concavity">—</div></div>
+          <div class="metric-detail" id="concavity-detail">Quadratic fit of recent monthly performance</div>
+        </article>
+      </section>
+
+      <section class="chart-section" aria-labelledby="chart-heading">
+        <div class="chart-heading-row">
+          <div>
+            <p class="eyebrow chart-eyebrow"><span>FIG. 01</span> ADJUSTED PERFORMANCE · $100 STARTING VALUE</p>
+            <h2 id="chart-heading">The shape of the climb</h2>
+          </div>
+          <div class="chart-scale-label"><span class="scale-icon" aria-hidden="true">⌁</span> LOG PERFORMANCE SCALE</div>
+        </div>
+        <div class="chart-legend" aria-label="Chart line visibility">
+          <button class="legend-item is-active" type="button" data-series="actual" aria-pressed="true"><span class="legend-line actual-line"></span> Actual performance</button>
+          <button class="legend-item is-active" type="button" data-series="quadratic" aria-pressed="true"><span class="legend-line quadratic-line"></span> Quadratic fit</button>
+          <button class="legend-item is-active" type="button" data-series="linear" aria-pressed="true"><span class="legend-line linear-line"></span> Linear fit</button>
+        </div>
+        <div class="chart-frame" id="chart-frame">
+          <div class="chart-loading" id="chart-loading"><span class="loader"></span><strong>Finding the long view</strong><span>Loading the complete S&amp;P 500 ranking and selected stock history.</span></div>
+          <div class="chart-error" id="chart-error" hidden><span class="error-mark">!</span><strong>Market data unavailable</strong><span id="error-copy">Check your connection and try again.</span><button id="retry-button" type="button">Try again <span aria-hidden="true">↗</span></button></div>
+          <svg id="performance-chart" viewBox="0 0 1000 390" role="img" aria-label="Selected company's all-time adjusted stock performance with linear and quadratic least-squares trendlines" hidden></svg>
+        </div>
+        <div class="chart-footnote"><span>MONTHLY OBSERVATIONS</span><span id="observation-count">—</span><span class="footnote-divider"></span><span>FIT METHOD</span><span>ORDINARY LEAST SQUARES</span><span class="footnote-source">SOURCE: YAHOO FINANCE · NASDAQ MARKET-CAP RANKING</span></div>
+      </section>
+
+      <section class="reading-guide" aria-label="How to read this analysis">
+        <div class="guide-heading"><span class="guide-spark" aria-hidden="true">✳</span><span>READING THE CURVE</span></div>
+        <p><strong>Trendlines</strong> minimize squared error in log performance across the full set of monthly observations, so the fits match the logarithmic chart. R² describes model fit; the higher score is shown above.</p>
+        <p><strong>Concavity</strong> comes from a quadratic least-squares fit to the latest 24 monthly observations. A positive second-order coefficient is concave up; a negative one is concave down. It describes historical curvature, not a forecast.</p>
+      </section>
+
+      <footer class="footer"><span>FIELDNOTES / MARKET SERIES <span class="footer-separator">—</span> LARGE-CAP EQUITIES</span><span>Historical analysis, not investment advice.</span></footer>
+    </main>
+  </div>
+</body>
+</html>

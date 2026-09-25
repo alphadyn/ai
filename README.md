@@ -10,16 +10,18 @@ The current top apps featured on the main landing page are:
 
 1. [experiences_app](experiences_app/) — Maps and authenticated trip journal
 2. [pulse](pulse/) — Social
-3. [market_lens_app](market_lens_app/) — Finance
-4. [nexus](nexus/) — Workspace
-5. [online_store_app](online_store_app/) — Commerce
-6. [photo_gallery_app](photo_gallery_app/) — Gallery
-7. [video_conference_app](video_conference_app/) — Communication
+3. [market_curve_lab](market_curve_lab/) — Full S&P 500 stock performance, trendlines, and concavity
+4. [market_lens_app](market_lens_app/) — Finance
+5. [nexus](nexus/) — Workspace
+6. [online_store_app](online_store_app/) — Commerce
+7. [photo_gallery_app](photo_gallery_app/) — Gallery
+8. [video_conference_app](video_conference_app/) — Communication
 
 ## Repository layout
 
 ### Web apps and interactive demos
 
+- [market_curve_lab](market_curve_lab/) — Rank all 500 S&P 500 companies by market cap, search stocks, and inspect selected-ticker all-time performance, trendlines, and concavity.
 - [architectural_design_app](architectural_design_app/) — Architectural concept board and home design presentation.
 - [audio_equalizer_app](audio_equalizer_app/) — Browser media player with live waveform and spectrum analysis.
 - [business_site](business_site/) — Marketing landing page for an AI company.
@@ -101,6 +103,18 @@ python3 server.py --port 8000
 ```
 
 Then open the app from the local server or direct to the generated HTML entrypoint as applicable to the project.
+
+### Market Curve Lab
+
+The [market_curve_lab](market_curve_lab/) web app builds a market-cap ranking of all 500 S&P 500 companies and lets you search any listed equity by ticker or company name. It computes adjusted all-time performance, linear and quadratic trendlines, and recent concavity for the selected ticker; histories are fetched on demand instead of requesting all 500 at startup. Start it with:
+
+```bash
+cd market_curve_lab
+python3 -m pip install -r requirements.txt
+python3 app.py
+```
+
+Open <http://127.0.0.1:5001>, type a ticker or company name, and choose a matching stock. The complete S&P 500 is listed in market-cap order; ranking data is cached for six hours, and selected-ticker histories for one hour. The dashboard shows the closest-fitting model by R² and classifies recent performance curvature as concave up or down.
 
 ### Postboard setup
 

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 590 96" fill="none">
+  <rect x="2" y="2" width="92" height="92" rx="25" fill="#18221C" stroke="#3B4A3E" stroke-width="2"/>
+  <path d="M25 69V24M25 69H75" stroke="#718174" stroke-width="2" stroke-linecap="round"/>
+  <path d="M27 61C37 59 41 50 49 51C58 52 61 41 68 42C74 43 78 33 82 27" stroke="#E7B976" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="2 6"/>
+  <path d="M27 60L38 55L47 57L56 45L64 48L72 36L79 39L85 23" stroke="#D0ED7A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="85" cy="23" r="4" fill="#D0ED7A" stroke="#18221C" stroke-width="2.5"/>
+  <text x="116" y="44" fill="#EEF0E8" font-family="Manrope, Arial, sans-serif" font-size="27" font-weight="700" letter-spacing="1.3">MARKET CURVE</text>
+  <text x="118" y="72" fill="#A0AA9F" font-family="DM Mono, Menlo, monospace" font-size="14" font-weight="500" letter-spacing="4.5">LAB <tspan fill="#D0ED7A">/</tspan> S&amp;P 500</text>
+</svg>
