@@ -2,7 +2,7 @@
 
 This repository is a portfolio-style collection of interactive demos, business mockups, data visualizations, browser apps, and Python utilities. Each project is intentionally self-contained and designed to be opened, adapted, or expanded independently.
 
-The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio.
+The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
 ## Featured projects
 
