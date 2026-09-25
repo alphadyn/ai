@@ -50,6 +50,8 @@ const closeProfileBtn = document.getElementById("closeProfileBtn");
 const profileForm = document.getElementById("profileForm");
 const profileUsername = document.getElementById("profileUsername");
 const profileDisplayName = document.getElementById("profileDisplayName");
+const profileStatusInput = document.getElementById("profileStatusInput");
+const profileUrlInput = document.getElementById("profileUrlInput");
 const profileStatus = document.getElementById("profileStatus");
 const userAvatar = document.getElementById("userAvatar");
 const profileAvatarPreview = document.getElementById("profileAvatarPreview");
@@ -1920,6 +1922,8 @@ function openProfile() {
   if (!profile) return;
   profileUsername.value = profile.username || "";
   profileDisplayName.value = profile.display_name || "";
+  profileStatusInput.value = profile.status || "";
+  profileUrlInput.value = profile.profile_url || "";
   profileAvatarPreview.src = profile.avatar_url || "";
   profilePanel.hidden = false;
   profilePanel.classList.add("profile-panel-open");
@@ -2073,22 +2077,26 @@ async function uploadAvatar(file) {
 async function saveProfile(event) {
   event.preventDefault();
   const displayName = profileDisplayName.value.trim();
+  const status = profileStatusInput.value.trim();
+  const profileUrl = profileUrlInput.value.trim();
   const avatarFile = profileAvatarInput.files[0];
   let avatarUrl = profile.avatar_url || null;
   if (avatarFile) avatarUrl = await uploadAvatar(avatarFile);
   const response = await supabaseRequest(`/rest/v1/${PROFILES_TABLE}?id=eq.${encodeURIComponent(session.user.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ display_name: displayName, avatar_url: avatarUrl }),
+    body: JSON.stringify({ display_name: displayName, status, profile_url: profileUrl || null, avatar_url: avatarUrl }),
   });
   if (!response.ok) {
     const error = await getSupabaseError(response, "Could not save your profile.");
-    if (/avatar_url.*schema cache|column.*avatar_url/i.test(error)) {
-      throw new Error("Your Supabase schema needs the avatar update. Run experiences_app/supabase-schema.sql, then refresh the app.");
+    if (/avatar_url|status|profile_url.*schema cache|column.*(avatar_url|status|profile_url)/i.test(error)) {
+      throw new Error("Your Supabase schema needs the profile fields update. Run experiences_app/supabase-schema.sql, then refresh the app.");
     }
     throw new Error(error);
   }
   profile.display_name = displayName;
+  profile.status = status;
+  profile.profile_url = profileUrl || null;
   profile.avatar_url = avatarUrl;
   userStatus.textContent = profile.username || profile.display_name;
   updateAvatar(avatarUrl);

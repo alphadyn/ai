@@ -3,6 +3,8 @@ create table if not exists public.checkin_map_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
   display_name text not null default '',
+  status text not null default '',
+  profile_url text,
   avatar_url text,
   role text not null default 'user' check (role in ('user', 'admin')),
   created_at timestamptz not null default now()
@@ -116,6 +118,8 @@ alter table public.checkin_map_trips alter column public_slug set not null;
 create unique index if not exists checkin_map_trips_public_slug_idx on public.checkin_map_trips(public_slug);
 
 alter table public.checkin_map_profiles enable row level security;
+alter table public.checkin_map_profiles add column if not exists status text not null default '';
+alter table public.checkin_map_profiles add column if not exists profile_url text;
 alter table public.checkin_map_profiles add column if not exists avatar_url text;
 alter table public.checkin_map_trips enable row level security;
 alter table public.checkin_map_locations enable row level security;

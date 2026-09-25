@@ -578,6 +578,39 @@ body.trips-open::before {
   animation: trip-panel-in 0.2s ease-out both;
 }
 
+.profile-heading-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.profile-heading {
+  position: relative;
+  padding-right: 6.4rem;
+}
+
+.profile-heading-actions .profile-save-btn,
+.profile-heading-actions .icon-btn {
+  height: 2.25rem;
+}
+
+.profile-heading-actions .profile-save-btn {
+  min-width: 4.1rem;
+  padding: 0 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 10px rgba(15, 118, 110, 0.16);
+}
+
+.profile-heading-actions .icon-btn {
+  width: 2.25rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+}
+
 body.profile-open::before {
   position: fixed;
   z-index: 1400;

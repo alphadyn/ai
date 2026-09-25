@@ -42,12 +42,13 @@
       </section>
 
       <section id="profilePanel" class="panel profile-panel" hidden>
-        <div class="section-heading"><div><p class="panel-kicker">Account</p><h2>Profile</h2></div><button type="button" id="closeProfileBtn" class="secondary-btn">Close</button></div>
+        <div class="section-heading profile-heading"><div><p class="panel-kicker">Account</p><h2>Profile</h2></div><div class="profile-heading-actions"><button type="submit" form="profileForm" class="primary-btn profile-save-btn">Save</button><button type="button" id="closeProfileBtn" class="secondary-btn icon-btn" aria-label="Close profile" title="Close profile">&times;</button></div></div>
         <form id="profileForm" class="profile-form">
-          <div class="profile-avatar-row"><img id="profileAvatarPreview" class="profile-avatar-preview" alt="Profile avatar" /><label class="file-picker">Choose avatar<input id="profileAvatarInput" type="file" accept="image/*" /></label></div>
+          <div class="profile-avatar-row"><img id="profileAvatarPreview" class="profile-avatar-preview" alt="Profile picture preview" /><label class="file-picker">Choose picture<input id="profileAvatarInput" type="file" accept="image/*" /></label></div>
           <label>Username<input id="profileUsername" type="text" readonly /></label>
-          <label>Display name<input id="profileDisplayName" type="text" maxlength="80" placeholder="How should we display your name?" /></label>
-          <button type="submit" class="primary-btn">Save profile</button>
+          <label>Name<input id="profileDisplayName" type="text" maxlength="80" placeholder="How should we display your name?" /></label>
+          <label>Status<input id="profileStatusInput" type="text" maxlength="160" placeholder="What are you up to?" /></label>
+          <label>URL<input id="profileUrlInput" type="url" maxlength="240" placeholder="https://example.com/your-profile" /></label>
         </form>
         <span id="profileStatus" class="status-text" role="status"></span>
       </section>
