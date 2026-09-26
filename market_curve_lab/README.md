@@ -15,6 +15,10 @@ python3 app.py
 
 Open <http://127.0.0.1:5001>. On a cold start, the app pages through Nasdaq's screener to build the complete S&P 500 ranking; it caches that list for six hours. Then type a ticker or company name and choose a matching listed stock. S&P 500 members are labeled with their market-cap rank. Searches are cached for two minutes, and selected-ticker price analyses for one hour. The legend controls toggle each chart series.
 
+## Shared results cache
+
+Page loads read the S&P 500 ranking and each ticker's analysis from a shared Supabase table ([`supabase-schema.sql`](supabase-schema.sql)) instead of recomputing them, so visiting the page doesn't re-rank the index or re-fetch price history every time. A newly searched ticker that isn't cached yet is fetched once and saved for later visitors. The "Refresh data" button next to the ticker card bypasses the cache and recomputes the current ranking and selected ticker, overwriting the saved rows. The loading panel shows progress through these steps (checking saved results, loading rankings/history, fitting trendlines).
+
 ## Deploying so the GitHub Pages copy works
 
 `index.html` here is the real app (same markup the Flask `app.py` renders locally), not a placeholder. It calls a JSON API for company rankings, search, and price history — Nasdaq and Yahoo Finance don't allow browser cross-origin requests, so those calls can't be made directly from a static GitHub Pages site. `app.py` provides that API for local use; [`api/`](api/) provides the same three endpoints (`/api/companies`, `/api/search`, `/api/analysis`) as Vercel serverless functions, matching the pattern used by [`market_lens_app`](../market_lens_app).

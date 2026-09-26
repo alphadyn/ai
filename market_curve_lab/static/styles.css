@@ -67,6 +67,11 @@ h1 em { color: var(--lime); font-style: normal; }
 .ticker-rule { height: 1px; margin: 16px 0 11px; background: #354239; }
 .ticker-rule span { width: 40%; height: 1px; display: block; background: var(--lime); }
 .ticker-caption { color: #93a093; font-size: 10px; }
+.ticker-refresh-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.refresh-button { display: inline-flex; align-items: center; gap: 6px; padding: 7px 11px; border: 1px solid #46564a; border-radius: 2px; background: transparent; color: var(--lime); cursor: pointer; font: 9px var(--mono); letter-spacing: .06em; }
+.refresh-button:hover { background: var(--panel-soft); }
+.refresh-button:disabled { cursor: wait; opacity: .6; }
+.cache-note { color: #78857a; font-size: 8px; letter-spacing: .04em; text-align: right; }
 .metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0; border-bottom: 1px solid var(--line); }
 .metric { min-height: 141px; padding: 23px 25px 21px; border-right: 1px solid var(--line); }
 .metric:first-child { padding-left: 5px; }.metric:last-child { border-right: 0; padding-right: 5px; }
@@ -99,6 +104,10 @@ h1 em { color: var(--lime); font-style: normal; }
 .chart-loading, .chart-error { min-height: 385px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 9px; color: #99a59a; text-align: center; }
 .chart-loading strong, .chart-error strong { color: #e4e9df; font: 500 14px var(--display); }.chart-loading span:last-child, .chart-error span:not(.error-mark) { font-size: 11px; }
 .loader { width: 25px; height: 25px; margin-bottom: 7px; border: 1px solid #52614e; border-top-color: var(--lime); border-radius: 50%; animation: spin 1s linear infinite; }
+.load-progress { width: min(100%, 280px); margin-top: 14px; }
+.load-progress-label { display: flex; justify-content: space-between; gap: 16px; color: #869287; font: 8px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.load-progress-track { height: 4px; margin-top: 8px; overflow: hidden; border-radius: 4px; background: var(--line); }
+.load-progress-track span { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--lime); box-shadow: 0 0 10px rgba(208, 237, 122, .35); transition: width .2s ease; }
 .chart-error[hidden], #performance-chart[hidden] { display: none; }.error-mark { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: rgba(229, 142, 124, .14); color: var(--red); }
 .chart-error button { margin-top: 9px; padding: 8px 12px; border: 1px solid #445448; background: transparent; color: var(--lime); cursor: pointer; font-size: 10px; }
 .chart-error button:hover { background: var(--panel-soft); }

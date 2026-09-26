@@ -5,6 +5,12 @@ const loadingPanel = document.querySelector('#chart-loading');
 const errorPanel = document.querySelector('#chart-error');
 const tickerSearch = document.querySelector('#ticker-search');
 const tickerResults = document.querySelector('#ticker-results');
+const refreshButton = document.querySelector('#refresh-button');
+const cacheNote = document.querySelector('#cache-note');
+const loadStatus = document.querySelector('#load-status');
+const loadCount = document.querySelector('#load-count');
+const loadProgressBar = document.querySelector('#load-progress-bar');
+const loadProgressTrack = document.querySelector('.load-progress-track');
 const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
@@ -18,6 +24,59 @@ let activeMatchIndex = -1;
 let searchTimer;
 let searchController;
 let userHasEditedSearch = false;
+let isRefreshing = false;
+
+// Shared server-side cache (Supabase/Postgres) so page loads read saved results instead of
+// re-ranking the S&P 500 and re-fetching price history every time; the refresh button overwrites it.
+const SUPABASE_URL = 'https://vftmcftccahjlxbxcnsf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_I8I-cRDhS60UoUgCvVvwnQ_MyKI9u14';
+const CACHE_TABLE = `${SUPABASE_URL}/rest/v1/market_curve_lab_cache`;
+const SUPABASE_HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
+
+async function loadCachedRow(id) {
+  try {
+    const response = await fetch(`${CACHE_TABLE}?id=eq.${encodeURIComponent(id)}&select=payload,updated_at`, { headers: SUPABASE_HEADERS });
+    if (!response.ok) return null;
+    const rows = await response.json();
+    const row = rows[0];
+    if (!row) return null;
+    return { payload: row.payload, updatedAt: row.updated_at ? Date.parse(row.updated_at) : null };
+  } catch (error) {
+    return null;
+  }
+}
+
+async function saveCachedRow(id, payload) {
+  try {
+    await fetch(CACHE_TABLE, {
+      method: 'POST',
+      headers: { ...SUPABASE_HEADERS, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{ id, payload, updated_at: new Date().toISOString() }]),
+    });
+  } catch (error) {
+    // cache save is best-effort; the data already on screen is unaffected
+  }
+}
+
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return '';
+  const minutes = Math.round((Date.now() - timestamp) / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+function updateProgress(completed, total, label) {
+  const percentage = total ? Math.round((completed / total) * 100) : 0;
+  loadStatus.textContent = label;
+  loadCount.textContent = `${completed} / ${total}`;
+  loadProgressBar.style.width = `${percentage}%`;
+  loadProgressTrack.setAttribute('aria-valuenow', String(percentage));
+}
+
 
 function formatMoney(value, currency = 'USD') {
   try {
@@ -135,7 +194,7 @@ function renderAnalysis(data) {
   chart.removeAttribute('hidden');
 }
 
-async function loadAnalysis(security) {
+async function loadAnalysis(security, { forceRefresh = false } = {}) {
   const symbol = typeof security === 'string' ? security : security.symbol;
   selectedSymbol = symbol;
   selectedSecurity = typeof security === 'string' ? companiesBySymbol.get(symbol) || { symbol } : security;
@@ -153,7 +212,20 @@ async function loadAnalysis(security) {
   errorPanel.hidden = true;
   chart.setAttribute('hidden', '');
   document.querySelector('#chart-loading').querySelector('strong').textContent = `Loading ${symbol}`;
+  const cacheId = `analysis:${symbol}`;
   try {
+    if (!forceRefresh) {
+      updateProgress(1, 2, `Checking saved ${symbol} history…`);
+      const cached = await loadCachedRow(cacheId);
+      if (requestId !== requestSequence) return;
+      if (cached) {
+        updateProgress(2, 2, 'Using saved results');
+        renderAnalysis(cached.payload);
+        updateCacheNote(cached.updatedAt);
+        return;
+      }
+    }
+    updateProgress(1, 2, `Loading ${symbol} price history…`);
     const params = new URLSearchParams({ symbol });
     if (selectedCompany?.company) params.set('company', selectedCompany.company);
     if (selectedCompany?.exchange) params.set('exchange', selectedCompany.exchange);
@@ -161,7 +233,10 @@ async function loadAnalysis(security) {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Could not load ${symbol} history.`);
     if (requestId !== requestSequence) return;
+    updateProgress(2, 2, 'Fitting trendlines');
     renderAnalysis(data);
+    updateCacheNote(Date.now());
+    saveCachedRow(cacheId, data);
   } catch (error) {
     if (requestId !== requestSequence) return;
     loadingPanel.hidden = true;
@@ -170,17 +245,38 @@ async function loadAnalysis(security) {
   }
 }
 
-async function loadCompanies() {
+function updateCacheNote(timestamp) {
+  cacheNote.textContent = timestamp ? `Saved results · ${formatRelativeTime(timestamp)}` : '';
+}
+
+async function loadCompanies(forceRefresh = false) {
   try {
-    const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || 'Could not load S&P 500 company rankings.');
-    sp500Companies = payload.companies || [];
+    let companiesPayload = null;
+    let cacheTimestamp = null;
+    if (!forceRefresh) {
+      updateProgress(0, 2, 'Checking saved S&P 500 rankings…');
+      const cached = await loadCachedRow('companies');
+      if (cached) {
+        companiesPayload = cached.payload.companies;
+        cacheTimestamp = cached.updatedAt;
+      }
+    }
+    if (!companiesPayload) {
+      updateProgress(0, 2, 'Loading S&P 500 rankings…');
+      const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || 'Could not load S&P 500 company rankings.');
+      companiesPayload = payload.companies || [];
+      cacheTimestamp = Date.now();
+      saveCachedRow('companies', { companies: companiesPayload });
+    }
+    sp500Companies = companiesPayload;
     companiesBySymbol = new Map(sp500Companies.map((company) => [company.symbol, company]));
+    updateCacheNote(cacheTimestamp);
     if (userHasEditedSearch) {
         const selectedCompany = companiesBySymbol.get(selectedSymbol);
         if (selectedCompany && tickerSearch.value.trim().toUpperCase() === selectedSymbol) {
-        await loadAnalysis(selectedCompany);
+        await loadAnalysis(selectedCompany, { forceRefresh });
         return;
         }
       await searchTicker(tickerSearch.value);
@@ -189,7 +285,7 @@ async function loadCompanies() {
     const preferred = companiesBySymbol.get(selectedSymbol) || sp500Companies[0];
     if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
     tickerSearch.value = preferred.symbol;
-    await loadAnalysis(preferred);
+    await loadAnalysis(preferred, { forceRefresh });
   } catch (error) {
     // The ticker-search endpoint still allows any listed stock if the ranking feed is unavailable.
     document.querySelector('#company-rank').textContent = 'SEARCH ANY STOCK';
@@ -348,5 +444,16 @@ document.querySelectorAll('.legend-item').forEach((button) => {
 
 document.querySelector('#retry-button').addEventListener('click', () => {
   loadAnalysis(selectedSecurity);
+});
+refreshButton.addEventListener('click', async () => {
+  if (isRefreshing) return;
+  isRefreshing = true;
+  refreshButton.disabled = true;
+  try {
+    await loadCompanies(true);
+  } finally {
+    isRefreshing = false;
+    refreshButton.disabled = false;
+  }
 });
 loadCompanies();
