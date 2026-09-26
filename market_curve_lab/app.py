@@ -190,8 +190,10 @@ def fetch_sp500_companies(force_refresh: bool = False) -> List[Dict[str, Any]]:
                     collect_rows(page.get("data", {}).get("table", {}).get("rows", []))
                 if found_symbols.issuperset(members):
                     break
-    except (HTTPError, URLError, TimeoutError, ValueError, KeyError) as error:
-        raise RuntimeError("Could not load the full S&P 500 market-cap ranking.") from error
+    except (HTTPError, URLError, TimeoutError, ValueError, KeyError):
+        # Graceful fallback: continue with the S&P 500 constituent list and unknown market caps.
+        # This keeps the app usable when Nasdaq's screener temporarily blocks or rate-limits requests.
+        pass
 
     companies = sorted(
         issuers.values(),
@@ -364,16 +366,35 @@ def index():
 def analysis():
     try:
         symbol = _normalize_ticker(request.args.get("symbol", "AAPL"))
-        try:
-            companies = fetch_sp500_companies()
-        except RuntimeError:
-            companies = []
-        company = next((item for item in companies if item["symbol"] == symbol), None)
+        requested_company = (request.args.get("company") or "").strip()
+        rank_text = (request.args.get("rank") or "").strip()
+        market_cap_text = (request.args.get("market_cap") or "").strip()
+
+        requested_rank = None
+        if rank_text:
+            requested_rank = int(rank_text)
+            if requested_rank <= 0:
+                raise ValueError("Rank must be a positive integer.")
+
+        requested_market_cap = None
+        if market_cap_text:
+            requested_market_cap = float(market_cap_text)
+            if not math.isfinite(requested_market_cap):
+                raise ValueError("Market cap must be a finite number.")
+
+        company = None
+        if requested_rank is None or requested_market_cap is None or not requested_company:
+            try:
+                companies = fetch_sp500_companies()
+                company = next((item for item in companies if item["symbol"] == symbol), None)
+            except RuntimeError:
+                company = None
+
         result = fetch_analysis(symbol)
-        result["company"] = company["company"] if company else request.args.get("company", symbol)
+        result["company"] = requested_company or (company["company"] if company else symbol)
         result["exchange"] = request.args.get("exchange", "")
-        result["market_cap"] = company["market_cap"] if company else None
-        result["market_cap_rank"] = company["rank"] if company else None
+        result["market_cap"] = requested_market_cap if requested_market_cap is not None else (company["market_cap"] if company else None)
+        result["market_cap_rank"] = requested_rank if requested_rank is not None else (company["rank"] if company else None)
         return jsonify(result)
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
