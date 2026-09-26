@@ -100,7 +100,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const postsUrl = new URL('/rest/v1/posts', supabaseUrl);
+    const postsUrl = new URL('/rest/v1/pulse_posts', supabaseUrl);
     postsUrl.searchParams.set('select', 'id,title,body,author_name,tags,attachments,is_deleted');
     postsUrl.searchParams.set('id', `eq.${postId}`);
     postsUrl.searchParams.set('limit', '1');
