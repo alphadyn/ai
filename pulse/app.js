@@ -1139,9 +1139,9 @@ function postShareText(post) {
   return [post.title, excerpt].filter(Boolean).join('\n\n');
 }
 
-async function sharePost(post) {
+async function sharePost(post, { text: customText } = {}) {
   const url = absolutePostUrl(post.id);
-  const text = postShareText(post);
+  const text = customText === undefined ? postShareText(post) : customText;
   const shareData = { title: post.title, text, url };
   try {
     if (navigator.share) {
@@ -1171,6 +1171,78 @@ async function sharePostById(id) {
   if (!post) throw new Error('Post not found.');
   await sharePost(post);
 }
+
+/* ---------------------------------------------------------------------- */
+/* Text / SMS share preview                                                */
+/* ---------------------------------------------------------------------- */
+
+const sharePreview = { post: null, url: '' };
+
+function smsHref(message) {
+  // iOS needs `sms:&body=`, most other platforms expect `sms:?body=`.
+  const separator = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? '&' : '?';
+  return `sms:${separator}body=${encodeURIComponent(message)}`;
+}
+
+function shareMessageWithoutUrl(message, url) {
+  return message.split(url).join(' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function renderSharePreviewBubble() {
+  const message = document.getElementById('share-message-input').value;
+  document.getElementById('sms-bubble-text').textContent = shareMessageWithoutUrl(message, sharePreview.url);
+  const length = message.length;
+  const segments = Math.max(1, Math.ceil(length / 160));
+  document.getElementById('share-message-meta').textContent =
+    `${length} characters · ~${segments} SMS ${segments === 1 ? 'message' : 'messages'}`;
+}
+
+function openSharePreview(post) {
+  const modal = document.getElementById('share-preview-modal');
+  if (!modal || !post) return;
+
+  sharePreview.post = post;
+  sharePreview.url = absolutePostUrl(post.id);
+
+  const input = document.getElementById('share-message-input');
+  input.value = `${postShareText(post)}\n\n${sharePreview.url}`;
+
+  const image = (post.attachments || []).find(attachmentIsImage);
+  const media = document.getElementById('sms-link-media');
+  const img = document.getElementById('sms-link-image');
+  media.hidden = !image;
+  img.src = image ? image.dataUrl : '';
+  img.alt = image ? (image.name || 'Post image') : '';
+
+  document.getElementById('sms-link-card').href = sharePreview.url;
+  document.getElementById('sms-link-title').textContent = post.title;
+  document.getElementById('sms-link-desc').textContent = plainExcerpt(post.body, 120);
+  document.getElementById('sms-link-domain').textContent = new URL(sharePreview.url).hostname;
+
+  renderSharePreviewBubble();
+  if (!modal.open) modal.showModal();
+}
+
+document.getElementById('share-message-input').addEventListener('input', renderSharePreviewBubble);
+
+document.getElementById('share-copy-btn').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById('share-message-input').value);
+    toast('Message copied.');
+  } catch (err) {
+    toast(`Could not copy: ${err.message}`);
+  }
+});
+
+document.getElementById('share-sms-btn').addEventListener('click', () => {
+  window.location.href = smsHref(document.getElementById('share-message-input').value);
+});
+
+document.getElementById('share-more-btn').addEventListener('click', async () => {
+  if (!sharePreview.post) return;
+  const message = document.getElementById('share-message-input').value;
+  await sharePost(sharePreview.post, { text: shareMessageWithoutUrl(message, sharePreview.url) });
+});
 
 function renderAttachmentItem(att) {
   if (attachmentIsImage(att)) {
@@ -2139,8 +2211,9 @@ document.getElementById('post-form').addEventListener('submit', async (e) => {
   const tags = document.getElementById('post-tags').value.split(',').map((t) => t.trim()).filter(Boolean);
   try {
     const editing = Boolean(state.editingPostId);
+    let createdPost = null;
     if (editing) await pulse.updatePost(state.editingPostId, { title, body, linkUrl, tags, attachments: state.pendingAttachments });
-    else await pulse.createPost({ title, body, linkUrl, tags, attachments: state.pendingAttachments });
+    else createdPost = await pulse.createPost({ title, body, linkUrl, tags, attachments: state.pendingAttachments });
     document.getElementById('post-modal').close();
     state.editingPostId = null;
     toast(editing ? 'Post updated.' : 'Post submitted.');
@@ -2149,6 +2222,7 @@ document.getElementById('post-form').addEventListener('submit', async (e) => {
     loadTags();
     showFeedView();
     loadFeed(true);
+    if (createdPost) openSharePreview(createdPost);
   } catch (err) {
     errorEl.textContent = err.message;
     errorEl.hidden = false;

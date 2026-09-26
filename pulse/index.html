@@ -189,6 +189,52 @@
   </form>
 </dialog>
 
+<!-- Share preview modal -->
+<dialog id="share-preview-modal" class="modal">
+  <div class="modal-card" id="share-preview-card">
+    <header>
+      <h2 id="share-preview-title">Post published</h2>
+      <button type="button" class="icon-btn" data-close-modal aria-label="Close">✕</button>
+    </header>
+    <p class="muted small">Here's how it will look when you text it. Edit the message if you like.</p>
+
+    <div class="sms-preview" id="sms-preview">
+      <div class="sms-preview-header">
+        <span class="sms-preview-dot"></span>
+        <span class="sms-preview-name">Messages</span>
+      </div>
+      <div class="sms-preview-thread">
+        <div class="sms-bubble">
+          <p class="sms-bubble-text" id="sms-bubble-text"></p>
+          <a class="sms-link-card" id="sms-link-card" href="#" target="_blank" rel="noopener noreferrer">
+            <div class="sms-link-media" id="sms-link-media" hidden>
+              <img id="sms-link-image" alt="">
+            </div>
+            <div class="sms-link-body">
+              <span class="sms-link-title" id="sms-link-title"></span>
+              <span class="sms-link-desc" id="sms-link-desc"></span>
+              <span class="sms-link-domain" id="sms-link-domain"></span>
+            </div>
+          </a>
+          <span class="sms-bubble-tail" aria-hidden="true"></span>
+        </div>
+        <span class="sms-status">Delivered</span>
+      </div>
+    </div>
+
+    <label class="sms-message-field">Message
+      <textarea id="share-message-input" rows="3" maxlength="900"></textarea>
+    </label>
+    <p class="muted small" id="share-message-meta"></p>
+
+    <footer class="share-preview-footer">
+      <button type="button" class="btn ghost" id="share-copy-btn">Copy message</button>
+      <button type="button" class="btn ghost" id="share-more-btn">↗ Share…</button>
+      <button type="button" class="btn primary" id="share-sms-btn">Send as text</button>
+    </footer>
+  </div>
+</dialog>
+
 <!-- Carousel viewer -->
 <dialog id="carousel-modal" class="carousel-modal" aria-label="Maximized attachments">
   <div class="carousel-modal-shell">
