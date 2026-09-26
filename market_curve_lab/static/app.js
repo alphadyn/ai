@@ -11,7 +11,6 @@ const tickerResults = $('#ticker-results');
 const refreshButton = $('#refresh-button');
 const cacheNote = $('#cache-note');
 const loadStatus = $('#load-status');
-const loadCount = $('#load-count');
 const loadProgressBar = $('#load-progress-bar');
 const loadProgressTrack = $('.load-progress-track');
 const tickerCompany = $('#ticker-company');
@@ -89,10 +88,8 @@ function formatRelativeTime(timestamp) {
   return `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
-function updateProgress(completed, total, label) {
-  const percentage = total ? Math.round((completed / total) * 100) : 0;
+function updateProgress(percentage, label) {
   loadStatus.textContent = label;
-  loadCount.textContent = `${completed} / ${total}`;
   loadProgressBar.style.width = `${percentage}%`;
   loadProgressTrack.setAttribute('aria-valuenow', String(percentage));
 }
@@ -229,17 +226,19 @@ async function loadAnalysis(security, { forceRefresh = false, prefetchedCache } 
   const cacheId = `analysis:${symbol}`;
   try {
     if (!forceRefresh) {
-      updateProgress(1, 2, `Checking saved ${symbol} history…`);
+      updateProgress(60, `Checking saved ${symbol} history…`);
       const cached = prefetchedCache !== undefined ? prefetchedCache : await loadCachedRow(cacheId);
       if (requestId !== requestSequence) return;
       if (cached) {
-        updateProgress(2, 2, 'Using saved results');
+        updateProgress(100, `Using saved ${symbol} results`);
         renderAnalysis(cached.payload);
         updateCacheNote(cached.updatedAt);
         return;
       }
+    } else {
+      updateProgress(20, `Refreshing ${symbol}…`);
     }
-    updateProgress(1, 2, `Loading ${symbol} price history…`);
+    updateProgress(75, `Loading ${symbol} price history…`);
     const params = new URLSearchParams({ symbol });
     if (selectedCompany?.company) params.set('company', selectedCompany.company);
     if (selectedCompany?.exchange) params.set('exchange', selectedCompany.exchange);
@@ -250,7 +249,7 @@ async function loadAnalysis(security, { forceRefresh = false, prefetchedCache } 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Could not load ${symbol} history.`);
     if (requestId !== requestSequence) return;
-    updateProgress(2, 2, 'Fitting trendlines');
+    updateProgress(95, `Fitting ${symbol} trendlines…`);
     renderAnalysis(data);
     updateCacheNote(Date.now());
     saveCachedRow(cacheId, data);
@@ -274,7 +273,7 @@ async function loadCompanies(forceRefresh = false) {
     let companiesPayload = null;
     let cacheTimestamp = null;
     if (!forceRefresh) {
-      updateProgress(0, 2, 'Checking saved S&P 500 rankings…');
+      updateProgress(10, 'Checking saved results…');
       const cached = await loadCachedRow('companies');
       if (cached) {
         companiesPayload = cached.payload.companies;
@@ -282,7 +281,7 @@ async function loadCompanies(forceRefresh = false) {
       }
     }
     if (!companiesPayload) {
-      updateProgress(0, 2, 'Loading S&P 500 rankings…');
+      updateProgress(45, 'Loading S&P 500 rankings…');
       const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' } });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Could not load S&P 500 company rankings.');
