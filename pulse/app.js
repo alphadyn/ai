@@ -1116,6 +1116,15 @@ function absolutePostUrl(id) {
   return new URL(postUrl(id), window.location.href).href;
 }
 
+// Messaging apps read Open Graph tags, so shared links point at the preview edge function.
+function shareablePostUrl(id) {
+  const config = window.PULSE_SUPABASE || {};
+  if (!config.url || !config.shareFunction) return absolutePostUrl(id);
+  const url = new URL(`/functions/v1/${config.shareFunction}`, config.url);
+  url.searchParams.set('post', id);
+  return url.href;
+}
+
 function feedUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete('post');
@@ -1140,7 +1149,7 @@ function postShareText(post) {
 }
 
 async function sharePost(post, { text: customText } = {}) {
-  const url = absolutePostUrl(post.id);
+  const url = shareablePostUrl(post.id);
   const text = customText === undefined ? postShareText(post) : customText;
   const shareData = { title: post.title, text, url };
   try {
@@ -1213,7 +1222,7 @@ function openSharePreview(post) {
   if (!modal || !post) return;
 
   sharePreview.post = post;
-  sharePreview.url = absolutePostUrl(post.id);
+  sharePreview.url = shareablePostUrl(post.id);
 
   sharePreview.bodyText = plainExcerpt(post.body, 600);
 

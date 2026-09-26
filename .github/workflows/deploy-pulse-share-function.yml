@@ -1,0 +1,32 @@
+name: Deploy Pulse share function
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pulse/supabase/functions/**'
+      - .github/workflows/deploy-pulse-share-function.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Link previews are fetched by crawlers that cannot send a JWT.
+      - name: Deploy pulse-share
+        working-directory: pulse
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions deploy pulse-share --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}" --no-verify-jwt
