@@ -145,6 +145,8 @@ export default async function handler(request, response) {
     const escapedTitle = escapeHtml(title);
     const escapedDescription = escapeHtml(description);
     const escapedImage = escapeHtml(previewImage);
+    // Twitter/X does not render WebP previews.
+    const escapedTwitterImage = escapeHtml(previewImageType === 'image/webp' ? FALLBACK_IMAGE : previewImage);
     const escapedAppUrl = escapeHtml(appUrl.href);
 
     const html = `<!doctype html>
@@ -167,7 +169,7 @@ export default async function handler(request, response) {
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapedTitle}">
   <meta name="twitter:description" content="${escapedDescription}">
-  <meta name="twitter:image" content="${escapedImage}">
+  <meta name="twitter:image" content="${escapedTwitterImage}">
   <title>${escapedTitle} · Pulse</title>
   <style>
     :root{color-scheme:dark;--bg:#071117;--panel:#0f181f;--line:#24343d;--text:#edf4f8;--muted:#a2b8c3;--accent:#8fe7ab}
