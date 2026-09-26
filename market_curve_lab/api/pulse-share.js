@@ -127,7 +127,7 @@ export default async function handler(request, response) {
     }
 
     const host = request.headers['x-forwarded-host'] || request.headers.host;
-    const selfUrl = new URL(`https://${host}/api/share`);
+    const selfUrl = new URL(`https://${host}/api/pulse-share`);
     selfUrl.searchParams.set('post', postId);
     const imageUrl = new URL(selfUrl.href);
     imageUrl.searchParams.set('image', '1');

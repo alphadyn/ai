@@ -1120,7 +1120,9 @@ function absolutePostUrl(id) {
 function shareablePostUrl(id) {
   const shareOrigin = (window.PULSE_SUPABASE || {}).shareOrigin;
   if (!shareOrigin) return absolutePostUrl(id);
-  return new URL(`/p/${encodeURIComponent(id)}`, shareOrigin).href;
+  const url = new URL('/api/pulse-share', shareOrigin);
+  url.searchParams.set('post', id);
+  return url.href;
 }
 
 function feedUrl() {
