@@ -1119,13 +1119,9 @@ function absolutePostUrl(id) {
   return url.href;
 }
 
-// Link crawlers need server-rendered post metadata; visitors are sent on to the app.
 function shareablePostUrl(id) {
-  const shareOrigin = (window.PULSE_SUPABASE || {}).shareOrigin;
-  if (!shareOrigin) return absolutePostUrl(id);
-  const url = new URL('/api/pulse-share', shareOrigin);
-  url.searchParams.set('post', id);
-  return url.href;
+  // Pages serves a separate HTML document for each post at its own path.
+  return new URL(`share/${encodeURIComponent(id)}/`, new URL('./', window.location.href)).href;
 }
 
 function feedUrl() {
@@ -1232,12 +1228,12 @@ function openSharePreview(post) {
   const input = document.getElementById('share-message-input');
   input.value = `${postShareText(post)}\n\n${sharePreview.url}`;
 
-  const image = (post.attachments || []).find(attachmentIsImage);
   const media = document.getElementById('sms-link-media');
   const img = document.getElementById('sms-link-image');
-  media.hidden = !image;
-  img.src = image ? image.dataUrl : '';
-  img.alt = image ? (image.name || 'Post image') : '';
+  const image = (post.attachments || []).find(attachmentIsImage);
+  media.hidden = false;
+  img.src = image ? image.dataUrl : new URL('social-preview-mobile.png', new URL('./', window.location.href)).href;
+  img.alt = image ? (image.name || 'Post image') : 'Pulse community preview';
 
   document.getElementById('sms-link-card').href = sharePreview.url;
   document.getElementById('sms-link-title').textContent = post.title;

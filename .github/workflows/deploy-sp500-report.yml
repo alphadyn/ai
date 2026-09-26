@@ -27,11 +27,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Build S&P 500 market snapshot
         run: python3 market_lens_app/build_data.py
+
+      - name: Build Pulse post previews
+        run: |
+          python3 -m pip install --disable-pip-version-check -r pulse/requirements-build.txt
+          python3 pulse/build_share_pages.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

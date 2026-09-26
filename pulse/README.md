@@ -29,7 +29,7 @@ Pages.
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).
 - Up to 12 free-form tags per post for categorization and search.
 - Upvote / downvote with one vote per user (or per anonymous browser id) — score updates live.
-- Every post has a shareable URL in the form `https://alphadyn.github.io/ai/pulse/?post=<post-id>` that opens its detail view directly, including on static hosts.
+- Every post can be opened directly at `https://alphadyn.github.io/ai/pulse/?post=<post-id>`. After the next Pages publish it also has a post-specific share URL, `https://alphadyn.github.io/ai/pulse/share/<post-id>/`, with its own link-preview metadata.
 - Share posts directly to supported apps such as Messages/RCS with the post title/body as the highlighted shared text and image attachments included for preview when the share target supports file sharing.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
@@ -72,12 +72,28 @@ Pages.
 
 Messaging apps (iMessage/SMS, WhatsApp, Slack…) don't run JavaScript when they
 unfurl a link — they just read the Open Graph tags of whatever HTML the URL
-returns. GitHub Pages serves the same generic HTML for every `?post=` query,
-so shared links instead use the Vercel preview endpoint to show each post's
-title, excerpt, and first image. Opening a link sends visitors to the post
-on GitHub Pages.
+returns. GitHub Pages serves the same generic HTML for every `?post=` query.
+Instead, the Pages build runs [`build_share_pages.py`](build_share_pages.py) to
+fetch all public, active posts from Supabase and generate one static HTML page
+per post under `share/<post-id>/`. Each page contains the current title, body
+excerpt, and a JPEG of the first supported image attachment (or generic Pulse
+artwork). Its share link stays on `alphadyn.github.io` and opens the app's
+post detail when tapped.
+
+The Pages workflow runs on pushes, on demand, and on a scheduled five-minute
+interval. Saves, edits, and deletions are picked up on the **next successful
+publish**, not instantly. Newly created share URLs may be 404 until then;
+edits can show the previous preview, and deleted posts' pages are removed at
+the next build. Messaging apps can also cache old preview metadata even after
+a publish. No GitHub credentials are exposed to the browser: the build uses
+the publicly readable Supabase API and the public key in
+[`supabase-config.js`](supabase-config.js). To run the build locally, install
+[`requirements-build.txt`](requirements-build.txt) and run
+`python3 pulse/build_share_pages.py` from the repository root. Generated pages
+are not committed; a fresh set is included with each Pages artifact.
+
 [`../market_curve_lab/api/pulse-share.js`](../market_curve_lab/api/pulse-share.js)
-is the Vercel serverless function that serves the preview HTML and images.
+is a legacy Vercel preview endpoint for older links, not used for new shares.
 
 The Vercel project needs these environment variables:
 
@@ -87,14 +103,10 @@ The Vercel project needs these environment variables:
 | `SUPABASE_ANON_KEY` | the same public anon key used in `supabase-config.js` |
 | `APP_BASE_URL` | optional; where the app itself is hosted (defaults to the GitHub Pages URL) |
 
-`shareOrigin` in [`supabase-config.js`](supabase-config.js) points to that
-deployment. Shared URLs look like
-`https://ai-orcin-eta-15.vercel.app/api/pulse-share?post=<post-id>`; the URL
-visible in a message uses the Vercel host, while opening it takes readers to
-`https://alphadyn.github.io/ai/pulse/?post=<post-id>`. Set `shareOrigin` to
-`null` to use the direct GitHub Pages URL instead, with generic previews.
-The function lives in `market_curve_lab/` because that folder is the root
-directory of this repository's existing Vercel project.
+Per-post link cards at the exact GitHub Pages `?post=` URL would require a
+dynamic host; GitHub Pages cannot vary its HTML in response to query strings.
+The legacy function lives in `market_curve_lab/` because that folder is the
+root directory of this repository's existing Vercel project.
 
 ### Making your first admin
 
