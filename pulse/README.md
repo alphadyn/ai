@@ -73,21 +73,29 @@ Pages.
 Messaging apps (iMessage/SMS, WhatsApp, Slack…) don't run JavaScript when they
 unfurl a link — they just read the Open Graph tags of whatever HTML the URL
 returns. On a static host that's always the generic `index.html`, so every
-shared post would show the same Pulse artwork. `supabase/functions/pulse-share`
-is a small edge function that looks the post up and returns per-post OG tags
-(title, body excerpt, and the post's own first image, served straight from the
-attachment), plus a human-readable card with an "Open in Pulse" link.
+shared post would show the same Pulse artwork. [`api/share.js`](api/share.js)
+is a Vercel serverless function that looks the post up and returns per-post OG
+tags (title, body excerpt, and the post's own first image, served straight from
+the attachment), plus a readable card with an "Open in Pulse" link.
 
-Deploy it once, without JWT verification so crawlers can reach it:
+Deploy this folder as a Vercel project (root directory `pulse`) and set two
+environment variables on it:
 
-```sh
-supabase functions deploy pulse-share --no-verify-jwt
-supabase secrets set APP_BASE_URL=https://your-user.github.io/your-repo/pulse/
+| Variable | Value |
+| --- | --- |
+| `SUPABASE_URL` | your project URL, e.g. `https://xxxx.supabase.co` |
+| `SUPABASE_ANON_KEY` | the same public anon key used in `supabase-config.js` |
+| `APP_BASE_URL` | optional; where the app itself is hosted (defaults to the GitHub Pages URL) |
+
+Then put the deployment origin in [`supabase-config.js`](supabase-config.js):
+
+```js
+shareOrigin: 'https://your-pulse-project.vercel.app'
 ```
 
-`app.js` shares `…/functions/v1/pulse-share?post=<id>` instead of the raw app
-URL. Set `shareFunction: null` in `supabase-config.js` to turn this off and
-share plain app URLs again.
+Shared links then look like `https://your-pulse-project.vercel.app/p/<post-id>`
+(rewritten to `/api/share` by [`vercel.json`](vercel.json)). Leave
+`shareOrigin: null` to share plain app URLs instead.
 
 ### Making your first admin
 
@@ -132,4 +140,4 @@ rule has to hold up even against a client that skips `app.js` entirely:
 - `index.html` / `styles.css` / `app.js` — the entire application (feed, post detail, threaded comments, auth modals, rich-text/file-upload post composer, admin screen, and all Supabase REST/Auth calls).
 - `supabase-config.js` — your project's public URL + anon key (safe to commit; it's meaningless without the RLS policies in your project).
 - `supabase-schema.sql` — table definitions, RLS policies, and the vote-casting RPC functions. Run this once per Supabase project.
-- `supabase/functions/pulse-share/index.ts` — edge function that renders per-post Open Graph metadata (and the post's image) so shared links preview the actual post in messaging apps.
+- `api/share.js` + `vercel.json` — Vercel serverless endpoint that renders per-post Open Graph metadata (and the post's image) so shared links preview the actual post in messaging apps.

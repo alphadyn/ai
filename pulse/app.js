@@ -1116,13 +1116,11 @@ function absolutePostUrl(id) {
   return new URL(postUrl(id), window.location.href).href;
 }
 
-// Messaging apps read Open Graph tags, so shared links point at the preview edge function.
+// Messaging apps read Open Graph tags, so shared links point at the preview endpoint.
 function shareablePostUrl(id) {
-  const config = window.PULSE_SUPABASE || {};
-  if (!config.url || !config.shareFunction) return absolutePostUrl(id);
-  const url = new URL(`/functions/v1/${config.shareFunction}`, config.url);
-  url.searchParams.set('post', id);
-  return url.href;
+  const shareOrigin = (window.PULSE_SUPABASE || {}).shareOrigin;
+  if (!shareOrigin) return absolutePostUrl(id);
+  return new URL(`/p/${encodeURIComponent(id)}`, shareOrigin).href;
 }
 
 function feedUrl() {
