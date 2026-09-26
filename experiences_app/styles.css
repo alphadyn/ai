@@ -88,34 +88,6 @@ select:focus-visible {
   min-width: 0;
 }
 
-.account-bar #loginBtn {
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: none;
-}
-
-.account-bar #loginBtn:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-dark);
-  transform: none;
-}
-
-.account-bar #createProfileBtn {
-  min-height: 2.45rem;
-  border: 0;
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 5px 12px rgba(15, 118, 110, 0.18);
-}
-
-.account-bar #createProfileBtn:hover:not(:disabled) {
-  background: var(--accent-dark);
-  color: #fff;
-  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.22);
-}
-
 .public-toggle {
   display: inline-flex;
   align-items: center;
