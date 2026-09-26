@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import UUID
 
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
 
 
 ROOT = Path(__file__).resolve().parent
@@ -77,7 +77,72 @@ def fetch_posts(supabase_url, api_key):
         offset += PAGE_SIZE
 
 
+def wrap_preview_text(text, draw, font, max_width, max_lines=3):
+    lines = []
+    current = ''
+    for word in str(text or '').split():
+        candidate = f'{current} {word}'.strip()
+        if draw.textlength(candidate, font=font) <= max_width:
+            current = candidate
+            continue
+
+        if current:
+            lines.append(current)
+        current = word
+        while draw.textlength(current, font=font) > max_width and len(current) > 1:
+            split_at = len(current) - 1
+            while split_at > 1 and draw.textlength(current[:split_at], font=font) > max_width:
+                split_at -= 1
+            lines.append(current[:split_at])
+            current = current[split_at:]
+
+    if current:
+        lines.append(current)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        last = lines[-1]
+        while last and draw.textlength(last + '…', font=font) > max_width:
+            last = last[:-1]
+        lines[-1] = last.rstrip() + '…'
+    return lines
+
+
+def overlay_post_text(image, text):
+    image = image.convert('RGBA')
+    width, height = image.size
+    font_size = max(18, round(min(width, height) * 0.035))
+    font = ImageFont.load_default(size=font_size)
+    draw = ImageDraw.Draw(image)
+    padding = round(width * 0.055)
+    line_height = round(font_size * 1.35)
+    lines = wrap_preview_text(text, draw, font, width - padding * 2)
+    if not lines:
+        return image
+
+    panel_height = min(height, line_height * 3 + padding * 2)
+    gradient = Image.new('RGBA', (width, panel_height))
+    gradient_draw = ImageDraw.Draw(gradient)
+    for y in range(panel_height):
+        alpha = round(225 * (y / max(1, panel_height - 1)) ** 0.65)
+        gradient_draw.line((0, y, width, y), fill=(4, 11, 16, alpha))
+    image.alpha_composite(gradient, (0, height - panel_height))
+
+    draw = ImageDraw.Draw(image)
+    first_y = height - padding - line_height * len(lines)
+    for index, line in enumerate(lines):
+        draw.text(
+            (padding, first_y + index * line_height),
+            line,
+            font=font,
+            fill=(255, 255, 255, 255),
+            stroke_width=max(1, font_size // 18),
+            stroke_fill=(0, 0, 0, 180),
+        )
+    return image
+
+
 def cover_image(post, post_dir, share_url):
+    image = None
     for attachment in post.get('attachments') or []:
         if not isinstance(attachment, dict):
             continue
@@ -98,17 +163,25 @@ def cover_image(post, post_dir, share_url):
                 image = ImageOps.exif_transpose(original)
                 image.thumbnail((1200, 1200))
                 image = image.convert('RGBA')
-                background = Image.new('RGB', image.size, '#0f181f')
-                background.paste(image, mask=image.getchannel('A'))
-                output = BytesIO()
-                background.save(output, format='JPEG', quality=85, optimize=True)
-            content = output.getvalue()
-            filename = f'cover-{hashlib.sha256(content).hexdigest()[:16]}.jpg'
-            (post_dir / filename).write_bytes(content)
-            return share_url + filename
+            break
         except (ValueError, OSError, UnidentifiedImageError, Image.DecompressionBombError):
             continue
-    return FALLBACK_IMAGE
+
+    if image is None:
+        with Image.open(ROOT / 'social-preview-mobile.png') as original:
+            image = ImageOps.exif_transpose(original).convert('RGBA')
+            image.thumbnail((1200, 1200))
+
+    post_text = plain_text(post.get('body')) or str(post.get('title') or 'Shared on Pulse')
+    image = overlay_post_text(image, post_text)
+    background = Image.new('RGB', image.size, '#0f181f')
+    background.paste(image, mask=image.getchannel('A'))
+    output = BytesIO()
+    background.save(output, format='JPEG', quality=85, optimize=True)
+    content = output.getvalue()
+    filename = f'cover-{hashlib.sha256(content).hexdigest()[:16]}.jpg'
+    (post_dir / filename).write_bytes(content)
+    return share_url + filename
 
 
 def render_page(post, share_url, image_url):

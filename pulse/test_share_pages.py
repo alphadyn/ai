@@ -1,7 +1,7 @@
 import base64
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import pytest
 
 from pulse import build_share_pages as previews
@@ -33,6 +33,7 @@ def test_build_generates_safe_post_metadata_and_jpeg_cover(tmp_path):
     cover = next((output / POST_ID).glob('cover-*.jpg'))
     with Image.open(cover) as image:
         assert image.format == 'JPEG'
+        assert sum(image.getpixel((image.width // 2, image.height - 1))) < 300
 
 
 def test_rebuild_removes_deleted_posts_and_old_images(tmp_path):
@@ -63,3 +64,27 @@ def test_description_and_redirect_escaping():
     )
     assert 'A &quot;quote&quot; &amp; &lt;word&gt;' in page
     assert 'og:image:type" content="image/png"' in page
+
+
+def test_fallback_preview_also_gets_post_text_overlay(tmp_path):
+    post_dir = tmp_path / POST_ID
+    post_dir.mkdir()
+    cover_url = previews.cover_image(
+        {'title': 'Fallback post', 'body': '<p>Post text on the preview.</p>', 'attachments': []},
+        post_dir,
+        previews.APP_URL + 'share/' + POST_ID + '/',
+    )
+    cover = post_dir / cover_url.rsplit('/', 1)[-1]
+    with Image.open(cover) as image, Image.open(previews.ROOT / 'social-preview-mobile.png') as original:
+        assert image.format == 'JPEG'
+        sample = (image.width // 2, image.height - 1)
+        assert sum(image.getpixel(sample)) < sum(original.convert('RGB').getpixel(sample))
+
+
+def test_preview_excerpt_is_limited_to_three_lines():
+    image = Image.new('RGB', (240, 120))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default(size=14)
+    lines = previews.wrap_preview_text('Pulse post text ' * 30, draw, font, 150)
+    assert len(lines) == 3
+    assert lines[-1].endswith('…')
