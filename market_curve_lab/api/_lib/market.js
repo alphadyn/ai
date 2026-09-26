@@ -17,7 +17,7 @@ const NASDAQ_HEADERS = {
 };
 
 // Warm-instance cache only; each cold start refetches, mirroring the Flask app's in-memory cache.
-let companyCache = { companies: null, expiresAt: 0 };
+let companyCache = { withCaps: { companies: null, expiresAt: 0 }, noCaps: { companies: null, expiresAt: 0 } };
 
 export function normalizeSymbol(symbol) {
   return symbol.trim().toUpperCase().replace(/\./g, '-').replace(/\//g, '-');
@@ -93,10 +93,11 @@ async function fetchScreenerPage(offset) {
   return response.json();
 }
 
-export async function fetchSp500Companies(forceRefresh = false) {
+export async function fetchSp500Companies(forceRefresh = false, { includeMarketCaps = false } = {}) {
+  const cacheBucket = includeMarketCaps ? companyCache.withCaps : companyCache.noCaps;
   const now = Date.now() / 1000;
-  if (!forceRefresh && companyCache.companies && now < companyCache.expiresAt) {
-    return companyCache.companies;
+  if (!forceRefresh && cacheBucket.companies && now < cacheBucket.expiresAt) {
+    return cacheBucket.companies;
   }
 
   let constituentsCsv;
@@ -129,49 +130,53 @@ export async function fetchSp500Companies(forceRefresh = false) {
     }
   }
 
-  const foundSymbols = new Set();
-  const collectRows = (rows) => {
-    for (const row of rows || []) {
-      const symbol = normalizeSymbol(String(row.symbol || ''));
-      const issuerKey = issuerBySymbol.get(symbol);
-      if (!issuerKey) continue;
-      foundSymbols.add(symbol);
-      const marketCap = parseFloat(String(row.marketCap || '').replace(/,/g, ''));
-      if (!Number.isFinite(marketCap) || marketCap <= 0) continue;
-      const issuer = issuers.get(issuerKey);
-      if (issuer.representative_market_cap === null || marketCap > issuer.representative_market_cap) {
-        issuer.symbol = symbol;
-        issuer.market_cap = marketCap;
-        issuer.representative_market_cap = marketCap;
+  if (includeMarketCaps) {
+    const foundSymbols = new Set();
+    const collectRows = (rows) => {
+      for (const row of rows || []) {
+        const symbol = normalizeSymbol(String(row.symbol || ''));
+        const issuerKey = issuerBySymbol.get(symbol);
+        if (!issuerKey) continue;
+        foundSymbols.add(symbol);
+        const marketCap = parseFloat(String(row.marketCap || '').replace(/,/g, ''));
+        if (!Number.isFinite(marketCap) || marketCap <= 0) continue;
+        const issuer = issuers.get(issuerKey);
+        if (issuer.representative_market_cap === null || marketCap > issuer.representative_market_cap) {
+          issuer.symbol = symbol;
+          issuer.market_cap = marketCap;
+          issuer.representative_market_cap = marketCap;
+        }
       }
+    };
+
+    try {
+      const firstPage = (await fetchScreenerPage(0)).data || {};
+      const firstRows = (firstPage.table || {}).rows || [];
+      const totalRecords = Number(firstPage.totalrecords) || firstRows.length;
+      collectRows(firstRows);
+
+      const remainingOffsets = [];
+      for (let offset = SCREENER_LIMIT; offset < totalRecords; offset += SCREENER_LIMIT) remainingOffsets.push(offset);
+
+      for (let start = 0; start < remainingOffsets.length; start += 4) {
+        const offsets = remainingOffsets.slice(start, start + 4);
+        const pages = await Promise.all(offsets.map(fetchScreenerPage));
+        for (const page of pages) collectRows(((page.data || {}).table || {}).rows);
+        if ([...members.keys()].every((symbol) => foundSymbols.has(symbol))) break;
+      }
+    } catch (error) {
+      // Fall back to constituent-only ordering when Nasdaq ranking is unavailable.
     }
-  };
-
-  try {
-    const firstPage = (await fetchScreenerPage(0)).data || {};
-    const firstRows = (firstPage.table || {}).rows || [];
-    const totalRecords = Number(firstPage.totalrecords) || firstRows.length;
-    collectRows(firstRows);
-
-    const remainingOffsets = [];
-    for (let offset = SCREENER_LIMIT; offset < totalRecords; offset += SCREENER_LIMIT) remainingOffsets.push(offset);
-
-    for (let start = 0; start < remainingOffsets.length; start += 4) {
-      const offsets = remainingOffsets.slice(start, start + 4);
-      const pages = await Promise.all(offsets.map(fetchScreenerPage));
-      for (const page of pages) collectRows(((page.data || {}).table || {}).rows);
-      if ([...members.keys()].every((symbol) => foundSymbols.has(symbol))) break;
-    }
-  } catch (error) {
-    throw new UpstreamError('Could not load the full S&P 500 market-cap ranking.');
   }
 
-  const companies = [...issuers.values()].sort((a, b) => {
-    const aHasCap = a.market_cap !== null;
-    const bHasCap = b.market_cap !== null;
-    if (aHasCap !== bHasCap) return aHasCap ? -1 : 1;
-    return (b.market_cap || 0) - (a.market_cap || 0);
-  });
+  const companies = includeMarketCaps
+    ? [...issuers.values()].sort((a, b) => {
+      const aHasCap = a.market_cap !== null;
+      const bHasCap = b.market_cap !== null;
+      if (aHasCap !== bHasCap) return aHasCap ? -1 : 1;
+      return (b.market_cap || 0) - (a.market_cap || 0);
+    })
+    : [...issuers.values()];
 
   if (companies.length < SP500_COMPANY_COUNT) {
     throw new UpstreamError(`Only ${companies.length} distinct S&P 500 companies were found; 500 are required.`);
@@ -179,10 +184,12 @@ export async function fetchSp500Companies(forceRefresh = false) {
 
   const trimmed = companies.slice(0, SP500_COMPANY_COUNT).map((company, index) => {
     const { representative_market_cap, ...rest } = company;
-    return { ...rest, rank: index + 1 };
+    return { ...rest, rank: includeMarketCaps ? index + 1 : null };
   });
 
-  companyCache = { companies: trimmed, expiresAt: Date.now() / 1000 + COMPANY_CACHE_SECONDS };
+  const expiresAt = Date.now() / 1000 + COMPANY_CACHE_SECONDS;
+  if (includeMarketCaps) companyCache.withCaps = { companies: trimmed, expiresAt };
+  else companyCache.noCaps = { companies: trimmed, expiresAt };
   return trimmed;
 }
 
