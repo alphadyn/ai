@@ -32,6 +32,9 @@ const chartHeading = $('#chart-heading');
 const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
+const mobileChartQuery = window.matchMedia('(max-width: 600px)');
+let mobileChartMode = mobileChartQuery.matches;
+let lastChartPoints = null;
 let selectedSymbol = 'AAPL';
 let requestSequence = 0;
 let companiesBySymbol = new Map();
@@ -121,11 +124,14 @@ function formatIndex(value) {
 }
 
 function renderChart(points) {
+  lastChartPoints = points;
+  const chartHeight = mobileChartMode ? 560 : CHART.height;
+  chart.setAttribute('viewBox', `0 0 ${CHART.width} ${chartHeight}`);
   const maxValue = Math.max(...points.map((point) => point.performance));
   const minExponent = 2;
   const maxExponent = Math.ceil(Math.log10(maxValue));
   const plotWidth = CHART.width - CHART.left - CHART.right;
-  const plotHeight = CHART.height - CHART.top - CHART.bottom;
+  const plotHeight = chartHeight - CHART.top - CHART.bottom;
   const minLog = minExponent;
   const maxLog = Math.max(maxExponent, minExponent + 1);
   const x = (index) => CHART.left + (index / (points.length - 1)) * plotWidth;
@@ -151,14 +157,14 @@ function renderChart(points) {
     );
   }
 
-  const baselineY = CHART.height - CHART.bottom;
+  const baselineY = chartHeight - CHART.bottom;
   chart.append(svgElement('line', { class: 'chart-axis', x1: CHART.left, x2: CHART.width - CHART.right, y1: baselineY, y2: baselineY }));
   for (let tick = 0; tick <= 4; tick += 1) {
     const index = Math.round(tick * (points.length - 1) / 4);
     chart.append(svgElement('text', {
       class: 'chart-date-label',
       x: x(index),
-      y: CHART.height - 13,
+      y: chartHeight - 13,
       'text-anchor': tick === 0 ? 'start' : tick === 4 ? 'end' : 'middle',
     }, points[index].date.slice(0, 4)));
   }
@@ -174,6 +180,13 @@ function renderChart(points) {
     series.style.display = seriesVisibility[series.dataset.series] ? '' : 'none';
   });
 }
+
+window.addEventListener('resize', () => {
+  const nextMobileChartMode = mobileChartQuery.matches;
+  if (nextMobileChartMode === mobileChartMode) return;
+  mobileChartMode = nextMobileChartMode;
+  if (lastChartPoints) renderChart(lastChartPoints);
+});
 
 function renderAnalysis(data) {
   const currency = data.currency || 'USD';

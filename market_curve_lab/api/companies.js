@@ -1,4 +1,4 @@
-import { fetchSp500Companies, ValidationError, UpstreamError } from './_lib/market.js';
+import { fetchSp500Companies } from './_lib/market.js';
 
 export default async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,12 +19,6 @@ export default async function handler(request, response) {
     const companies = await fetchSp500Companies();
     response.status(200).json({ companies });
   } catch (error) {
-    if (error instanceof ValidationError) {
-      response.status(400).json({ error: error.message });
-    } else if (error instanceof UpstreamError) {
-      response.status(502).json({ error: error.message });
-    } else {
-      response.status(502).json({ error: error.message || 'Could not load S&P 500 company rankings.' });
-    }
+    response.status(502).json({ error: error.message || 'Could not load S&P 500 company rankings.' });
   }
 }

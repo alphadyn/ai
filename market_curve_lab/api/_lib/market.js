@@ -1,4 +1,4 @@
-// Shared helpers ported from app.py so the Vercel functions match the local Flask app's behavior.
+// Shared helpers for the Vercel serverless market-data endpoints.
 const NASDAQ_API = 'https://api.nasdaq.com/api';
 const SCREENER_URL = `${NASDAQ_API}/screener/stocks`;
 const SP500_URL = 'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv';
@@ -16,7 +16,7 @@ const NASDAQ_HEADERS = {
   Referer: 'https://www.nasdaq.com/',
 };
 
-// Warm-instance cache only; each cold start refetches, mirroring the Flask app's in-memory cache.
+// Warm-instance cache only; each cold start refetches the company data.
 let companyCache = { withCaps: { companies: null, expiresAt: 0 }, noCaps: { companies: null, expiresAt: 0 } };
 
 export function normalizeSymbol(symbol) {
