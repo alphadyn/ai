@@ -1,6 +1,13 @@
 name: Deploy Alphadyn AI Apps to Pages
 
 on:
+  workflow_run:
+    workflows:
+      - pages-build-deployment
+    types:
+      - completed
+    branches:
+      - main
   push:
     branches:
       - main
@@ -22,6 +29,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

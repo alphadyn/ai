@@ -81,9 +81,11 @@ generic Pulse artwork), with up to three lines of post text overlaid at the
 bottom. Its share link stays on `alphadyn.github.io` and opens the app's post
 detail when tapped.
 
-The Pages workflow runs on pushes, on demand, and on a scheduled five-minute
-interval. Saves, edits, and deletions are picked up on the **next successful
-publish**, not instantly. Newly created share URLs may be 404 until then;
+The Pages workflow runs after GitHub's branch-based Pages build, on demand,
+and on a scheduled five-minute interval. Running afterward ensures its
+generated per-post pages are included in the final deployment. Saves, edits,
+and deletions are picked up on the **next successful publish**, not instantly.
+Newly created share URLs may be 404 until then;
 edits can show the previous preview, and deleted posts' pages are removed at
 the next build. Messaging apps can also cache old preview metadata even after
 a publish. No GitHub credentials are exposed to the browser: the build uses
