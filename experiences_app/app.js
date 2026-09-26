@@ -4,6 +4,7 @@ const MAX_MEDIA_SIZE = 5 * 1024 * 1024;
 const SUPABASE_CONFIG = window.CHECKIN_MAP_SUPABASE || {};
 const SUPABASE_URL = SUPABASE_CONFIG.url;
 const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
+const SHARE_PREVIEW_ENABLED = SUPABASE_CONFIG.sharePreviewEnabled === true;
 const STORAGE_BUCKET = SUPABASE_CONFIG.storageBucket || "checkin-map-media";
 const LOCATIONS_TABLE = "checkin_map_locations";
 const MEDIA_TABLE = "checkin_map_media";
@@ -97,6 +98,7 @@ const experienceDetailKicker = document.getElementById("experienceDetailKicker")
 const activeExperienceName = document.getElementById("activeExperienceName");
 const activeExperienceDescription = document.getElementById("activeExperienceDescription");
 const experienceDoneBtn = document.getElementById("experienceDoneBtn");
+const shareActiveExperienceBtn = document.getElementById("shareActiveExperienceBtn");
 const experienceEditDetailsBtn = document.getElementById("experienceEditDetailsBtn");
 const newExperienceEventBtn = document.getElementById("newExperienceEventBtn");
 const experienceEventCreateScreen = document.getElementById("experienceEventCreateScreen");
@@ -399,6 +401,7 @@ async function showExperienceIndex() {
   if (session && isExperienceUrl) {
     history.replaceState(null, "", window.location.pathname);
     document.body.classList.remove("public-experience-view");
+    document.body.classList.remove("public-experience-authenticated");
     await loadExperiences();
     return;
   }
@@ -423,7 +426,7 @@ function renderExperiences() {
         ${experience.description ? `<span>${escapeHtml(experience.description)}</span>` : ""}
       </div>
       <div class="experience-card-actions">
-        ${canEditExperience(experience) ? `<div class="experience-order-controls" aria-label="Reorder ${escapeHtml(experience.name)}"><button type="button" class="secondary-btn icon-btn" data-move-experience="up" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-experience="down" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} down" title="Move down" ${index === experiences.length - 1 ? "disabled" : ""}>&darr;</button></div><label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-duplicate-experience="${escapeHtml(experience.id)}">Duplicate</button><button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
+        ${canEditExperience(experience) ? `<div class="experience-order-controls" aria-label="Reorder ${escapeHtml(experience.name)}"><button type="button" class="secondary-btn icon-btn" data-move-experience="up" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} up" title="Move up" ${index === 0 ? "disabled" : ""}>&uarr;</button><button type="button" class="secondary-btn icon-btn" data-move-experience="down" data-experience-id="${escapeHtml(experience.id)}" aria-label="Move ${escapeHtml(experience.name)} down" title="Move down" ${index === experiences.length - 1 ? "disabled" : ""}>&darr;</button></div><label class="public-toggle compact-toggle"><input type="checkbox" data-experience-public="${escapeHtml(experience.id)}" ${experience.is_public ? "checked" : ""} /><span>Public</span></label><button type="button" class="secondary-btn" data-edit-experience="${escapeHtml(experience.id)}">Edit</button><button type="button" class="secondary-btn" data-duplicate-experience="${escapeHtml(experience.id)}">Duplicate</button>${experience.is_public ? `<button type="button" class="primary-btn" data-share-experience="${escapeHtml(experience.id)}">Share</button>` : ""}<button type="button" class="secondary-btn" data-copy-experience="${escapeHtml(experience.id)}">Copy URL <span class="button-icon" aria-hidden="true">⧉</span></button><button type="button" class="delete-checkin-btn" data-delete-experience="${escapeHtml(experience.id)}" aria-label="Delete ${escapeHtml(experience.name)}" title="Delete experience">&times;</button>` : ""}
       </div>
     </article>`).join("") : '<p class="empty-experience-state">Create an experience, then collect its events, places, and media.</p>';
   experienceDetail.hidden = !activeExperience;
@@ -434,6 +437,7 @@ function renderExperiences() {
     experienceLocationForm.hidden = true;
     experienceDetailKicker.textContent = "Experience";
     experienceEditDetailsBtn.hidden = !canEditExperience(activeExperience) || experienceViewMode === "edit";
+    shareActiveExperienceBtn.hidden = !activeExperience.is_public;
     const canAddEvent = canEditExperience(activeExperience) || (isPublicExperience && activeExperience.is_public);
     newExperienceEventBtn.hidden = !canAddEvent || (experienceViewMode !== "edit" && !isPublicExperience);
   }
@@ -850,6 +854,12 @@ async function handleExperienceClick(event) {
   if (copyButton) {
     try { await copyExperienceUrl(copyButton.dataset.copyExperience); }
     catch (error) { setStatus(experienceStatus, error.message, "error"); }
+    return;
+  }
+  const shareButton = event.target.closest("[data-share-experience]");
+  if (shareButton) {
+    try { await shareExperience(shareButton.dataset.shareExperience); }
+    catch (error) { setStatus(experienceStatus, error.message, "error"); }
   }
 }
 
@@ -921,12 +931,44 @@ async function copyExperienceUrl(id) {
   setStatus(experienceStatus, experience.is_public ? "Public experience URL copied." : "Private experience URL copied. It requires owner sign-in.", "success");
 }
 
+async function shareExperience(id) {
+  const experience = experiences.find((item) => item.id === id);
+  if (!experience || !experience.is_public) throw new Error("Make this experience public before sharing it.");
+  const url = await experienceUrl(experience);
+  const shareData = {
+    title: `${experience.name} · Experiences`,
+    text: experience.description?.trim() || `Explore the places and moments in ${experience.name}.`,
+    url,
+  };
+  if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (error) {
+      if (error.name === "AbortError") return;
+    }
+  }
+  await navigator.clipboard.writeText(url);
+  setStatus(experienceStatus, "Share link copied.", "success");
+}
+
+async function shareActiveExperience() {
+  if (!activeExperience?.is_public) return;
+  try { await shareExperience(activeExperience.id); }
+  catch (error) { setStatus(experienceStatus, error.message, "error"); }
+}
+
 async function experienceUrl(experience) {
   const slug = experience.public_slug || createPublicSlug(experience.name);
   if (!experience.public_slug) {
     const response = await supabaseRequest(`/rest/v1/${EXPERIENCES_TABLE}?id=eq.${encodeURIComponent(experience.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ public_slug: slug, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create the experience URL."));
     experience.public_slug = slug;
+  }
+  if (experience.is_public && SHARE_PREVIEW_ENABLED && SUPABASE_URL) {
+    const previewUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/experience-share`);
+    previewUrl.searchParams.set("slug", slug);
+    return previewUrl.toString();
   }
   return `${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`;
 }
@@ -2291,6 +2333,7 @@ closeExperiencesBtn.addEventListener("click", closeExperiences);
 newExperienceBtn.addEventListener("click", showExperienceCreate);
 backFromExperienceCreateBtn.addEventListener("click", showExperienceIndex);
 experienceDoneBtn.addEventListener("click", showExperienceIndex);
+shareActiveExperienceBtn.addEventListener("click", shareActiveExperience);
 experienceEditDetailsBtn.addEventListener("click", openExperienceDetailsForm);
 activeExperienceName.addEventListener("click", openExperienceDetailsForm);
 newExperienceEventBtn.addEventListener("click", openExperienceEventForm);
@@ -2454,6 +2497,7 @@ async function initializeApp() {
     try {
       activeExperience = experiences[0] || null;
       document.body.classList.add("public-experience-view");
+      document.body.classList.toggle("public-experience-authenticated", Boolean(restoredSession));
       experienceViewMode = restoredSession && canEditExperience(activeExperience) ? "edit" : "view";
       showExperienceScreen("detail");
       experiencePanel.classList.add("experience-detail-open");

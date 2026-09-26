@@ -205,6 +205,7 @@ select:focus-visible {
 .public-experience-view { background: var(--bg); }
 .public-experience-view .topbar { margin-bottom: 1rem; }
 .public-experience-view #userStatus { display: none; }
+.public-experience-authenticated .account-bar { display: none; }
 .public-experience-view #appContent { display: block; }
 .public-experience-view .experience-panel {
   position: relative;
@@ -1818,6 +1819,45 @@ body.profile-open::before {
   .experience-event-create-form { grid-template-columns: 1fr; }
   .experience-form-actions { justify-content: flex-start; }
   .experience-list { grid-template-columns: 1fr; }
+
+  .public-experience-view .page-shell {
+    padding: max(1rem, env(safe-area-inset-top)) 0.75rem max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .public-experience-view .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .public-experience-view .brand-logo { width: min(22rem, 84vw); }
+  .public-experience-view .topbar-subtitle { margin-top: 0.45rem; font-size: 0.86rem; }
+
+  .public-experience-view .account-bar {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .public-experience-view .account-bar button {
+    min-height: 44px;
+    flex: 1 1 0;
+  }
+
+  .public-experience-view .experience-panel {
+    min-height: calc(100svh - 8rem);
+    padding: 0.8rem;
+  }
+
+  .public-experience-view .experience-detail { padding: 0.75rem 0 1rem; }
+  .public-experience-view .experience-detail-heading { align-items: center; gap: 0.5rem; }
+  .public-experience-view .experience-detail-actions { flex-shrink: 0; }
+  .public-experience-view .experience-detail-actions button,
+  .public-experience-view .experience-events-heading button { min-width: 44px; min-height: 44px; }
+  .public-experience-view .experience-detail-actions .share-experience-btn { min-width: 72px; }
+  .public-experience-view .experience-map { height: clamp(250px, 42svh, 360px); }
+  .public-experience-view .experience-location-list { grid-template-columns: 1fr; }
 
   .map-panel-heading {
     align-items: flex-start;

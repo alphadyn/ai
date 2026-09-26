@@ -14,7 +14,8 @@ A browser-based app for recording trips, Experiences, and named Events with maps
 - **Experiences and events**: build private or public Experience collections, then add named Events with a date/time, location, description, and photo, video, or audio attachments
 - **Event maps**: open an Experience to see all Event pins on a dedicated map, select an Event card to focus its pin, and reset the map to show every Event
 - **Location picking**: find a city, region, or country by name, or choose a precise Event location by clicking the Event creation or editing map
-- **Experience links**: every Experience has a stable copyable URL; enable its Public toggle to open a standalone shared Experience page where visitors can view its map and add or edit named Events with a location, date/time, description, and attachments
+- **Experience links**: every Experience has a stable copyable URL; enable its Public toggle to open a standalone shared Experience page where visitors can view its map and add or edit named Events with a location, date/time, description, and attachments. Public share links show an Experience-specific mobile preview with its title, description, event count, and first public image
+- **Message preview artwork**: links use a simple square map illustration with tourist photos visibly connected to their pins, plus a concise app description. The PNG artwork is supported by common message-preview crawlers. Open [share-preview.html](share-preview.html) to see the mobile Messages card mockup
 - **Public trip links**: copy a URL to share a read-only trip with anyone; visitors to the home page see the featured public trip by default
 - **Admin area**: administrators can edit user profiles, trip names, and any check-in, or delete trips and check-ins
 - **Map pinning**: right-click any point on the map and choose **Drop pin** to save that coordinate as a check-in
@@ -34,6 +35,17 @@ python3 -m http.server 8000
 ```
 
 Then open http://localhost:8000 in your browser.
+
+## Deploy mobile share previews
+Public Experience links can use a Supabase Edge Function to return per-Experience Open Graph and Twitter metadata to message previews, plus a compact mobile landing card with an **Open this Experience** link. The function only looks up Experiences marked public; private links continue to open the app directly. Until the function is deployed and enabled, existing direct app links keep working with the generic app preview.
+
+Deploy it to the same Supabase project configured in [supabase-config.js](supabase-config.js):
+
+```bash
+supabase functions deploy experience-share --project-ref YOUR_PROJECT_REF
+```
+
+The function uses Supabase's automatically provided project URL and anonymous key. [supabase/config.toml](supabase/config.toml) disables JWT verification for this public preview endpoint; the function still filters every lookup to public Experiences and relies on the existing anonymous RLS policies. After deploying, set `sharePreviewEnabled: true` in the `window.CHECKIN_MAP_SUPABASE` object in [supabase-config.js](supabase-config.js), then redeploy the static app. Set the `APP_BASE_URL` Edge Function secret if the app is hosted somewhere other than `https://alphadyn.github.io/ai/experiences_app/`.
 
 ## How to use
 1. Open the app to view the welcome screen. Choose **Log in** or **Sign up** before starting a trip or exploring Experiences, then choose an existing trip or create a new one. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box

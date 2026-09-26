@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080" role="img" aria-labelledby="title description">
+  <title id="title">Travel photos connected to map pins</title>
+  <desc id="description">A quiet travel map connecting photos of an island, an ancient landmark, and the coast to their locations.</desc>
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e6f2ee"/><stop offset="1" stop-color="#d3e8e2"/></linearGradient>
+    <linearGradient id="sunset" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f2c9a6"/><stop offset="1" stop-color="#fff0d9"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64b9bd"/><stop offset="1" stop-color="#287b8d"/></linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#efc69d"/><stop offset="1" stop-color="#c59370"/></linearGradient>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#23463e" flood-opacity=".15"/></filter>
+    <pattern id="mapLines" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M72 0H0V72" fill="none" stroke="#83aaa0" stroke-opacity=".12" stroke-width="2"/></pattern>
+    <clipPath id="sceneA"><rect x="118" y="176" width="344" height="230" rx="24"/></clipPath>
+    <clipPath id="sceneB"><rect x="618" y="176" width="344" height="230" rx="24"/></clipPath>
+    <clipPath id="sceneC"><rect x="368" y="674" width="344" height="230" rx="24"/></clipPath>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#water)"/>
+  <rect width="1080" height="1080" fill="url(#mapLines)"/>
+  <path d="M0 80c118 32 143 107 225 121 79 14 120-44 194-19 60 20 72 82 41 130-28 44-91 44-103 91-11 44 49 87 24 129-18 31-71 25-105 54-37 31-28 83-70 108-43 25-95 4-142 21-35 13-50 39-64 66Z" fill="#fffefa" opacity=".8"/>
+  <path d="M1080 36c-116 4-152 53-173 110-19 52-3 91-45 121-38 27-100 7-138 39-38 32-20 92-54 127-28 29-80 16-103 49-25 36 0 81-25 116-27 37-87 30-118 63-31 33-16 91-45 130-23 30-67 39-91 83-22 40-20 104-18 206h828V36Z" fill="#fffefa" opacity=".92"/>
+  <path d="M179 425c110-64 260-54 365 10 105 65 169 67 258 9" fill="none" stroke="#6c9b90" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 17" opacity=".8"/>
+  <path d="M810 444c-51 73-94 126-161 185-38 34-85 45-126 88" fill="none" stroke="#c78367" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 17" opacity=".76"/>
+
+  <g filter="url(#cardShadow)" clip-path="url(#sceneA)">
+    <rect x="118" y="176" width="344" height="230" fill="url(#sunset)"/>
+    <circle cx="397" cy="220" r="26" fill="#fff1d2"/>
+    <path d="M118 320c56-27 107-21 161-3 67 22 119 16 183-16v105H118Z" fill="url(#sea)"/>
+    <path d="M118 302c42-28 78-45 124-37 31 6 48 24 75 28v49H118Z" fill="#fffefa"/>
+    <path d="M225 267c0-27 21-48 48-48s48 21 48 48Z" fill="#337d9c"/>
+    <path d="M244 267v-34m29 34v-39m29 39v-29" stroke="#e4f4ef" stroke-width="5"/>
+    <path d="M146 289h34v31h-34zm48-17h25v38h-25z" fill="#e6a886"/>
+  </g>
+  <rect x="118" y="176" width="344" height="230" rx="24" fill="none" stroke="#fffefa" stroke-width="9"/>
+
+  <g filter="url(#cardShadow)" clip-path="url(#sceneB)">
+    <rect x="618" y="176" width="344" height="230" fill="#f2c5a1"/>
+    <circle cx="870" cy="217" r="27" fill="#fff0cc"/>
+    <path d="M618 321c75-37 128-18 181-7 61 12 108 2 163-29v121H618Z" fill="#8b7d6d"/>
+    <path d="M670 283h244v17H670Zm23-62h198v18H693Z" fill="url(#stone)"/>
+    <path d="m680 220 112-48 112 48Z" fill="#f6e8d1"/>
+    <path d="M704 242v65m39-65v65m39-65v65m39-65v65m39-65v65m39-65v65" stroke="#f8efdf" stroke-width="19"/>
+    <path d="M680 309h222v14H680Z" fill="#cfaa83"/>
+  </g>
+  <rect x="618" y="176" width="344" height="230" rx="24" fill="none" stroke="#fffefa" stroke-width="9"/>
+
+  <g filter="url(#cardShadow)" clip-path="url(#sceneC)">
+    <rect x="368" y="674" width="344" height="230" fill="url(#sunset)"/>
+    <circle cx="645" cy="712" r="25" fill="#fff0ca"/>
+    <path d="M368 789h344v115H368Z" fill="url(#sea)"/>
+    <path d="M368 789c58-39 102-19 145-44 42-25 94-29 128-10 36 19 46 1 71-20v92H368Z" fill="#f6ead7"/>
+    <path d="M368 813c51-23 93-15 133 2l-24 25H368Zm260-70 84-38v111h-72Z" fill="#d39c7d"/>
+    <path d="M492 823h72l-13 14h-48Z" fill="#fffefa"/>
+    <path d="M526 776v47m0-46 24 37m-24-37-22 35" fill="none" stroke="#fffefa" stroke-linecap="round" stroke-width="5"/>
+  </g>
+  <rect x="368" y="674" width="344" height="230" rx="24" fill="none" stroke="#fffefa" stroke-width="9"/>
+
+  <g>
+    <path d="M142 463c0-24 19-43 43-43s43 19 43 43c0 33-43 73-43 73s-43-40-43-73Z" fill="#0f766e" stroke="#fffefa" stroke-width="7"/>
+    <circle cx="185" cy="461" r="11" fill="#fffefa"/>
+    <path d="M775 463c0-24 19-43 43-43s43 19 43 43c0 33-43 73-43 73s-43-40-43-73Z" fill="#c85c45" stroke="#fffefa" stroke-width="7"/>
+    <circle cx="818" cy="461" r="11" fill="#fffefa"/>
+    <path d="M496 614c0-24 19-43 43-43s43 19 43 43c0 33-43 73-43 73s-43-40-43-73Z" fill="#0f766e" stroke="#fffefa" stroke-width="7"/>
+    <circle cx="539" cy="612" r="11" fill="#fffefa"/>
+  </g>
+</svg>

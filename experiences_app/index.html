@@ -3,10 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Experiences</title>
+    <meta name="theme-color" content="#f3f6f1" />
+    <title>Experiences — Every Place Has a Story</title>
+    <meta name="description" content="Map your travels and share your experiences with friends." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Experiences" />
+    <meta property="og:title" content="Experiences — Every Place Has a Story" />
+    <meta property="og:description" content="Map your travels and share your experiences with friends." />
+    <meta property="og:url" content="https://alphadyn.github.io/ai/experiences_app/" />
+    <meta property="og:image" content="https://alphadyn.github.io/ai/experiences_app/assets/experience-pin-photos.png" />
+    <meta property="og:image:secure_url" content="https://alphadyn.github.io/ai/experiences_app/assets/experience-pin-photos.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="1080" />
+    <meta property="og:image:alt" content="Travel photos of Santorini, Athens, and the Aegean coast connected to map pins." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Experiences — Every Place Has a Story" />
+    <meta name="twitter:description" content="Map your travels and share your experiences with friends." />
+    <meta name="twitter:image" content="https://alphadyn.github.io/ai/experiences_app/assets/experience-pin-photos.png" />
+    <meta name="twitter:image:alt" content="Travel photos linked to location pins on a trip map." />
     <link rel="icon" href="assets/experiences-favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="styles.css?v=20260925-auth-colors-2" />
+    <link rel="stylesheet" href="styles.css?v=20260925-share-preview" />
   </head>
   <body>
     <div class="page-shell">
@@ -99,7 +117,7 @@
             </form>
           </section>
           <section id="experienceDetail" class="experience-detail" hidden>
-            <div class="experience-detail-heading"><div><p id="experienceDetailKicker" class="panel-kicker">Experience</p><button type="button" id="activeExperienceName" class="experience-name-button" aria-label="Edit experience name"></button></div><div class="experience-detail-actions"><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit</button><button type="button" id="experienceDoneBtn" class="secondary-btn icon-btn" aria-label="Close experience" title="Close experience">&times;</button></div></div>
+            <div class="experience-detail-heading"><div><p id="experienceDetailKicker" class="panel-kicker">Experience</p><button type="button" id="activeExperienceName" class="experience-name-button" aria-label="Edit experience name"></button></div><div class="experience-detail-actions"><button type="button" id="shareActiveExperienceBtn" class="secondary-btn share-experience-btn" hidden>Share</button><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit</button><button type="button" id="experienceDoneBtn" class="secondary-btn icon-btn" aria-label="Close experience" title="Close experience">&times;</button></div></div>
             <p id="activeExperienceDescription" class="experience-description"></p>
             <div id="experienceMap" class="experience-map" aria-label="Experience events map"></div>
             <div class="experience-events-heading"><h4>Events</h4><button type="button" id="newExperienceEventBtn" class="secondary-btn icon-btn" aria-label="Add event" title="Add event">+</button></div>
@@ -211,6 +229,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/exif-js@2.3.0/exif.js"></script>
     <script src="supabase-config.js"></script>
-    <script src="app.js?v=20260924"></script>
+    <script src="app.js?v=20260925-share-preview"></script>
   </body>
 </html>

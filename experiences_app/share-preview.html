@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f2f3f7" />
+  <title>Messages preview · Experiences</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #18181b;
+      background: #f2f3f7;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+      background: #f2f3f7;
+    }
+
+    .messages {
+      width: min(100%, 420px, calc(100svh - 24px));
+      aspect-ratio: 1;
+      display: grid;
+      grid-template-rows: 24px 54px minmax(0, 1fr) 42px;
+      overflow: hidden;
+      border: 1px solid #e1e2e8;
+      border-radius: 26px;
+      background: #fff;
+      box-shadow: 0 20px 60px rgb(32 39 56 / 14%);
+    }
+
+    .status-bar,
+    .status-icons,
+    .conversation-header,
+    .contact,
+    .message-row,
+    .composer {
+      display: flex;
+      align-items: center;
+    }
+
+    .status-bar {
+      justify-content: space-between;
+      padding: 0 18px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-icons { gap: 5px; }
+    .signal { width: 14px; height: 12px; }
+    .signal i { display: inline-block; width: 2px; margin-right: 1px; border-radius: 2px; background: #202124; }
+    .signal i:nth-child(1) { height: 4px; }
+    .signal i:nth-child(2) { height: 6px; }
+    .signal i:nth-child(3) { height: 9px; }
+    .signal i:nth-child(4) { height: 12px; }
+    .wifi { width: 14px; height: 12px; }
+    .battery { width: 20px; height: 11px; position: relative; border: 1.4px solid #202124; border-radius: 3px; }
+    .battery::before { position: absolute; inset: 2px 4px 2px 2px; border-radius: 1px; background: #202124; content: ""; }
+    .battery::after { position: absolute; top: 3px; right: -4px; width: 2px; height: 4px; border-radius: 0 2px 2px 0; background: #202124; content: ""; }
+
+    .conversation-header {
+      justify-content: space-between;
+      padding: 0 15px 7px;
+      border-bottom: 1px solid #f0f0f3;
+    }
+
+    .back-link { display: flex; align-items: center; gap: 4px; color: #1684e8; font-size: 11px; }
+    .back-chevron { font-size: 24px; font-weight: 300; line-height: 1; }
+    .contact { align-self: end; flex-direction: column; gap: 2px; }
+    .contact-avatar { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #d9eee6; color: #246c5d; font-size: 12px; font-weight: 700; }
+    .contact-name { font-size: 10px; font-weight: 650; }
+    .video-icon { width: 25px; height: 20px; color: #1684e8; }
+
+    .conversation { min-height: 0; padding: 8px 9px; }
+    .message-row { align-items: flex-start; }
+    .bubble {
+      width: min(100%, 160px);
+      overflow: hidden;
+      border: 1px solid #e4e4e8;
+      border-radius: 14px 14px 14px 4px;
+      background: #f0f0f2;
+    }
+
+    .message-text { margin: 0; padding: 7px 8px 5px; font-size: 10px; line-height: 1.25; }
+    .link-card { display: block; margin: 0 3px 3px; overflow: hidden; border-radius: 8px; background: #fff; color: inherit; text-decoration: none; }
+    .link-card:focus-visible { outline: 2px solid #1684e8; outline-offset: -2px; }
+    .preview-image { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; background: #e8efeb; }
+    .card-copy { padding: 7px 8px 8px; }
+    .card-title { margin: 0; font-size: 12px; font-weight: 700; line-height: 1.2; }
+    .card-description { margin: 3px 0 6px; color: #73737a; font-size: 9px; line-height: 1.3; }
+    .domain { display: flex; align-items: center; gap: 4px; color: #7b7b82; font-size: 8px; letter-spacing: .035em; text-transform: uppercase; }
+    .domain img { width: 11px; height: 11px; border-radius: 3px; }
+    .delivered { margin: 3px 3px 0 0; color: #94949b; font-size: 8px; text-align: right; }
+
+    .composer { gap: 6px; padding: 4px 9px max(5px, env(safe-area-inset-bottom)); border-top: 1px solid #f0f0f3; }
+    .add-button { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #f0f0f2; color: #6c6c73; font-size: 16px; }
+    .input-placeholder { min-width: 0; height: 24px; flex: 1; display: flex; align-items: center; padding: 0 9px; border: 1px solid #d9d9df; border-radius: 16px; color: #a0a0a7; font-size: 9px; }
+    .mic-icon { width: 13px; height: 18px; color: #85858d; }
+
+    @media (max-width: 460px) {
+      .conversation { padding: 4px 7px; }
+      .bubble { width: min(100%, 144px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="messages" aria-label="Text message with an Experiences link preview">
+    <div class="status-bar">
+      <time datetime="09:41">9:41</time>
+      <div class="status-icons" aria-hidden="true">
+        <span class="signal"><i></i><i></i><i></i><i></i></span>
+        <svg class="wifi" viewBox="0 0 16 12" fill="none"><path d="M1 4c4-4 10-4 14 0M4 7c2-2 6-2 8 0M7 10c.6-.6 1.4-.6 2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="battery"></span>
+      </div>
+    </div>
+
+    <header class="conversation-header">
+      <span class="back-link" aria-hidden="true"><span class="back-chevron">‹</span>Messages</span>
+      <div class="contact">
+        <span class="contact-avatar" aria-hidden="true">A</span>
+        <span class="contact-name">Alex</span>
+      </div>
+      <svg class="video-icon" viewBox="0 0 32 24" fill="none" aria-hidden="true"><rect x="1" y="2" width="22" height="20" rx="6" stroke="currentColor" stroke-width="1.7"/><path d="m24 8 7-4v16l-7-4V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    </header>
+
+    <section class="conversation" aria-label="Message conversation">
+      <div class="message-row">
+        <article class="bubble">
+          <p class="message-text">Look at this ✨</p>
+          <a class="link-card" href="https://alphadyn.github.io/ai/experiences_app/" aria-label="Open Experiences">
+            <img class="preview-image" src="assets/experience-pin-photos.png" alt="Tourist photos of Santorini, Athens, and the Aegean coast linked to map pins" />
+            <div class="card-copy">
+              <h1 class="card-title">Experiences</h1>
+              <p class="card-description">Map your travels and share your experiences.</p>
+              <span class="domain"><img src="assets/experiences-favicon.svg" alt="" /> alphadyn.github.io</span>
+            </div>
+          </a>
+        </article>
+      </div>
+      <p class="delivered">Delivered</p>
+    </section>
+
+    <footer class="composer" aria-hidden="true">
+      <span class="add-button">+</span>
+      <span class="input-placeholder">Text Message</span>
+      <svg class="mic-icon" viewBox="0 0 16 22" fill="none"><rect x="5" y="1" width="6" height="12" rx="3" fill="currentColor"/><path d="M2 10a6 6 0 0 0 12 0M8 16v5m-3 0h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </footer>
+  </main>
+</body>
+</html>
