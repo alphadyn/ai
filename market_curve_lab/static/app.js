@@ -3,7 +3,7 @@ const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api'
 const $ = (selector) => document.querySelector(selector);
 const chart = $('#performance-chart');
 const loadingPanel = $('#chart-loading');
-const loadingTitle = $('#loading-title');
+const loadingTitle = $('#loading-title') || $('#chart-loading strong');
 const errorPanel = $('#chart-error');
 const errorCopy = $('#error-copy');
 const tickerSearch = $('#ticker-search');
@@ -89,9 +89,9 @@ function formatRelativeTime(timestamp) {
 }
 
 function updateProgress(percentage, label) {
-  loadStatus.textContent = label;
-  loadProgressBar.style.width = `${percentage}%`;
-  loadProgressTrack.setAttribute('aria-valuenow', String(percentage));
+  if (loadStatus) loadStatus.textContent = label;
+  if (loadProgressBar) loadProgressBar.style.width = `${percentage}%`;
+  if (loadProgressTrack) loadProgressTrack.setAttribute('aria-valuenow', String(percentage));
 }
 
 function formatMoney(value, currency = 'USD') {
@@ -262,6 +262,7 @@ async function loadAnalysis(security, { forceRefresh = false, prefetchedCache } 
 }
 
 function updateCacheNote(timestamp) {
+  if (!cacheNote) return;
   cacheNote.textContent = timestamp ? `Saved results · ${formatRelativeTime(timestamp)}` : '';
 }
 
@@ -310,6 +311,10 @@ async function loadCompanies(forceRefresh = false) {
     // The ticker-search endpoint still allows any listed stock if the ranking feed is unavailable.
     companyRank.textContent = 'SEARCH ANY STOCK';
     await searchTicker(tickerSearch.value || 'AAPL');
+    if (!userHasEditedSearch) {
+      const prefetchedCache = forceRefresh ? undefined : await analysisPrefetch;
+      await loadAnalysis({ symbol: selectedSymbol, company: selectedSymbol, exchange: '' }, { forceRefresh, prefetchedCache });
+    }
   }
 }
 
@@ -478,15 +483,17 @@ document.querySelectorAll('.legend-item').forEach((button) => {
 $('#retry-button').addEventListener('click', () => {
   loadAnalysis(selectedSecurity);
 });
-refreshButton.addEventListener('click', async () => {
-  if (isRefreshing) return;
-  isRefreshing = true;
-  refreshButton.disabled = true;
-  try {
-    await loadCompanies(true);
-  } finally {
-    isRefreshing = false;
-    refreshButton.disabled = false;
-  }
-});
+if (refreshButton) {
+  refreshButton.addEventListener('click', async () => {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    refreshButton.disabled = true;
+    try {
+      await loadCompanies(true);
+    } finally {
+      isRefreshing = false;
+      refreshButton.disabled = false;
+    }
+  });
+}
 loadCompanies();

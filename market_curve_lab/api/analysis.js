@@ -1,4 +1,4 @@
-import { fetchAnalysis, fetchSp500Companies, normalizeTicker, ValidationError, UpstreamError } from '../_lib/market.js';
+import { fetchAnalysis, normalizeTicker, ValidationError, UpstreamError } from '../_lib/market.js';
 
 export default async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,16 +22,11 @@ export default async function handler(request, response) {
     const rankParam = Number(request.query.rank);
     const marketCapParam = Number(request.query.market_cap);
     const hasClientRank = Number.isFinite(rankParam) && rankParam > 0;
-
-    const [result, companies] = await Promise.all([
-      fetchAnalysis(symbol),
-      hasClientRank ? Promise.resolve([]) : fetchSp500Companies().catch(() => []),
-    ]);
-    const company = hasClientRank ? null : companies.find((item) => item.symbol === symbol) || null;
-    result.company = company ? company.company : request.query.company || symbol;
+    const result = await fetchAnalysis(symbol);
+    result.company = request.query.company || symbol;
     result.exchange = request.query.exchange || '';
-    result.market_cap = hasClientRank ? (Number.isFinite(marketCapParam) ? marketCapParam : null) : (company ? company.market_cap : null);
-    result.market_cap_rank = hasClientRank ? rankParam : (company ? company.rank : null);
+    result.market_cap = hasClientRank && Number.isFinite(marketCapParam) ? marketCapParam : null;
+    result.market_cap_rank = hasClientRank ? rankParam : null;
     response.status(200).json(result);
   } catch (error) {
     if (error instanceof ValidationError) {
