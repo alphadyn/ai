@@ -125,7 +125,7 @@ function formatIndex(value) {
 
 function renderChart(points) {
   lastChartPoints = points;
-  const chartHeight = mobileChartMode ? 560 : CHART.height;
+  const chartHeight = mobileChartMode ? 520 : CHART.height;
   chart.setAttribute('viewBox', `0 0 ${CHART.width} ${chartHeight}`);
   const maxValue = Math.max(...points.map((point) => point.performance));
   const minExponent = 2;
@@ -447,8 +447,15 @@ tickerSearch.addEventListener('input', () => {
 });
 tickerSearch.addEventListener('focus', () => {
   if (!tickerResults.hidden) return;
-  if (tickerSearch.value.trim()) searchTicker(tickerSearch.value);
-  else renderSearchResults(sp500Companies.slice(0, 8));
+  const query = tickerSearch.value.trim();
+  if (!query) {
+    renderSearchResults(sp500Companies.slice(0, 8));
+    return;
+  }
+  const localMatches = combineSearchMatches(query, []);
+  if (localMatches.length) renderSearchResults(localMatches);
+  else if (selectedSecurity?.symbol === query.toUpperCase()) renderSearchResults([selectedSecurity]);
+  else searchTicker(query);
 });
 tickerSearch.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
