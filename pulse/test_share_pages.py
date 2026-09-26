@@ -88,3 +88,32 @@ def test_preview_excerpt_is_limited_to_three_lines():
     lines = previews.wrap_preview_text('Pulse post text ' * 30, draw, font, 150)
     assert len(lines) == 3
     assert lines[-1].endswith('…')
+
+
+def test_title_and_body_are_passed_to_preview_overlay(tmp_path, monkeypatch):
+    post_dir = tmp_path / POST_ID
+    post_dir.mkdir()
+    captured = {}
+
+    def capture_overlay(image, title, text):
+        captured['title'] = title
+        captured['text'] = text
+        return image
+
+    monkeypatch.setattr(previews, 'overlay_post_text', capture_overlay)
+    previews.cover_image(
+        {'title': 'Bombardier Global 8000', 'body': '<p>The fastest civilian aircraft.</p>', 'attachments': []},
+        post_dir,
+        previews.APP_URL + 'share/' + POST_ID + '/',
+    )
+
+    assert captured == {'title': 'Bombardier Global 8000', 'text': 'The fastest civilian aircraft.'}
+
+
+def test_title_wraps_to_two_lines_with_ellipsis():
+    image = Image.new('RGB', (240, 120))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default(size=16)
+    lines = previews.wrap_preview_text('A very long title ' * 20, draw, font, 150, max_lines=2)
+    assert len(lines) == 2
+    assert lines[-1].endswith('…')

@@ -107,19 +107,39 @@ def wrap_preview_text(text, draw, font, max_width, max_lines=3):
     return lines
 
 
-def overlay_post_text(image, text):
+def preview_font(size, bold=False):
+    if bold:
+        font_paths = (
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+            '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
+        )
+        for font_path in font_paths:
+            try:
+                return ImageFont.truetype(font_path, size=size)
+            except OSError:
+                continue
+    return ImageFont.load_default(size=size)
+
+
+def overlay_post_text(image, title, text):
     image = image.convert('RGBA')
     width, height = image.size
     font_size = max(18, round(min(width, height) * 0.035))
-    font = ImageFont.load_default(size=font_size)
+    title_font_size = round(font_size * 1.25)
+    title_font = preview_font(title_font_size, bold=True)
+    body_font = preview_font(font_size)
     draw = ImageDraw.Draw(image)
     padding = round(width * 0.055)
-    line_height = round(font_size * 1.35)
-    lines = wrap_preview_text(text, draw, font, width - padding * 2)
-    if not lines:
+    title_line_height = round(title_font_size * 1.35)
+    body_line_height = round(font_size * 1.35)
+    title_lines = wrap_preview_text(title, draw, title_font, width - padding * 2, max_lines=2)
+    body_lines = wrap_preview_text(text, draw, body_font, width - padding * 2, max_lines=3)
+    if not title_lines and not body_lines:
         return image
 
-    panel_height = min(height, line_height * 3 + padding * 2)
+    gap = round(font_size * 0.35) if title_lines and body_lines else 0
+    content_height = title_line_height * len(title_lines) + body_line_height * len(body_lines) + gap
+    panel_height = min(height, content_height + padding * 2)
     gradient = Image.new('RGBA', (width, panel_height))
     gradient_draw = ImageDraw.Draw(gradient)
     for y in range(panel_height):
@@ -128,12 +148,22 @@ def overlay_post_text(image, text):
     image.alpha_composite(gradient, (0, height - panel_height))
 
     draw = ImageDraw.Draw(image)
-    first_y = height - padding - line_height * len(lines)
-    for index, line in enumerate(lines):
+    body_y = height - padding - body_line_height * len(body_lines)
+    title_y = body_y - gap - title_line_height * len(title_lines)
+    for index, line in enumerate(title_lines):
         draw.text(
-            (padding, first_y + index * line_height),
+            (padding, title_y + index * title_line_height),
             line,
-            font=font,
+            font=title_font,
+            fill=(255, 255, 255, 255),
+            stroke_width=max(1, title_font_size // 18),
+            stroke_fill=(0, 0, 0, 200),
+        )
+    for index, line in enumerate(body_lines):
+        draw.text(
+            (padding, body_y + index * body_line_height),
+            line,
+            font=body_font,
             fill=(255, 255, 255, 255),
             stroke_width=max(1, font_size // 18),
             stroke_fill=(0, 0, 0, 180),
@@ -172,8 +202,9 @@ def cover_image(post, post_dir, share_url):
             image = ImageOps.exif_transpose(original).convert('RGBA')
             image.thumbnail((1200, 1200))
 
-    post_text = plain_text(post.get('body')) or str(post.get('title') or 'Shared on Pulse')
-    image = overlay_post_text(image, post_text)
+    post_title = plain_text(post.get('title')) or 'Pulse post'
+    post_text = plain_text(post.get('body'))
+    image = overlay_post_text(image, post_title, post_text)
     background = Image.new('RGB', image.size, '#0f181f')
     background.paste(image, mask=image.getchannel('A'))
     output = BytesIO()
