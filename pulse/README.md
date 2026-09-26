@@ -29,7 +29,7 @@ Pages.
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).
 - Up to 12 free-form tags per post for categorization and search.
 - Upvote / downvote with one vote per user (or per anonymous browser id) — score updates live.
-- Every post has a shareable URL in the form `index.html?post=<post-id>` that opens its detail view directly, including on static hosts.
+- Every post has a shareable URL in the form `https://alphadyn.github.io/ai/pulse/?post=<post-id>` that opens its detail view directly, including on static hosts.
 - Share posts directly to supported apps such as Messages/RCS with the post title/body as the highlighted shared text and image attachments included for preview when the share target supports file sharing.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
@@ -68,18 +68,18 @@ Pages.
    ```
 6. Serve the folder with any static file server, e.g. `python3 -m http.server 8000` from inside `news_aggregator_app/`, then open `http://localhost:8000`. It also works out of the box on GitHub Pages or any other static host.
 
-### Link previews for shared posts (optional but recommended)
+### Link previews for shared posts
 
 Messaging apps (iMessage/SMS, WhatsApp, Slack…) don't run JavaScript when they
 unfurl a link — they just read the Open Graph tags of whatever HTML the URL
-returns. On a static host that's always the generic `index.html`, so every
-shared post would show the same Pulse artwork.
+returns. Shared links go directly to the Pulse app on GitHub Pages. Because
+GitHub Pages is static, messaging apps may show the generic Pulse artwork
+rather than the post's title or first image; the share message still includes
+the post title and body excerpt.
 [`../market_curve_lab/api/pulse-share.js`](../market_curve_lab/api/pulse-share.js)
-is a Vercel serverless function that looks the post up and returns per-post OG
-tags (title, body excerpt, and the post's own first image, served straight from
-the attachment), plus a readable card with an "Open in Pulse" link. It lives in
-`market_curve_lab/` only because that folder is the root directory of this
-repository's existing Vercel project — GitHub Pages still serves Pulse itself.
+is a legacy Vercel serverless function for older shared links. It returns
+per-post OG tags and redirects visitors to the GitHub Pages post; new links
+no longer point to this endpoint.
 
 The Vercel project needs these environment variables:
 
@@ -89,10 +89,9 @@ The Vercel project needs these environment variables:
 | `SUPABASE_ANON_KEY` | the same public anon key used in `supabase-config.js` |
 | `APP_BASE_URL` | optional; where the app itself is hosted (defaults to the GitHub Pages URL) |
 
-`shareOrigin` in [`supabase-config.js`](supabase-config.js) points at that
-deployment, so shared links look like
-`https://ai-orcin-eta-15.vercel.app/api/pulse-share?post=<post-id>`. Set it to
-`null` to share plain app URLs instead.
+The serverless function lives in `market_curve_lab/` because that folder is
+the root directory of this repository's existing Vercel project. It is not
+needed to share new Pulse posts.
 
 ### Making your first admin
 

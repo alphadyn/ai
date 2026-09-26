@@ -165,7 +165,7 @@ export default async function handler(request, response) {
   <meta property="og:site_name" content="Pulse">
   <meta property="og:title" content="${escapedTitle}">
   <meta property="og:description" content="${escapedDescription}">
-  <meta property="og:url" content="${escapeHtml(selfUrl.href)}">
+  <meta property="og:url" content="${escapedAppUrl}">
   <meta property="og:image" content="${escapedImage}">
   <meta property="og:image:secure_url" content="${escapedImage}">
   <meta property="og:image:type" content="${escapeHtml(previewImageType)}">

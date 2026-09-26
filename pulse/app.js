@@ -1113,14 +1113,8 @@ function postUrl(id) {
 }
 
 function absolutePostUrl(id) {
-  return new URL(postUrl(id), window.location.href).href;
-}
-
-// Messaging apps read Open Graph tags, so shared links point at the preview endpoint.
-function shareablePostUrl(id) {
-  const shareOrigin = (window.PULSE_SUPABASE || {}).shareOrigin;
-  if (!shareOrigin) return absolutePostUrl(id);
-  const url = new URL('/api/pulse-share', shareOrigin);
+  // Resolve to the directory so /pulse/index.html and /pulse/ share the same URL.
+  const url = new URL('./', window.location.href);
   url.searchParams.set('post', id);
   return url.href;
 }
@@ -1149,7 +1143,7 @@ function postShareText(post) {
 }
 
 async function sharePost(post, { text: customText } = {}) {
-  const url = shareablePostUrl(post.id);
+  const url = absolutePostUrl(post.id);
   const text = customText === undefined ? postShareText(post) : customText;
   const shareData = { title: post.title, text, url };
   try {
@@ -1222,7 +1216,7 @@ function openSharePreview(post) {
   if (!modal || !post) return;
 
   sharePreview.post = post;
-  sharePreview.url = shareablePostUrl(post.id);
+  sharePreview.url = absolutePostUrl(post.id);
 
   sharePreview.bodyText = plainExcerpt(post.body, 600);
 
@@ -1236,11 +1230,9 @@ function openSharePreview(post) {
   img.src = image ? image.dataUrl : '';
   img.alt = image ? (image.name || 'Post image') : '';
 
-  // The shared link redirects here, so the card shows the post's own Pulse URL.
-  const appUrl = absolutePostUrl(post.id);
-  document.getElementById('sms-link-card').href = appUrl;
+  document.getElementById('sms-link-card').href = sharePreview.url;
   document.getElementById('sms-link-title').textContent = post.title;
-  document.getElementById('sms-link-domain').textContent = new URL(appUrl).hostname;
+  document.getElementById('sms-link-domain').textContent = new URL(sharePreview.url).hostname;
 
   renderSharePreviewBubble();
   if (!modal.open) modal.showModal();
