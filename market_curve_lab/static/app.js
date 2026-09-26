@@ -1,16 +1,35 @@
 const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api';
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
-const chart = document.querySelector('#performance-chart');
-const loadingPanel = document.querySelector('#chart-loading');
-const errorPanel = document.querySelector('#chart-error');
-const tickerSearch = document.querySelector('#ticker-search');
-const tickerResults = document.querySelector('#ticker-results');
-const refreshButton = document.querySelector('#refresh-button');
-const cacheNote = document.querySelector('#cache-note');
-const loadStatus = document.querySelector('#load-status');
-const loadCount = document.querySelector('#load-count');
-const loadProgressBar = document.querySelector('#load-progress-bar');
-const loadProgressTrack = document.querySelector('.load-progress-track');
+const $ = (selector) => document.querySelector(selector);
+const chart = $('#performance-chart');
+const loadingPanel = $('#chart-loading');
+const loadingTitle = $('#loading-title');
+const errorPanel = $('#chart-error');
+const errorCopy = $('#error-copy');
+const tickerSearch = $('#ticker-search');
+const tickerResults = $('#ticker-results');
+const refreshButton = $('#refresh-button');
+const cacheNote = $('#cache-note');
+const loadStatus = $('#load-status');
+const loadCount = $('#load-count');
+const loadProgressBar = $('#load-progress-bar');
+const loadProgressTrack = $('.load-progress-track');
+const tickerCompany = $('#ticker-company');
+const tickerSymbol = $('#ticker-symbol');
+const companyRank = $('#company-rank');
+const tickerPrice = $('#ticker-price');
+const tickerCurrency = $('#ticker-currency');
+const dataAsOf = $('#data-asof');
+const totalReturn = $('#total-return');
+const historyPeriod = $('#history-period');
+const bestFitLabel = $('#best-fit');
+const fitQuality = $('#fit-quality');
+const concavityCard = $('#concavity-card');
+const concavityLabel = $('#concavity');
+const concavitySymbol = $('#concavity-symbol');
+const concavityDetail = $('#concavity-detail');
+const observationCount = $('#observation-count');
+const chartHeading = $('#chart-heading');
 const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
@@ -77,7 +96,6 @@ function updateProgress(completed, total, label) {
   loadProgressTrack.setAttribute('aria-valuenow', String(percentage));
 }
 
-
 function formatMoney(value, currency = 'USD') {
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 2 }).format(value);
@@ -137,8 +155,6 @@ function renderChart(points) {
 
   const baselineY = CHART.height - CHART.bottom;
   chart.append(svgElement('line', { class: 'chart-axis', x1: CHART.left, x2: CHART.width - CHART.right, y1: baselineY, y2: baselineY }));
-  const firstYear = points[0].date.slice(0, 4);
-  const lastYear = points.at(-1).date.slice(0, 4);
   for (let tick = 0; tick <= 4; tick += 1) {
     const index = Math.round(tick * (points.length - 1) / 4);
     chart.append(svgElement('text', {
@@ -159,34 +175,31 @@ function renderChart(points) {
   chart.querySelectorAll('.series-toggle').forEach((series) => {
     series.style.display = seriesVisibility[series.dataset.series] ? '' : 'none';
   });
-
 }
 
 function renderAnalysis(data) {
   const currency = data.currency || 'USD';
-  document.querySelector('#ticker-company').textContent = data.company || data.symbol;
-  document.querySelector('#ticker-symbol').textContent = data.market_cap_rank
+  tickerCompany.textContent = data.company || data.symbol;
+  tickerSymbol.textContent = data.market_cap_rank
     ? `${data.symbol} · S&P RANK #${data.market_cap_rank}`
     : `${data.symbol}${data.exchange ? ` · ${data.exchange}` : ''}`;
-  document.querySelector('#company-rank').textContent = data.market_cap_rank ? `S&P #${data.market_cap_rank}` : 'ANY LISTED STOCK';
-  document.querySelector('#ticker-price').textContent = formatMoney(data.latest_price, currency);
-  document.querySelector('#ticker-currency').textContent = `${currency} · LATEST QUOTE`;
-  document.querySelector('#data-asof').textContent = `As of ${data.period_end}`;
-  document.querySelector('#total-return').textContent = formatPercent(data.total_return_pct);
-  document.querySelector('#history-period').textContent = `${data.period_start} — ${data.period_end} · total return`;
-  document.querySelector('#best-fit').textContent = `${data.best_fit} curve`;
+  companyRank.textContent = data.market_cap_rank ? `S&P #${data.market_cap_rank}` : 'ANY LISTED STOCK';
+  tickerPrice.textContent = formatMoney(data.latest_price, currency);
+  tickerCurrency.textContent = `${currency} · LATEST QUOTE`;
+  dataAsOf.textContent = `As of ${data.period_end}`;
+  totalReturn.textContent = formatPercent(data.total_return_pct);
+  historyPeriod.textContent = `${data.period_start} — ${data.period_end} · total return`;
+  bestFitLabel.textContent = `${data.best_fit} curve`;
   const rSquared = data.best_fit === 'quadratic' ? data.quadratic_r_squared : data.linear_r_squared;
-  document.querySelector('#fit-quality').textContent = `R² ${(rSquared * 100).toFixed(1)}% · ${data.observations} monthly observations`;
+  fitQuality.textContent = `R² ${(rSquared * 100).toFixed(1)}% · ${data.observations} monthly observations`;
 
   const direction = data.concavity === 'concave up' ? 'up' : 'down';
-  const concavityCard = document.querySelector('#concavity-card');
   concavityCard.dataset.direction = direction;
-  document.querySelector('#concavity').textContent = data.concavity;
-  document.querySelector('#concavity-symbol').textContent = direction === 'up' ? '⌣' : '⌒';
-  document.querySelector('#concavity-detail').textContent = `Recent quadratic fit · ${data.concavity_window_months} monthly observations`;
-  document.querySelector('#observation-count').textContent = `${data.observations} POINTS`;
-  document.querySelector('#chart-heading').textContent = `${data.company || data.symbol}: the shape of its climb`;
-  document.querySelector('#chart-loading').querySelector('span:last-child').textContent = `Fitting ${data.symbol}'s full available adjusted price history.`;
+  concavityLabel.textContent = data.concavity;
+  concavitySymbol.textContent = direction === 'up' ? '⌣' : '⌒';
+  concavityDetail.textContent = `Recent quadratic fit · ${data.concavity_window_months} monthly observations`;
+  observationCount.textContent = `${data.observations} POINTS`;
+  chartHeading.textContent = `${data.company || data.symbol}: the shape of its climb`;
 
   renderChart(data.points);
   loadingPanel.hidden = true;
@@ -201,17 +214,17 @@ async function loadAnalysis(security, { forceRefresh = false } = {}) {
   const requestId = ++requestSequence;
   const selectedCompany = selectedSecurity;
   if (selectedCompany) {
-    document.querySelector('#ticker-company').textContent = selectedCompany.company;
-    document.querySelector('#ticker-symbol').textContent = selectedCompany.rank
+    tickerCompany.textContent = selectedCompany.company;
+    tickerSymbol.textContent = selectedCompany.rank
       ? `${symbol} · S&P RANK #${selectedCompany.rank}`
       : `${symbol}${selectedCompany.exchange ? ` · ${selectedCompany.exchange}` : ''}`;
-    document.querySelector('#company-rank').textContent = selectedCompany.rank ? `S&P #${selectedCompany.rank}` : 'ANY LISTED STOCK';
-    document.querySelector('#chart-heading').textContent = `${selectedCompany.company}: the shape of its climb`;
+    companyRank.textContent = selectedCompany.rank ? `S&P #${selectedCompany.rank}` : 'ANY LISTED STOCK';
+    chartHeading.textContent = `${selectedCompany.company}: the shape of its climb`;
   }
   loadingPanel.hidden = false;
   errorPanel.hidden = true;
   chart.setAttribute('hidden', '');
-  document.querySelector('#chart-loading').querySelector('strong').textContent = `Loading ${symbol}`;
+  loadingTitle.textContent = `Loading ${symbol}`;
   const cacheId = `analysis:${symbol}`;
   try {
     if (!forceRefresh) {
@@ -241,7 +254,7 @@ async function loadAnalysis(security, { forceRefresh = false } = {}) {
     if (requestId !== requestSequence) return;
     loadingPanel.hidden = true;
     errorPanel.hidden = false;
-    document.querySelector('#error-copy').textContent = error instanceof Error ? error.message : `Could not load ${symbol} history.`;
+    errorCopy.textContent = error instanceof Error ? error.message : `Could not load ${symbol} history.`;
   }
 }
 
@@ -274,11 +287,11 @@ async function loadCompanies(forceRefresh = false) {
     companiesBySymbol = new Map(sp500Companies.map((company) => [company.symbol, company]));
     updateCacheNote(cacheTimestamp);
     if (userHasEditedSearch) {
-        const selectedCompany = companiesBySymbol.get(selectedSymbol);
-        if (selectedCompany && tickerSearch.value.trim().toUpperCase() === selectedSymbol) {
+      const selectedCompany = companiesBySymbol.get(selectedSymbol);
+      if (selectedCompany && tickerSearch.value.trim().toUpperCase() === selectedSymbol) {
         await loadAnalysis(selectedCompany, { forceRefresh });
         return;
-        }
+      }
       await searchTicker(tickerSearch.value);
       return;
     }
@@ -288,7 +301,7 @@ async function loadCompanies(forceRefresh = false) {
     await loadAnalysis(preferred, { forceRefresh });
   } catch (error) {
     // The ticker-search endpoint still allows any listed stock if the ranking feed is unavailable.
-    document.querySelector('#company-rank').textContent = 'SEARCH ANY STOCK';
+    companyRank.textContent = 'SEARCH ANY STOCK';
     await searchTicker(tickerSearch.value || 'AAPL');
   }
 }
@@ -442,7 +455,7 @@ document.querySelectorAll('.legend-item').forEach((button) => {
   });
 });
 
-document.querySelector('#retry-button').addEventListener('click', () => {
+$('#retry-button').addEventListener('click', () => {
   loadAnalysis(selectedSecurity);
 });
 refreshButton.addEventListener('click', async () => {
