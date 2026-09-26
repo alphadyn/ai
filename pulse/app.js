@@ -1236,9 +1236,11 @@ function openSharePreview(post) {
   img.src = image ? image.dataUrl : '';
   img.alt = image ? (image.name || 'Post image') : '';
 
-  document.getElementById('sms-link-card').href = sharePreview.url;
+  // The shared link redirects here, so the card shows the post's own Pulse URL.
+  const appUrl = absolutePostUrl(post.id);
+  document.getElementById('sms-link-card').href = appUrl;
   document.getElementById('sms-link-title').textContent = post.title;
-  document.getElementById('sms-link-domain').textContent = new URL(sharePreview.url).hostname;
+  document.getElementById('sms-link-domain').textContent = new URL(appUrl).hostname;
 
   renderSharePreviewBubble();
   if (!modal.open) modal.showModal();
