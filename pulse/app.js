@@ -1176,7 +1176,7 @@ async function sharePostById(id) {
 /* Text / SMS share preview                                                */
 /* ---------------------------------------------------------------------- */
 
-const sharePreview = { post: null, url: '' };
+const sharePreview = { post: null, url: '', bodyText: '' };
 
 function smsHref(message) {
   // iOS needs `sms:&body=`, most other platforms expect `sms:?body=`.
@@ -1188,9 +1188,20 @@ function shareMessageWithoutUrl(message, url) {
   return message.split(url).join(' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }
 
+function truncateText(text, limit) {
+  return text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text;
+}
+
 function renderSharePreviewBubble() {
   const message = document.getElementById('share-message-input').value;
-  document.getElementById('sms-bubble-text').textContent = shareMessageWithoutUrl(message, sharePreview.url);
+  const bubbleText = shareMessageWithoutUrl(message, sharePreview.url);
+  document.getElementById('sms-bubble-text').textContent = bubbleText;
+
+  // With a URL-only message the card is the whole story, so show more of the post text.
+  const card = document.getElementById('sms-link-card');
+  card.classList.toggle('is-expanded', !bubbleText);
+  document.getElementById('sms-link-desc').textContent = truncateText(sharePreview.bodyText, bubbleText ? 110 : 220);
+
   const length = message.length;
   const segments = Math.max(1, Math.ceil(length / 160));
   document.getElementById('share-message-meta').textContent =
@@ -1204,6 +1215,8 @@ function openSharePreview(post) {
   sharePreview.post = post;
   sharePreview.url = absolutePostUrl(post.id);
 
+  sharePreview.bodyText = plainExcerpt(post.body, 600);
+
   const input = document.getElementById('share-message-input');
   input.value = `${postShareText(post)}\n\n${sharePreview.url}`;
 
@@ -1216,7 +1229,6 @@ function openSharePreview(post) {
 
   document.getElementById('sms-link-card').href = sharePreview.url;
   document.getElementById('sms-link-title').textContent = post.title;
-  document.getElementById('sms-link-desc').textContent = plainExcerpt(post.body, 120);
   document.getElementById('sms-link-domain').textContent = new URL(sharePreview.url).hostname;
 
   renderSharePreviewBubble();
