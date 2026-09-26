@@ -3,7 +3,7 @@ import { fetchSp500Companies, ValidationError, UpstreamError } from '../_lib/mar
 export default async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
 
   if (request.method === 'OPTIONS') {
     response.status(204).end();

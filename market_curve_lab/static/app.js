@@ -42,6 +42,7 @@ let visibleMatches = [];
 let activeMatchIndex = -1;
 let searchTimer;
 let searchController;
+const searchResultsCache = new Map();
 let userHasEditedSearch = false;
 let isRefreshing = false;
 
@@ -207,7 +208,7 @@ function renderAnalysis(data) {
   chart.removeAttribute('hidden');
 }
 
-async function loadAnalysis(security, { forceRefresh = false } = {}) {
+async function loadAnalysis(security, { forceRefresh = false, prefetchedCache } = {}) {
   const symbol = typeof security === 'string' ? security : security.symbol;
   selectedSymbol = symbol;
   selectedSecurity = typeof security === 'string' ? companiesBySymbol.get(symbol) || { symbol } : security;
@@ -229,7 +230,7 @@ async function loadAnalysis(security, { forceRefresh = false } = {}) {
   try {
     if (!forceRefresh) {
       updateProgress(1, 2, `Checking saved ${symbol} history…`);
-      const cached = await loadCachedRow(cacheId);
+      const cached = prefetchedCache !== undefined ? prefetchedCache : await loadCachedRow(cacheId);
       if (requestId !== requestSequence) return;
       if (cached) {
         updateProgress(2, 2, 'Using saved results');
@@ -242,7 +243,10 @@ async function loadAnalysis(security, { forceRefresh = false } = {}) {
     const params = new URLSearchParams({ symbol });
     if (selectedCompany?.company) params.set('company', selectedCompany.company);
     if (selectedCompany?.exchange) params.set('exchange', selectedCompany.exchange);
-    const response = await fetch(`${API}/analysis?${params}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    // Passing along rank/market_cap (already known client-side) lets the API skip the Nasdaq screener call.
+    if (selectedCompany?.rank) params.set('rank', String(selectedCompany.rank));
+    if (selectedCompany?.market_cap != null) params.set('market_cap', String(selectedCompany.market_cap));
+    const response = await fetch(`${API}/analysis?${params}`, { headers: { Accept: 'application/json' } });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || `Could not load ${symbol} history.`);
     if (requestId !== requestSequence) return;
@@ -263,6 +267,9 @@ function updateCacheNote(timestamp) {
 }
 
 async function loadCompanies(forceRefresh = false) {
+  // Kicked off alongside the companies lookup below (not awaited yet) so the two independent
+  // cache reads happen in parallel instead of one waiting on the other.
+  const analysisPrefetch = forceRefresh ? null : loadCachedRow(`analysis:${selectedSymbol}`);
   try {
     let companiesPayload = null;
     let cacheTimestamp = null;
@@ -276,7 +283,7 @@ async function loadCompanies(forceRefresh = false) {
     }
     if (!companiesPayload) {
       updateProgress(0, 2, 'Loading S&P 500 rankings…');
-      const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const response = await fetch(`${API}/companies`, { headers: { Accept: 'application/json' } });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || 'Could not load S&P 500 company rankings.');
       companiesPayload = payload.companies || [];
@@ -286,10 +293,11 @@ async function loadCompanies(forceRefresh = false) {
     sp500Companies = companiesPayload;
     companiesBySymbol = new Map(sp500Companies.map((company) => [company.symbol, company]));
     updateCacheNote(cacheTimestamp);
+    const prefetchedCache = await analysisPrefetch;
     if (userHasEditedSearch) {
       const selectedCompany = companiesBySymbol.get(selectedSymbol);
       if (selectedCompany && tickerSearch.value.trim().toUpperCase() === selectedSymbol) {
-        await loadAnalysis(selectedCompany, { forceRefresh });
+        await loadAnalysis(selectedCompany, { forceRefresh, prefetchedCache });
         return;
       }
       await searchTicker(tickerSearch.value);
@@ -298,7 +306,7 @@ async function loadCompanies(forceRefresh = false) {
     const preferred = companiesBySymbol.get(selectedSymbol) || sp500Companies[0];
     if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
     tickerSearch.value = preferred.symbol;
-    await loadAnalysis(preferred, { forceRefresh });
+    await loadAnalysis(preferred, { forceRefresh, prefetchedCache });
   } catch (error) {
     // The ticker-search endpoint still allows any listed stock if the ranking feed is unavailable.
     companyRank.textContent = 'SEARCH ANY STOCK';
@@ -368,28 +376,27 @@ async function searchTicker(query) {
   if (searchController) searchController.abort();
   searchController = new AbortController();
   const controller = searchController;
+
+  const cacheKey = normalizedQuery.toLowerCase();
+  const cachedResults = searchResultsCache.get(cacheKey);
+  if (cachedResults) {
+    renderSearchResults(combineSearchMatches(normalizedQuery, cachedResults));
+    return;
+  }
   renderSearchResults([], 'Searching listed stocks…');
 
   try {
     const response = await fetch(`${API}/search?q=${encodeURIComponent(normalizedQuery)}`, {
       headers: { Accept: 'application/json' },
-      cache: 'no-store',
       signal: controller.signal,
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.error || 'Stock search is unavailable.');
 
-    const queryUpper = normalizedQuery.toUpperCase();
-    const rankedCompanies = sp500Companies.filter((company) =>
-      company.symbol.includes(queryUpper) || company.company.toLowerCase().includes(normalizedQuery.toLowerCase()),
-    );
-    const seen = new Set();
-    const matches = [...rankedCompanies, ...(payload.results || [])].filter((security) => {
-      if (seen.has(security.symbol)) return false;
-      seen.add(security.symbol);
-      return true;
-    }).slice(0, 10);
-    renderSearchResults(matches);
+    const results = payload.results || [];
+    if (searchResultsCache.size >= 50) searchResultsCache.delete(searchResultsCache.keys().next().value);
+    searchResultsCache.set(cacheKey, results);
+    renderSearchResults(combineSearchMatches(normalizedQuery, results));
   } catch (error) {
     if (error.name === 'AbortError') return;
     const queryLower = normalizedQuery.toLowerCase();
@@ -398,6 +405,20 @@ async function searchTicker(query) {
     );
     renderSearchResults(localMatches.slice(0, 10), localMatches.length ? '' : error instanceof Error ? error.message : 'Stock search is unavailable.');
   }
+}
+
+function combineSearchMatches(query, remoteResults) {
+  const queryUpper = query.toUpperCase();
+  const queryLower = query.toLowerCase();
+  const rankedCompanies = sp500Companies.filter((company) =>
+    company.symbol.includes(queryUpper) || company.company.toLowerCase().includes(queryLower),
+  );
+  const seen = new Set();
+  return [...rankedCompanies, ...remoteResults].filter((security) => {
+    if (seen.has(security.symbol)) return false;
+    seen.add(security.symbol);
+    return true;
+  }).slice(0, 10);
 }
 
 tickerSearch.addEventListener('input', () => {

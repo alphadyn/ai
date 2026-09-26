@@ -3,7 +3,7 @@ import { fetchAnalysis, fetchSp500Companies, normalizeTicker, ValidationError, U
 export default async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  response.setHeader('Cache-Control', 'no-store, max-age=0');
+  response.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
 
   if (request.method === 'OPTIONS') {
     response.status(204).end();
@@ -17,18 +17,21 @@ export default async function handler(request, response) {
 
   try {
     const symbol = normalizeTicker(request.query.symbol || 'AAPL');
-    let companies = [];
-    try {
-      companies = await fetchSp500Companies();
-    } catch (error) {
-      companies = [];
-    }
-    const company = companies.find((item) => item.symbol === symbol) || null;
-    const result = await fetchAnalysis(symbol);
+    // The client already has the S&P 500 ranking once it's loaded once, so it passes rank/market_cap
+    // along to skip Nasdaq's screener here entirely; only look it up server-side when it doesn't.
+    const rankParam = Number(request.query.rank);
+    const marketCapParam = Number(request.query.market_cap);
+    const hasClientRank = Number.isFinite(rankParam) && rankParam > 0;
+
+    const [result, companies] = await Promise.all([
+      fetchAnalysis(symbol),
+      hasClientRank ? Promise.resolve([]) : fetchSp500Companies().catch(() => []),
+    ]);
+    const company = hasClientRank ? null : companies.find((item) => item.symbol === symbol) || null;
     result.company = company ? company.company : request.query.company || symbol;
     result.exchange = request.query.exchange || '';
-    result.market_cap = company ? company.market_cap : null;
-    result.market_cap_rank = company ? company.rank : null;
+    result.market_cap = hasClientRank ? (Number.isFinite(marketCapParam) ? marketCapParam : null) : (company ? company.market_cap : null);
+    result.market_cap_rank = hasClientRank ? rankParam : (company ? company.rank : null);
     response.status(200).json(result);
   } catch (error) {
     if (error instanceof ValidationError) {
