@@ -1,21 +1,21 @@
 # Alphadyn AI Apps and Experiments
 
-This repository is a portfolio-style collection of interactive demos, business mockups, data visualizations, browser apps, and Python utilities. Each project is intentionally self-contained and designed to be opened, adapted, or expanded independently.
+This repository is a portfolio-style collection of 35 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own.
 
 The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
 ## Featured projects
 
-The current top apps featured on the main landing page are:
+The landing page highlights these projects:
 
-1. [experiences_app](experiences_app/) — Maps and authenticated trip journal
-2. [pulse](pulse/) — Social
-3. [market_curve_lab](market_curve_lab/) — Full S&P 500 stock performance, trendlines, and concavity
-4. [market_lens_app](market_lens_app/) — Finance
-5. [nexus](nexus/) — Workspace
-6. [online_store_app](online_store_app/) — Commerce
-7. [photo_gallery_app](photo_gallery_app/) — Gallery
-8. [video_conference_app](video_conference_app/) — Communication
+1. [pulse](pulse/) — Social/news app with posts, tags, and threaded discussion
+2. [market_curve_lab](market_curve_lab/) — S&P 500 rankings, performance, trendlines, and concavity
+3. [experiences_app](experiences_app/) — Maps and authenticated trip journal
+4. [market_lens_app](market_lens_app/) — Large-cap equity screening dashboard
+5. [nexus](nexus/) — Content and media workspace
+6. [online_store_app](online_store_app/) — Storefront and checkout experience
+7. [photo_gallery_app](photo_gallery_app/) — Responsive photo gallery
+8. [video_conference_app](video_conference_app/) — Meeting and communication interface
 
 ## Repository layout
 
