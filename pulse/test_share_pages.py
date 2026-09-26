@@ -1,7 +1,7 @@
 import base64
 from io import BytesIO
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 import pytest
 
 from pulse import build_share_pages as previews
@@ -33,7 +33,8 @@ def test_build_generates_safe_post_metadata_and_jpeg_cover(tmp_path):
     cover = next((output / POST_ID).glob('cover-*.jpg'))
     with Image.open(cover) as image:
         assert image.format == 'JPEG'
-        assert sum(image.getpixel((image.width // 2, image.height - 1))) < 300
+        pixel = image.getpixel((image.width // 2, image.height // 2))
+        assert all(abs(actual - expected) < 20 for actual, expected in zip(pixel, (170, 187, 204)))
 
 
 def test_rebuild_removes_deleted_posts_and_old_images(tmp_path):
@@ -64,6 +65,7 @@ def test_description_and_redirect_escaping():
     )
     assert 'A &quot;quote&quot; &amp; &lt;word&gt;' in page
     assert 'og:image:type" content="image/png"' in page
+    assert page.index('<h1>Safe</h1>') < page.index('<p>A &quot;quote&quot;') < page.index('<p class="domain">alphadyn.github.io</p>')
 
 
 def test_fallback_preview_also_gets_post_text_overlay(tmp_path):
@@ -78,42 +80,5 @@ def test_fallback_preview_also_gets_post_text_overlay(tmp_path):
     with Image.open(cover) as image, Image.open(previews.ROOT / 'social-preview-mobile.png') as original:
         assert image.format == 'JPEG'
         sample = (image.width // 2, image.height - 1)
-        assert sum(image.getpixel(sample)) < sum(original.convert('RGB').getpixel(sample))
-
-
-def test_preview_excerpt_is_limited_to_three_lines():
-    image = Image.new('RGB', (240, 120))
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default(size=14)
-    lines = previews.wrap_preview_text('Pulse post text ' * 30, draw, font, 150)
-    assert len(lines) == 3
-    assert lines[-1].endswith('…')
-
-
-def test_title_and_body_are_passed_to_preview_overlay(tmp_path, monkeypatch):
-    post_dir = tmp_path / POST_ID
-    post_dir.mkdir()
-    captured = {}
-
-    def capture_overlay(image, title, text):
-        captured['title'] = title
-        captured['text'] = text
-        return image
-
-    monkeypatch.setattr(previews, 'overlay_post_text', capture_overlay)
-    previews.cover_image(
-        {'title': 'Bombardier Global 8000', 'body': '<p>The fastest civilian aircraft.</p>', 'attachments': []},
-        post_dir,
-        previews.APP_URL + 'share/' + POST_ID + '/',
-    )
-
-    assert captured == {'title': 'Bombardier Global 8000', 'text': 'The fastest civilian aircraft.'}
-
-
-def test_title_wraps_to_two_lines_with_ellipsis():
-    image = Image.new('RGB', (240, 120))
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default(size=16)
-    lines = previews.wrap_preview_text('A very long title ' * 20, draw, font, 150, max_lines=2)
-    assert len(lines) == 2
-    assert lines[-1].endswith('…')
+        expected = original.convert('RGB').getpixel(sample)
+        assert all(abs(actual - source) < 30 for actual, source in zip(image.getpixel(sample), expected))

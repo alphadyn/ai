@@ -10,11 +10,11 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 from uuid import UUID
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 
 ROOT = Path(__file__).resolve().parent
@@ -77,100 +77,6 @@ def fetch_posts(supabase_url, api_key):
         offset += PAGE_SIZE
 
 
-def wrap_preview_text(text, draw, font, max_width, max_lines=3):
-    lines = []
-    current = ''
-    for word in str(text or '').split():
-        candidate = f'{current} {word}'.strip()
-        if draw.textlength(candidate, font=font) <= max_width:
-            current = candidate
-            continue
-
-        if current:
-            lines.append(current)
-        current = word
-        while draw.textlength(current, font=font) > max_width and len(current) > 1:
-            split_at = len(current) - 1
-            while split_at > 1 and draw.textlength(current[:split_at], font=font) > max_width:
-                split_at -= 1
-            lines.append(current[:split_at])
-            current = current[split_at:]
-
-    if current:
-        lines.append(current)
-    if len(lines) > max_lines:
-        lines = lines[:max_lines]
-        last = lines[-1]
-        while last and draw.textlength(last + '…', font=font) > max_width:
-            last = last[:-1]
-        lines[-1] = last.rstrip() + '…'
-    return lines
-
-
-def preview_font(size, bold=False):
-    if bold:
-        font_paths = (
-            '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-            '/System/Library/Fonts/Supplemental/Arial Bold.ttf',
-        )
-        for font_path in font_paths:
-            try:
-                return ImageFont.truetype(font_path, size=size)
-            except OSError:
-                continue
-    return ImageFont.load_default(size=size)
-
-
-def overlay_post_text(image, title, text):
-    image = image.convert('RGBA')
-    width, height = image.size
-    font_size = max(18, round(min(width, height) * 0.035))
-    title_font_size = round(font_size * 1.25)
-    title_font = preview_font(title_font_size, bold=True)
-    body_font = preview_font(font_size)
-    draw = ImageDraw.Draw(image)
-    padding = round(width * 0.055)
-    title_line_height = round(title_font_size * 1.35)
-    body_line_height = round(font_size * 1.35)
-    title_lines = wrap_preview_text(title, draw, title_font, width - padding * 2, max_lines=2)
-    body_lines = wrap_preview_text(text, draw, body_font, width - padding * 2, max_lines=3)
-    if not title_lines and not body_lines:
-        return image
-
-    gap = round(font_size * 0.35) if title_lines and body_lines else 0
-    content_height = title_line_height * len(title_lines) + body_line_height * len(body_lines) + gap
-    panel_height = min(height, content_height + padding * 2)
-    gradient = Image.new('RGBA', (width, panel_height))
-    gradient_draw = ImageDraw.Draw(gradient)
-    for y in range(panel_height):
-        alpha = round(225 * (y / max(1, panel_height - 1)) ** 0.65)
-        gradient_draw.line((0, y, width, y), fill=(4, 11, 16, alpha))
-    image.alpha_composite(gradient, (0, height - panel_height))
-
-    draw = ImageDraw.Draw(image)
-    body_y = height - padding - body_line_height * len(body_lines)
-    title_y = body_y - gap - title_line_height * len(title_lines)
-    for index, line in enumerate(title_lines):
-        draw.text(
-            (padding, title_y + index * title_line_height),
-            line,
-            font=title_font,
-            fill=(255, 255, 255, 255),
-            stroke_width=max(1, title_font_size // 18),
-            stroke_fill=(0, 0, 0, 200),
-        )
-    for index, line in enumerate(body_lines):
-        draw.text(
-            (padding, body_y + index * body_line_height),
-            line,
-            font=body_font,
-            fill=(255, 255, 255, 255),
-            stroke_width=max(1, font_size // 18),
-            stroke_fill=(0, 0, 0, 180),
-        )
-    return image
-
-
 def cover_image(post, post_dir, share_url):
     image = None
     for attachment in post.get('attachments') or []:
@@ -202,9 +108,7 @@ def cover_image(post, post_dir, share_url):
             image = ImageOps.exif_transpose(original).convert('RGBA')
             image.thumbnail((1200, 1200))
 
-    post_title = plain_text(post.get('title')) or 'Pulse post'
-    post_text = plain_text(post.get('body'))
-    image = overlay_post_text(image, post_title, post_text)
+    image = image.convert('RGBA')
     background = Image.new('RGB', image.size, '#0f181f')
     background.paste(image, mask=image.getchannel('A'))
     output = BytesIO()
@@ -224,6 +128,7 @@ def render_page(post, share_url, image_url):
     escaped_image = html.escape(image_url, quote=True)
     escaped_share = html.escape(share_url, quote=True)
     escaped_app = html.escape(app_url, quote=True)
+    domain = html.escape(urlsplit(share_url).hostname or '', quote=True)
     image_type = 'image/jpeg' if image_url != FALLBACK_IMAGE else 'image/png'
     # JSON is safe in a script element only after escaping '<' (including </script>).
     destination = json.dumps(app_url).replace('<', '\\u003c')
@@ -249,13 +154,14 @@ def render_page(post, share_url, image_url):
   <meta name="twitter:description" content="{escaped_desc}">
   <meta name="twitter:image" content="{escaped_image}">
   <title>{escaped_title} · Pulse</title>
-  <style>body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#071117;color:#edf4f8;font:16px/1.5 system-ui,sans-serif}}main{{width:min(90%,480px);padding:24px;border:1px solid #30414c;border-radius:20px;background:#101c24}}img{{width:100%;max-height:350px;object-fit:cover;border-radius:12px}}a{{color:#8fe7ab}}h1{{overflow-wrap:anywhere}}</style>
+    <style>body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#071117;color:#edf4f8;font:16px/1.5 system-ui,sans-serif}}main{{width:min(90%,480px);padding:24px;border:1px solid #30414c;border-radius:20px;background:#101c24}}img{{width:100%;max-height:350px;object-fit:cover;border-radius:12px}}a{{color:#8fe7ab}}h1{{overflow-wrap:anywhere}}.domain{{margin:10px 0 0;color:#7c909c;font-size:12px;text-align:center}}</style>
 </head>
 <body>
   <main>
     <img src="{escaped_image}" alt="Preview image for {escaped_title}">
     <h1>{escaped_title}</h1>
     <p>{escaped_desc}</p>
+    <p class="domain">{domain}</p>
     <a href="{escaped_app}">Open in Pulse</a>
   </main>
   <script>location.replace({destination});</script>
