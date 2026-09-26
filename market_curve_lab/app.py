@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 import io
 import json
 import math
+import os
 import re
 import threading
 import time
@@ -35,6 +36,7 @@ _cache_lock = threading.Lock()
 _analysis_cache: Dict[str, Dict[str, Any]] = {}
 _company_cache: Dict[str, Any] = {"expires_at": 0.0, "companies": None}
 _search_cache: Dict[str, Dict[str, Any]] = {}
+IS_VERCEL_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
 
 
 def _request_json(url: str) -> Dict[str, Any]:
@@ -111,7 +113,7 @@ def search_securities(query: str) -> List[Dict[str, Any]]:
     return matches
 
 
-def fetch_sp500_companies(force_refresh: bool = False) -> List[Dict[str, Any]]:
+def fetch_sp500_companies(force_refresh: bool = False, include_market_caps: bool = True) -> List[Dict[str, Any]]:
     """Rank all current S&P 500 issuers by market cap, including unknown-cap members last."""
     now = time.time()
     with _cache_lock:
@@ -175,36 +177,40 @@ def fetch_sp500_companies(force_refresh: bool = False) -> List[Dict[str, Any]]:
                 issuer["market_cap"] = market_cap
                 issuer["representative_market_cap"] = market_cap
 
-    try:
-        first_page = fetch_screener_page(0).get("data", {})
-        first_rows = first_page.get("table", {}).get("rows", [])
-        total_records = int(first_page.get("totalrecords") or len(first_rows))
-        collect_rows(first_rows)
+    should_fetch_caps = include_market_caps and not IS_VERCEL_SERVERLESS
+    if should_fetch_caps:
+        try:
+            first_page = fetch_screener_page(0).get("data", {})
+            first_rows = first_page.get("table", {}).get("rows", [])
+            total_records = int(first_page.get("totalrecords") or len(first_rows))
+            collect_rows(first_rows)
 
-        remaining_offsets = list(range(SCREENER_LIMIT, total_records, SCREENER_LIMIT))
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            for start in range(0, len(remaining_offsets), 4):
-                offsets = remaining_offsets[start:start + 4]
-                pages = list(executor.map(fetch_screener_page, offsets))
-                for page in pages:
-                    collect_rows(page.get("data", {}).get("table", {}).get("rows", []))
-                if found_symbols.issuperset(members):
-                    break
-    except (HTTPError, URLError, TimeoutError, ValueError, KeyError):
-        # Graceful fallback: continue with the S&P 500 constituent list and unknown market caps.
-        # This keeps the app usable when Nasdaq's screener temporarily blocks or rate-limits requests.
-        pass
+            remaining_offsets = list(range(SCREENER_LIMIT, total_records, SCREENER_LIMIT))
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                for start in range(0, len(remaining_offsets), 4):
+                    offsets = remaining_offsets[start:start + 4]
+                    pages = list(executor.map(fetch_screener_page, offsets))
+                    for page in pages:
+                        collect_rows(page.get("data", {}).get("table", {}).get("rows", []))
+                    if found_symbols.issuperset(members):
+                        break
+        except (HTTPError, URLError, TimeoutError, ValueError, KeyError):
+            # Graceful fallback: continue with the S&P 500 constituent list and unknown market caps.
+            pass
 
-    companies = sorted(
-        issuers.values(),
-        key=lambda item: (item["market_cap"] is not None, item["market_cap"] or 0),
-        reverse=True,
-    )
+    if should_fetch_caps:
+        companies = sorted(
+            issuers.values(),
+            key=lambda item: (item["market_cap"] is not None, item["market_cap"] or 0),
+            reverse=True,
+        )
+    else:
+        companies = list(issuers.values())
     if len(companies) < SP500_COMPANY_COUNT:
         raise RuntimeError(f"Only {len(companies)} distinct S&P 500 companies were found; 500 are required.")
     companies = companies[:SP500_COMPANY_COUNT]
     for rank, company in enumerate(companies, start=1):
-        company["rank"] = rank
+        company["rank"] = rank if should_fetch_caps else None
         company.pop("representative_market_cap", None)
 
     with _cache_lock:
@@ -385,7 +391,7 @@ def analysis():
         company = None
         if requested_rank is None or requested_market_cap is None or not requested_company:
             try:
-                companies = fetch_sp500_companies()
+                companies = fetch_sp500_companies(include_market_caps=False)
                 company = next((item for item in companies if item["symbol"] == symbol), None)
             except RuntimeError:
                 company = None
@@ -416,7 +422,7 @@ def search():
 @app.get("/api/companies")
 def companies():
     try:
-        return jsonify({"companies": fetch_sp500_companies()})
+        return jsonify({"companies": fetch_sp500_companies(include_market_caps=False)})
     except (RuntimeError, ValueError) as error:
         return jsonify({"error": str(error)}), 502
 
