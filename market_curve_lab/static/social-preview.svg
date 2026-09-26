@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="background" x1="64" y1="32" x2="1120" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#15221A"/>
+      <stop offset="1" stop-color="#0B110E"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="655" y1="110" x2="1100" y2="530" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1C2B21"/>
+      <stop offset="1" stop-color="#111A14"/>
+    </linearGradient>
+    <linearGradient id="chartFill" x1="876" y1="202" x2="876" y2="447" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#D0ED7A" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#D0ED7A" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(490 0 0 345 235 133)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#78945B" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#78945B" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" stroke="#9BB38A" stroke-opacity=".045"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" rx="30" fill="url(#background)"/>
+  <rect width="1200" height="630" rx="30" fill="url(#glow)"/>
+  <rect width="1200" height="630" rx="30" fill="url(#grid)"/>
+  <path d="M64 91H1136" stroke="#3B4A3E"/>
+
+  <g transform="translate(64 32)">
+    <rect width="48" height="48" rx="14" fill="#18221C" stroke="#3B4A3E"/>
+    <path d="M12 36V12M12 36H37" stroke="#718174" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="m13 32 7-4 7 2 6-9 6 2 4-8" stroke="#D0ED7A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="43" cy="15" r="2.5" fill="#D0ED7A"/>
+    <text x="62" y="24" fill="#EEF0E8" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="1.1">MARKET CURVE</text>
+    <text x="63" y="40" fill="#A0AA9F" font-family="monospace" font-size="8" letter-spacing="2.1">LAB  /  S&amp;P 500</text>
+  </g>
+  <g transform="translate(910 42)">
+    <rect width="226" height="30" rx="15" fill="#18241D" stroke="#35463A"/>
+    <circle cx="16" cy="15" r="3" fill="#83D0A5"/>
+    <text x="29" y="19" fill="#A8B4A9" font-family="monospace" font-size="9" letter-spacing="1.3">THE COMPLETE S&amp;P 500 UNIVERSE</text>
+  </g>
+
+  <text x="65" y="170" fill="#AAB69F" font-family="monospace" font-size="11" letter-spacing="2.1">01  /  PRICE HISTORY &amp; TREND ANALYSIS</text>
+  <text x="60" y="270" fill="#F1F4ED" font-family="Arial, sans-serif" font-size="76" font-weight="700" letter-spacing="-4">Company,</text>
+  <text x="60" y="352" fill="#D3EF83" font-family="Arial, sans-serif" font-size="76" font-weight="700" letter-spacing="-4">over time.</text>
+  <text x="66" y="406" fill="#B1BCB1" font-family="Arial, sans-serif" font-size="17">Explore long-term stock performance, fitted trendlines,</text>
+  <text x="66" y="434" fill="#B1BCB1" font-family="Arial, sans-serif" font-size="17">and recent curvature across the S&amp;P 500.</text>
+  <g transform="translate(66 475)">
+    <rect width="205" height="34" rx="8" fill="#111B15" stroke="#465A4B"/>
+    <circle cx="17" cy="17" r="4" fill="#D3EF83"/>
+    <text x="31" y="21" fill="#DCE2D8" font-family="monospace" font-size="10" letter-spacing="1">SEARCH ANY TICKER</text>
+  </g>
+
+  <g transform="translate(635 119)">
+    <rect width="501" height="402" rx="18" fill="url(#panel)" stroke="#495E4C"/>
+    <text x="27" y="36" fill="#AAB69F" font-family="monospace" font-size="9" letter-spacing="1.8">FIG. 01  /  ADJUSTED PERFORMANCE</text>
+    <text x="27" y="68" fill="#EEF0E8" font-family="Arial, sans-serif" font-size="21" font-weight="600">The shape of the climb</text>
+    <g transform="translate(26 92)">
+      <rect width="449" height="251" rx="10" fill="#101813" fill-opacity=".78" stroke="#304138"/>
+      <path d="M42 44H428M42 91H428M42 138H428M42 185H428" stroke="#344139" stroke-width="1"/>
+      <path d="M42 213H428" stroke="#536055"/>
+      <path d="M48 199C91 191 102 184 135 189C173 195 181 171 216 176C251 181 263 145 294 151C327 157 344 121 369 125C391 128 405 103 423 61V213H48V199Z" fill="url(#chartFill)"/>
+      <path d="M48 199C91 191 102 184 135 189C173 195 181 171 216 176C251 181 263 145 294 151C327 157 344 121 369 125C391 128 405 103 423 61" stroke="#D3EF83" stroke-width="3" stroke-linecap="round"/>
+      <path d="M48 197C126 184 200 164 269 139C327 118 377 96 423 72" stroke="#EFC27E" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round"/>
+      <path d="M48 205C139 190 222 166 298 137C348 118 389 96 423 83" stroke="#7FB5A2" stroke-width="2" stroke-dasharray="8 7"/>
+      <text x="42" y="234" fill="#879287" font-family="monospace" font-size="9">LONG-RUN HISTORY</text>
+      <text x="357" y="234" fill="#879287" font-family="monospace" font-size="9">MONTHLY</text>
+    </g>
+    <g transform="translate(28 367)">
+      <circle cx="4" cy="0" r="3" fill="#D3EF83"/>
+      <text x="14" y="4" fill="#A8B4A9" font-family="monospace" font-size="9">ACTUAL</text>
+      <circle cx="111" cy="0" r="3" fill="#EFC27E"/>
+      <text x="121" y="4" fill="#A8B4A9" font-family="monospace" font-size="9">QUADRATIC FIT</text>
+      <circle cx="259" cy="0" r="3" fill="#7FB5A2"/>
+      <text x="269" y="4" fill="#A8B4A9" font-family="monospace" font-size="9">LINEAR FIT</text>
+    </g>
+  </g>
+
+  <path d="M64 558H1136" stroke="#293930"/>
+  <text x="66" y="589" fill="#8D9A8F" font-family="monospace" font-size="9" letter-spacing="1.5">FIELDNOTES / MARKET SERIES  —  LARGE-CAP EQUITIES</text>
+  <text x="878" y="589" fill="#8D9A8F" font-family="Arial, sans-serif" font-size="11">Historical analysis, not investment advice.</text>
+</svg>
