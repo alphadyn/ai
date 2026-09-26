@@ -1119,6 +1119,15 @@ function absolutePostUrl(id) {
   return url.href;
 }
 
+// Link crawlers need server-rendered post metadata; visitors are sent on to the app.
+function shareablePostUrl(id) {
+  const shareOrigin = (window.PULSE_SUPABASE || {}).shareOrigin;
+  if (!shareOrigin) return absolutePostUrl(id);
+  const url = new URL('/api/pulse-share', shareOrigin);
+  url.searchParams.set('post', id);
+  return url.href;
+}
+
 function feedUrl() {
   const url = new URL(window.location.href);
   url.searchParams.delete('post');
@@ -1143,7 +1152,7 @@ function postShareText(post) {
 }
 
 async function sharePost(post, { text: customText } = {}) {
-  const url = absolutePostUrl(post.id);
+  const url = shareablePostUrl(post.id);
   const text = customText === undefined ? postShareText(post) : customText;
   const shareData = { title: post.title, text, url };
   try {
@@ -1216,7 +1225,7 @@ function openSharePreview(post) {
   if (!modal || !post) return;
 
   sharePreview.post = post;
-  sharePreview.url = absolutePostUrl(post.id);
+  sharePreview.url = shareablePostUrl(post.id);
 
   sharePreview.bodyText = plainExcerpt(post.body, 600);
 

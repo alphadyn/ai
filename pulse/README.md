@@ -72,14 +72,12 @@ Pages.
 
 Messaging apps (iMessage/SMS, WhatsApp, Slack…) don't run JavaScript when they
 unfurl a link — they just read the Open Graph tags of whatever HTML the URL
-returns. Shared links go directly to the Pulse app on GitHub Pages. Because
-GitHub Pages is static, messaging apps may show the generic Pulse artwork
-rather than the post's title or first image; the share message still includes
-the post title and body excerpt.
+returns. GitHub Pages serves the same generic HTML for every `?post=` query,
+so shared links instead use the Vercel preview endpoint to show each post's
+title, excerpt, and first image. Opening a link sends visitors to the post
+on GitHub Pages.
 [`../market_curve_lab/api/pulse-share.js`](../market_curve_lab/api/pulse-share.js)
-is a legacy Vercel serverless function for older shared links. It returns
-per-post OG tags and redirects visitors to the GitHub Pages post; new links
-no longer point to this endpoint.
+is the Vercel serverless function that serves the preview HTML and images.
 
 The Vercel project needs these environment variables:
 
@@ -89,9 +87,14 @@ The Vercel project needs these environment variables:
 | `SUPABASE_ANON_KEY` | the same public anon key used in `supabase-config.js` |
 | `APP_BASE_URL` | optional; where the app itself is hosted (defaults to the GitHub Pages URL) |
 
-The serverless function lives in `market_curve_lab/` because that folder is
-the root directory of this repository's existing Vercel project. It is not
-needed to share new Pulse posts.
+`shareOrigin` in [`supabase-config.js`](supabase-config.js) points to that
+deployment. Shared URLs look like
+`https://ai-orcin-eta-15.vercel.app/api/pulse-share?post=<post-id>`; the URL
+visible in a message uses the Vercel host, while opening it takes readers to
+`https://alphadyn.github.io/ai/pulse/?post=<post-id>`. Set `shareOrigin` to
+`null` to use the direct GitHub Pages URL instead, with generic previews.
+The function lives in `market_curve_lab/` because that folder is the root
+directory of this repository's existing Vercel project.
 
 ### Making your first admin
 
