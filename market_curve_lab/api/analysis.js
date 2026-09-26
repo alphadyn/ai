@@ -1,4 +1,4 @@
-import { fetchAnalysis, normalizeTicker, ValidationError, UpstreamError } from '../_lib/market.js';
+import { fetchAnalysis, normalizeTicker, ValidationError, UpstreamError } from './_lib/market.js';
 
 export default async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
