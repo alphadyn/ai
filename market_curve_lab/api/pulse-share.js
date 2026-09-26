@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 const DEFAULT_APP_URL = 'https://alphadyn.github.io/ai/pulse/';
 const FALLBACK_IMAGE = 'https://alphadyn.github.io/ai/pulse/social-preview-mobile.png';
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -32,11 +34,11 @@ function truncate(text, limit) {
   return text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text;
 }
 
-function sendPage(response, html, status = 200) {
+function sendPage(response, html, status = 200, scriptNonce = null) {
   response.status(status);
   response.setHeader('Content-Type', 'text/html; charset=utf-8');
   response.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
-  response.setHeader('Content-Security-Policy', "default-src 'none'; img-src https:; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'");
+  response.setHeader('Content-Security-Policy', `default-src 'none'; img-src https:; style-src 'unsafe-inline'; script-src ${scriptNonce ? `'nonce-${scriptNonce}'` : "'none'"}; base-uri 'none'; frame-ancestors 'none'`);
   response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('X-Robots-Tag', 'noindex, nofollow');
@@ -148,6 +150,8 @@ export default async function handler(request, response) {
     // Twitter/X does not render WebP previews.
     const escapedTwitterImage = escapeHtml(previewImageType === 'image/webp' ? FALLBACK_IMAGE : previewImage);
     const escapedAppUrl = escapeHtml(appUrl.href);
+    // Link crawlers don't run JavaScript, so they keep the tags above while real visitors land on the app.
+    const scriptNonce = randomUUID();
 
     const html = `<!doctype html>
 <html lang="en">
@@ -199,9 +203,10 @@ export default async function handler(request, response) {
       <p class="foot">Shared by ${escapeHtml(post.author_name || 'Anonymous')}</p>
     </div>
   </main>
+  <script nonce="${scriptNonce}">location.replace(${JSON.stringify(appUrl.href)});</script>
 </body>
 </html>`;
-    sendPage(response, html);
+    sendPage(response, html, 200, scriptNonce);
   } catch {
     sendUnavailable(response, 503);
   }
