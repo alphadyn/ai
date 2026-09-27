@@ -294,11 +294,9 @@ export function buildAnalysis(payload, symbol) {
   for (let index = 0; index < timestamps.length; index += 1) {
     const close = adjustedValues[index];
     if (close === null || close === undefined || !Number.isFinite(close) || close <= 0) continue;
-    const marketClose = closeValues[index];
     points.push({
       date: new Date(timestamps[index] * 1000).toISOString().slice(0, 10),
       adjusted_close: close,
-      close: Number.isFinite(marketClose) && marketClose > 0 ? marketClose : close,
     });
   }
   if (points.length < 5) throw new UpstreamError('Not enough valid historical observations to calculate trendlines.');

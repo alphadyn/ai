@@ -33,14 +33,14 @@ const concavitySymbol = $('#concavity-symbol');
 const concavityDetail = $('#concavity-detail');
 const observationCount = $('#observation-count');
 const chartHeading = $('#chart-heading');
-const seriesVisibility = { actual: true, price: true, quadratic: true, linear: true };
+const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const CHART = { width: 1000, height: 390, left: 76, right: 90, top: 22, bottom: 46 };
+const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
 const mobileChartQuery = window.matchMedia('(max-width: 600px)');
 let mobileChartMode = mobileChartQuery.matches;
 let lastChartPoints = null;
 let lastChartCurrency = 'USD';
-let activeChartHover = null;
+let activeChartSelection = null;
 const initialUrlSymbol = symbolFromUrl();
 let selectedSymbol = initialUrlSymbol || 'AAPL';
 let requestSequence = 0;
@@ -152,31 +152,26 @@ function formatIndex(value) {
   return `$${Math.round(value)}`;
 }
 
-function stockPriceFor(point) {
-  return point.close ?? point.adjusted_close;
-}
-
 function renderChart(points, currency = lastChartCurrency) {
   lastChartPoints = points;
   lastChartCurrency = currency;
   const chartHeight = mobileChartMode ? 520 : CHART.height;
+  const margins = mobileChartMode
+    ? { left: 120, right: 24, top: 70, bottom: 52 }
+    : { left: CHART.left, right: CHART.right, top: CHART.top, bottom: CHART.bottom };
+  const plotRight = CHART.width - margins.right;
   chart.setAttribute('viewBox', `0 0 ${CHART.width} ${chartHeight}`);
   const maxValue = Math.max(...points.map((point) => point.performance));
   const minExponent = 2;
   const maxExponent = Math.ceil(Math.log10(maxValue));
-  const prices = points.map(stockPriceFor).filter((value) => Number.isFinite(value) && value > 0);
-  const minPriceExponent = Math.floor(Math.log10(Math.min(...prices)));
-  const maxPriceExponent = Math.max(minPriceExponent + 1, Math.ceil(Math.log10(Math.max(...prices))));
-  const plotWidth = CHART.width - CHART.left - CHART.right;
-  const plotHeight = chartHeight - CHART.top - CHART.bottom;
+  const plotWidth = plotRight - margins.left;
+  const plotHeight = chartHeight - margins.top - margins.bottom;
   const minLog = minExponent;
   const maxLog = Math.max(maxExponent, minExponent + 1);
-  const x = (index) => CHART.left + (index / (points.length - 1)) * plotWidth;
-  const y = (value) => CHART.top + (1 - (Math.log10(Math.max(10 ** minExponent, value)) - minLog) / (maxLog - minLog)) * plotHeight;
-  const priceY = (value) => CHART.top + (1 - (Math.log10(Math.max(10 ** minPriceExponent, value)) - minPriceExponent) / (maxPriceExponent - minPriceExponent)) * plotHeight;
+  const x = (index) => margins.left + (index / (points.length - 1)) * plotWidth;
+  const y = (value) => margins.top + (1 - (Math.log10(Math.max(10 ** minExponent, value)) - minLog) / (maxLog - minLog)) * plotHeight;
   const makePath = (key) => points.map((point, index) => `${index ? 'L' : 'M'}${x(index).toFixed(2)},${y(point[key]).toFixed(2)}`).join(' ');
-  const makePricePath = () => points.map((point, index) => `${index ? 'L' : 'M'}${x(index).toFixed(2)},${priceY(stockPriceFor(point)).toFixed(2)}`).join(' ');
-  chart.setAttribute('aria-label', `Selected company's indexed performance with its ${currency} stock price on a separate logarithmic axis, plus linear and quadratic trendlines`);
+  chart.setAttribute('aria-label', 'Selected company indexed performance on a logarithmic scale with linear and quadratic trendlines. Click the graph to inspect monthly values.');
 
   chart.replaceChildren();
   const defs = svgElement('defs');
@@ -192,26 +187,18 @@ function renderChart(points, currency = lastChartCurrency) {
     const tickValue = 10 ** exponent;
     const tickY = y(tickValue);
     chart.append(
-      svgElement('line', { class: 'grid-line', x1: CHART.left, x2: CHART.width - CHART.right, y1: tickY, y2: tickY }),
-      svgElement('text', { class: 'chart-grid-label', x: CHART.left - 12, y: tickY + 3, 'text-anchor': 'end' }, formatIndex(tickValue)),
+      svgElement('line', { class: 'grid-line', x1: margins.left, x2: plotRight, y1: tickY, y2: tickY }),
+      svgElement('text', { class: 'chart-grid-label', x: margins.left - 12, y: tickY + 3, 'text-anchor': 'end' }, formatIndex(tickValue)),
     );
   }
 
-  const baselineY = chartHeight - CHART.bottom;
-  chart.append(svgElement('line', { class: 'chart-axis', x1: CHART.left, x2: CHART.width - CHART.right, y1: baselineY, y2: baselineY }));
-  chart.append(
-    svgElement('text', { class: 'performance-axis-title', x: CHART.left, y: CHART.top - 8 }, 'INDEXED VALUE'),
-    svgElement('line', { class: 'price-axis', x1: CHART.width - CHART.right, x2: CHART.width - CHART.right, y1: CHART.top, y2: baselineY }),
-    svgElement('text', { class: 'price-axis-title', x: CHART.width - CHART.right + 7, y: CHART.top - 8 }, `PRICE · ${currency}`),
-  );
-  for (let exponent = minPriceExponent; exponent <= maxPriceExponent; exponent += 1) {
-    const tickValue = 10 ** exponent;
-    const tickY = priceY(tickValue);
-    chart.append(
-      svgElement('line', { class: 'price-axis-tick', x1: CHART.width - CHART.right - 4, x2: CHART.width - CHART.right, y1: tickY, y2: tickY }),
-      svgElement('text', { class: 'price-axis-label', x: CHART.width - CHART.right + 7, y: tickY + 3 }, formatMoney(tickValue, currency)),
-    );
-  }
+  const baselineY = chartHeight - margins.bottom;
+  chart.append(svgElement('line', { class: 'chart-axis', x1: margins.left, x2: plotRight, y1: baselineY, y2: baselineY }));
+  chart.append(svgElement('text', {
+    class: 'performance-axis-title',
+    x: margins.left,
+    y: margins.top - (mobileChartMode ? 30 : 12),
+  }, 'INDEXED VALUE · $100 START'));
   for (let tick = 0; tick <= 4; tick += 1) {
     const index = Math.round(tick * (points.length - 1) / 4);
     chart.append(svgElement('text', {
@@ -226,33 +213,31 @@ function renderChart(points, currency = lastChartCurrency) {
   const areaPath = `${actualPath} L${x(points.length - 1)},${baselineY} L${x(0)},${baselineY} Z`;
   const actualArea = svgElement('path', { class: 'performance-area series-toggle', 'data-series': 'actual', d: areaPath });
   const actualLine = svgElement('path', { class: 'series-actual series-toggle', 'data-series': 'actual', d: actualPath });
-  const priceLine = svgElement('path', { class: 'series-price series-toggle', 'data-series': 'price', d: makePricePath() });
   const quadratic = svgElement('path', { class: 'series-quadratic series-toggle', 'data-series': 'quadratic', d: makePath('quadratic_fit') });
   const linear = svgElement('path', { class: 'series-linear series-toggle', 'data-series': 'linear', d: makePath('linear_fit') });
-  chart.append(actualArea, linear, quadratic, actualLine, priceLine);
+  chart.append(actualArea, linear, quadratic, actualLine);
 
-  const hoverLayer = svgElement('g', { class: 'chart-hover-layer', 'aria-hidden': 'true', 'pointer-events': 'none' });
-  const crosshair = svgElement('line', { class: 'chart-hover-crosshair', x1: CHART.left, x2: CHART.left, y1: CHART.top, y2: baselineY });
-  const performancePoint = svgElement('circle', { class: 'chart-hover-point chart-hover-performance', cx: CHART.left, cy: CHART.top, r: 5 });
-  const pricePoint = svgElement('circle', { class: 'chart-hover-point chart-hover-price', cx: CHART.left, cy: CHART.top, r: 5 });
-  const tooltipWidth = 270;
-  const tooltipHeight = 70;
-  const tooltip = svgElement('g', { class: 'chart-hover-tooltip' });
-  const hoverDate = svgElement('text', { class: 'chart-hover-date', x: 12, y: 20 });
-  const hoverPrice = svgElement('text', { class: 'chart-hover-price-text', x: 12, y: 42 });
-  const hoverPerformance = svgElement('text', { class: 'chart-hover-performance-text', x: 12, y: 60 });
+  const selectionLayer = svgElement('g', { class: 'chart-selection-layer', 'aria-hidden': 'true', 'pointer-events': 'none' });
+  const pointRadius = mobileChartMode ? 10 : 5;
+  const crosshair = svgElement('line', { class: 'chart-selection-crosshair', x1: margins.left, x2: margins.left, y1: margins.top, y2: baselineY });
+  const performancePoint = svgElement('circle', { class: 'chart-selection-point chart-selection-performance', cx: margins.left, cy: margins.top, r: pointRadius });
+  const tooltipWidth = mobileChartMode ? 580 : 270;
+  const tooltipHeight = mobileChartMode ? 108 : 54;
+  const tooltip = svgElement('g', { class: 'chart-selection-tooltip' });
+  const textScale = mobileChartMode ? 2 : 1;
+  const selectedDate = svgElement('text', { class: 'chart-selection-date', x: 12 * textScale, y: 20 * textScale });
+  const selectedPerformance = svgElement('text', { class: 'chart-selection-performance-text', x: 12 * textScale, y: 42 * textScale });
   tooltip.append(
-    svgElement('rect', { class: 'chart-hover-tooltip-bg', width: tooltipWidth, height: tooltipHeight, rx: 8 }),
-    hoverDate,
-    hoverPrice,
-    hoverPerformance,
+    svgElement('rect', { class: 'chart-selection-tooltip-bg', width: tooltipWidth, height: tooltipHeight, rx: mobileChartMode ? 14 : 8 }),
+    selectedDate,
+    selectedPerformance,
   );
-  hoverLayer.append(crosshair, performancePoint, pricePoint, tooltip);
-  hoverLayer.style.display = 'none';
-  chart.append(hoverLayer);
-  activeChartHover = {
-    points, currency, chartHeight, plotWidth, baselineY, x, y, priceY, hoverLayer, crosshair,
-    performancePoint, pricePoint, tooltip, hoverDate, hoverPrice, hoverPerformance, tooltipWidth, tooltipHeight,
+  selectionLayer.append(crosshair, performancePoint, tooltip);
+  selectionLayer.style.display = 'none';
+  chart.append(selectionLayer);
+  activeChartSelection = {
+    points, currency, chartHeight, margins, plotWidth, plotRight, baselineY, x, y, selectionLayer, crosshair,
+    performancePoint, tooltip, selectedDate, selectedPerformance, tooltipWidth, tooltipHeight,
   };
 
   chart.querySelectorAll('.series-toggle').forEach((series) => {
@@ -260,51 +245,65 @@ function renderChart(points, currency = lastChartCurrency) {
   });
 }
 
-function updateChartHover(event) {
-  const state = activeChartHover;
+function selectChartPoint(event) {
+  const state = activeChartSelection;
   if (!state) return;
   const bounds = chart.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return;
   const chartX = ((event.clientX - bounds.left) / bounds.width) * CHART.width;
   const chartY = ((event.clientY - bounds.top) / bounds.height) * state.chartHeight;
-  const minX = CHART.left;
-  const maxX = CHART.width - CHART.right;
-  if (chartX < minX || chartX > maxX || chartY < CHART.top || chartY > state.baselineY) {
-    state.hoverLayer.style.display = 'none';
-    return;
-  }
+  const minX = state.margins.left;
+  const maxX = state.plotRight;
+  if (chartX < minX || chartX > maxX || chartY < state.margins.top || chartY > state.baselineY) return;
 
-  const index = Math.round(((chartX - minX) / state.plotWidth) * (state.points.length - 1));
+  let index = -1;
+  let selectedY = chartY;
+  let nearestDistance = Infinity;
+  const pixelScaleX = bounds.width / CHART.width;
+  const pixelScaleY = bounds.height / state.chartHeight;
+  state.points.forEach((candidate, candidateIndex) => {
+    const candidateX = state.x(candidateIndex);
+    const seriesYs = [];
+    if (seriesVisibility.actual) seriesYs.push(state.y(candidate.performance));
+    if (seriesVisibility.quadratic) seriesYs.push(state.y(candidate.quadratic_fit));
+    if (seriesVisibility.linear) seriesYs.push(state.y(candidate.linear_fit));
+    seriesYs.forEach((seriesY) => {
+      const dx = (candidateX - chartX) * pixelScaleX;
+      const dy = (seriesY - chartY) * pixelScaleY;
+      const distance = Math.hypot(dx, dy);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        index = candidateIndex;
+        selectedY = seriesY;
+      }
+    });
+  });
+  if (index < 0) return;
+
   const point = state.points[index];
   const selectedX = state.x(index);
   const performanceY = state.y(point.performance);
-  const stockPrice = stockPriceFor(point);
-  const priceY = state.priceY(stockPrice);
   const tooltipX = selectedX + state.tooltipWidth + 14 > maxX
     ? Math.max(minX, selectedX - state.tooltipWidth - 14)
     : selectedX + 14;
-  const preferredTooltipY = chartY - state.tooltipHeight - 12;
-  const tooltipY = preferredTooltipY < CHART.top ? chartY + 12 : preferredTooltipY;
-  const boundedTooltipY = Math.min(state.baselineY - state.tooltipHeight, Math.max(CHART.top, tooltipY));
+  const preferredTooltipY = selectedY - state.tooltipHeight - 12;
+  const tooltipY = preferredTooltipY < state.margins.top ? selectedY + 12 : preferredTooltipY;
+  const boundedTooltipY = Math.min(state.baselineY - state.tooltipHeight, Math.max(state.margins.top, tooltipY));
 
   state.crosshair.setAttribute('x1', String(selectedX));
   state.crosshair.setAttribute('x2', String(selectedX));
   state.performancePoint.setAttribute('cx', String(selectedX));
   state.performancePoint.setAttribute('cy', String(performanceY));
-  state.performancePoint.style.display = seriesVisibility.actual ? '' : 'none';
-  state.pricePoint.setAttribute('cx', String(selectedX));
-  state.pricePoint.setAttribute('cy', String(priceY));
-  state.pricePoint.style.display = seriesVisibility.price ? '' : 'none';
   state.tooltip.setAttribute('transform', `translate(${tooltipX}, ${boundedTooltipY})`);
-  state.hoverDate.textContent = point.date;
-  state.hoverPrice.textContent = `Stock price: ${formatMoney(stockPrice, state.currency)}`;
-  state.hoverPerformance.textContent = `Performance: ${formatMoney(point.performance, state.currency)} per $100`;
-  state.hoverLayer.style.display = '';
+  state.selectedDate.textContent = point.date;
+  state.selectedPerformance.textContent = `Performance: ${formatMoney(point.performance, state.currency)} per $100`;
+  state.selectionLayer.style.display = '';
 }
 
-chart.addEventListener('pointermove', updateChartHover);
-chart.addEventListener('pointerleave', () => {
-  if (activeChartHover) activeChartHover.hoverLayer.style.display = 'none';
+chart.addEventListener('click', selectChartPoint);
+document.addEventListener('click', (event) => {
+  if (chart.contains(event.target) || !activeChartSelection) return;
+  activeChartSelection.selectionLayer.style.display = 'none';
 });
 
 window.addEventListener('resize', () => {

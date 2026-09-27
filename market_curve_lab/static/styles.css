@@ -106,30 +106,25 @@ h1 em { color: var(--lime); font-style: normal; }
 .legend-item:not(.is-active) { opacity: .43; }
 .legend-line { width: 20px; height: 2px; display: inline-block; }
 .actual-line { background: var(--lime); }.quadratic-line { background: var(--gold); }.linear-line { height: 0; border-top: 1px dashed #7fb5a2; }
-.price-line { height: 0; border-top: 2px solid #74c8e8; }
 .chart-frame { position: relative; min-height: 385px; overflow: hidden; border: 1px solid #304138; border-radius: 15px; background: radial-gradient(ellipse at 50% 0%, rgba(54, 78, 57, .14), transparent 65%), linear-gradient(180deg, rgba(21, 32, 26, .92), rgba(15, 23, 19, .88)); box-shadow: 0 18px 48px rgba(0, 0, 0, .14), inset 0 1px rgba(255, 255, 255, .025); }
 .chart-frame::before { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(211, 239, 131, .05), transparent 16%, transparent 84%, rgba(211, 239, 131, .03)); content: ''; pointer-events: none; }
-#performance-chart { width: 100%; height: auto; min-height: 330px; display: block; overflow: visible; pointer-events: all; }
+#performance-chart { width: 100%; height: auto; min-height: 330px; display: block; overflow: visible; cursor: crosshair; pointer-events: all; }
 #performance-chart .grid-line { stroke: #344139; stroke-width: 1; }.chart-grid-label { fill: #839086; font: 11.5px 'DM Mono', monospace; }.chart-date-label { fill: #879287; font: 10.5px 'DM Mono', monospace; }.chart-axis { stroke: #536055; stroke-width: 1; }
 .performance-area { fill: url(#performance-fill); }
 .series-actual { fill: none; stroke: var(--lime); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 .series-quadratic { fill: none; stroke: var(--gold); stroke-width: 1.7; stroke-dasharray: 2 6; stroke-linecap: round; opacity: .95; }
 .series-linear { fill: none; stroke: #7fb5a2; stroke-width: 1.5; stroke-dasharray: 7 6; opacity: .82; }
-.series-price { fill: none; stroke: #74c8e8; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-.chart-axis, .price-axis { stroke: #526a70; stroke-width: 1; }
-.price-axis-tick { stroke: #526a70; stroke-width: 1; }
-.chart-grid-label, .chart-date-label, .price-axis-label, .performance-axis-title, .price-axis-title { font-family: 'DM Mono', monospace; }
-.price-axis-label, .price-axis-title { fill: #89bfce; font-size: 10.5px; }
+.chart-axis { stroke: #526a70; stroke-width: 1; }
+.chart-grid-label, .chart-date-label, .performance-axis-title { font-family: 'DM Mono', monospace; }
 .performance-axis-title { fill: #839086; font-size: 9.5px; letter-spacing: .04em; }
-.price-axis-title { font-size: 9.5px; letter-spacing: .04em; }
-.chart-hover-crosshair { stroke: #dfe9d3; stroke-width: 1; stroke-dasharray: 3 4; opacity: .62; vector-effect: non-scaling-stroke; }
-.chart-hover-point { stroke: #0d1411; stroke-width: 2; vector-effect: non-scaling-stroke; }
-.chart-hover-performance { fill: var(--lime); }.chart-hover-price { fill: #74c8e8; }
-.chart-hover-tooltip-bg { fill: #101914; stroke: #71866c; stroke-width: 1; opacity: .98; filter: drop-shadow(0 5px 12px rgba(0, 0, 0, .42)); vector-effect: non-scaling-stroke; }
-.chart-hover-date, .chart-hover-price-text, .chart-hover-performance-text { font: 11.5px 'DM Mono', monospace; }
-.chart-hover-date { fill: var(--cream); font-weight: 600; }
-.chart-hover-price-text { fill: #89d4ee; }
-.chart-hover-performance-text { fill: var(--lime); }
+.chart-selection-crosshair { stroke: #dfe9d3; stroke-width: 1; stroke-dasharray: 3 4; opacity: .62; vector-effect: non-scaling-stroke; }
+.chart-selection-layer { pointer-events: none; }
+.chart-selection-point { stroke: #0d1411; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.chart-selection-performance { fill: var(--lime); }
+.chart-selection-tooltip-bg { fill: #101914; stroke: #71866c; stroke-width: 1; opacity: .98; filter: drop-shadow(0 5px 12px rgba(0, 0, 0, .42)); vector-effect: non-scaling-stroke; }
+.chart-selection-date, .chart-selection-performance-text { font: 11.5px 'DM Mono', monospace; }
+.chart-selection-date { fill: var(--cream); font-weight: 600; }
+.chart-selection-performance-text { fill: var(--lime); }
 .chart-loading, .chart-error { min-height: 385px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: #aab6ab; text-align: center; }
 .chart-loading strong, .chart-error strong { color: #e4e9df; font: 500 14px var(--display); }.chart-loading span:last-child, .chart-error span:not(.error-mark) { font-size: 11px; }
 .loader { width: 25px; height: 25px; margin-bottom: 7px; border: 1px solid #52614e; border-top-color: var(--lime); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -203,6 +198,9 @@ h1 em { color: var(--lime); font-style: normal; }
   .legend-line { width: 16px; }
   .chart-frame { min-height: 0; }
   #performance-chart { min-height: 0; height: auto; aspect-ratio: 1000 / 520; }
+  .chart-grid-label, .chart-date-label { font-size: 25px; }
+  .performance-axis-title { font-size: 21px; }
+  .chart-selection-date, .chart-selection-performance-text { font-size: 25px; }
   .chart-loading, .chart-error { min-height: 280px; padding: 20px 16px; }
   .chart-loading span:last-child, .chart-error span:not(.error-mark) { max-width: 30ch; font-size: 12px; line-height: 1.5; }
   .load-progress { width: min(100%, 280px); }
