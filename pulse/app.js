@@ -166,33 +166,50 @@ async function rpcFetch(name, args) {
   return data;
 }
 
-function anonId() {
-  let id = localStorage.getItem('pulse_anon_id');
-  if (!id) {
-    id = crypto.randomUUID ? crypto.randomUUID() : `anon-${Math.random().toString(36).slice(2)}`;
-    localStorage.setItem('pulse_anon_id', id);
-  }
-  return id;
+function appBaseUrl() {
+  const url = new URL('./', window.location.href);
+  url.pathname = url.pathname.replace(/share\/[^/]+\/?$/, '');
+  if (!url.pathname.endsWith('/')) url.pathname += '/';
+  url.search = '';
+  url.hash = '';
+  return url;
 }
 
-/* ---- Whitelist HTML sanitizer (mirrors the server-side one from before   */
-/* the static rewrite) — applied at both submit time and read time, since   */
-/* a client bypassing our JS could otherwise POST raw HTML directly.        */
-const ALLOWED_RICH_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'a', 'p', 'br', 'ul', 'ol', 'li',
-  'blockquote', 'code', 'pre', 'h3', 'h4', 'span']);
+function postUrl(id) {
+  return shareablePostUrl(id);
+}
 
-function sanitizeRichText(raw) {
-  if (!raw) return '';
-  let text = raw.replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '');
-  text = text.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
-  text = text.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '');
-  text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
-  text = text.replace(/<a\b([^>]*)>/gi, (match, attributes) => {
-    const cleanAttributes = attributes
-      .replace(/\s(target|rel)\s*=\s*("[^"]*"|'[^']*')/gi, '')
-      .trim();
-    return `<a${cleanAttributes ? ` ${cleanAttributes}` : ''} target="_blank" rel="noopener noreferrer">`;
-  });
+function absolutePostUrl(id) {
+  return shareablePostUrl(id);
+}
+
+function shareablePostUrl(id) {
+  // This per-post static page has its own preview metadata and redirects to the app post.
+  return new URL(`share/${encodeURIComponent(id)}/`, appBaseUrl()).href;
+}
+
+function postIdFromLocation() {
+  const url = new URL(window.location.href);
+  const queryPostId = url.searchParams.get('post');
+  if (queryPostId) return queryPostId;
+
+  const shareMatch = url.pathname.match(/\/share\/([^/]+)\/?$/);
+  if (!shareMatch) return null;
+  try {
+    return decodeURIComponent(shareMatch[1]);
+  } catch {
+    return null;
+  }
+}
+
+function feedUrl() {
+  const current = new URL(window.location.href);
+  const url = appBaseUrl();
+  url.search = current.search;
+  url.searchParams.delete('post');
+  url.searchParams.delete('user');
+  return `${url.pathname}${url.search}`;
+}
   return text;
 }
 
@@ -2283,7 +2300,7 @@ document.getElementById('mobile-profile-btn').addEventListener('click', () => {
 });
 
 window.addEventListener('popstate', () => {
-  const postId = new URLSearchParams(window.location.search).get('post');
+  const postId = postIdFromLocation();
   const userId = new URLSearchParams(window.location.search).get('user');
   if (postId) {
     openPost(postId, { updateUrl: false });
@@ -2298,7 +2315,7 @@ window.addEventListener('popstate', () => {
 (async function init() {
   await refreshMe();
   loadTags();
-  const postId = new URLSearchParams(window.location.search).get('post');
+  const postId = postIdFromLocation();
   const userId = new URLSearchParams(window.location.search).get('user');
   if (postId) openPost(postId, { updateUrl: false });
   else if (userId) openPublicProfile(userId, { updateUrl: false });

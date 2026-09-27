@@ -29,7 +29,7 @@ Pages.
 - Title, optional external link, rich-text body (bold/italic/lists/links via the built-in editor), and **any number of file attachments** — images, documents, audio, video, or arbitrary binary files (stored as data URLs).
 - Up to 12 free-form tags per post for categorization and search.
 - Upvote / downvote with one vote per user (or per anonymous browser id) — score updates live.
-- Every post can be opened directly at `https://alphadyn.github.io/ai/pulse/?post=<post-id>`. After the next Pages publish it also has a post-specific share URL, `https://alphadyn.github.io/ai/pulse/share/<post-id>/`, with its own link-preview metadata.
+- Every post can be opened in the app at `https://alphadyn.github.io/ai/pulse/?post=<post-id>`. Post-title links and the Share action use its preview permalink, `https://alphadyn.github.io/ai/pulse/share/<post-id>/`, which serves post-specific metadata and redirects to the app post when opened. GitHub Pages cannot vary metadata for query-string URLs, so the preview permalink is used when sharing.
 - Share posts directly to supported apps such as Messages/RCS with the post title/body as the highlighted shared text and image attachments included for preview when the share target supports file sharing.
 - Three sort modes: **Hot** (Reddit-style time-decayed rank), **New** (most recent first), **Top** (highest score first).
 - Full-text search across titles, body text, and tags, combinable with tag filtering.
@@ -75,12 +75,13 @@ unfurl a link — they just read the Open Graph tags of whatever HTML the URL
 returns. GitHub Pages serves the same generic HTML for every `?post=` query.
 Instead, the Pages build runs [`build_share_pages.py`](build_share_pages.py) to
 fetch all public, active posts from Supabase and generate one static HTML page
-per post under `share/<post-id>/`. Each page contains the current title and a
-JPEG preview based on the first supported image attachment (or generic Pulse
-artwork) with up to two lines of the post excerpt overlaid at the bottom. The
-excerpt is included in the image because some link-preview clients omit text
-descriptions. The share domain appears below the image. Its link stays on
-`alphadyn.github.io` and opens the app's post detail when tapped.
+per post under `share/<post-id>/`. Post-title links use these per-post preview
+URLs. Each page contains the current title and a JPEG preview based on the first
+supported image attachment (or generic Pulse artwork) with up to two lines of
+the post excerpt overlaid at the bottom. The excerpt is included in the image
+because some link-preview clients omit text descriptions. The share domain
+appears below the image. Its link stays on `alphadyn.github.io` and opens the
+app's post detail when tapped.
 
 The Pages workflow runs after GitHub's branch-based Pages build, on demand,
 and on a scheduled five-minute interval. Running afterward ensures its
