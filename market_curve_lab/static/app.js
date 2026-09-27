@@ -33,12 +33,14 @@ const concavitySymbol = $('#concavity-symbol');
 const concavityDetail = $('#concavity-detail');
 const observationCount = $('#observation-count');
 const chartHeading = $('#chart-heading');
-const seriesVisibility = { actual: true, quadratic: true, linear: true };
+const seriesVisibility = { actual: true, price: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
+const CHART = { width: 1000, height: 390, left: 76, right: 90, top: 22, bottom: 46 };
 const mobileChartQuery = window.matchMedia('(max-width: 600px)');
 let mobileChartMode = mobileChartQuery.matches;
 let lastChartPoints = null;
+let lastChartCurrency = 'USD';
+let activeChartHover = null;
 const initialUrlSymbol = symbolFromUrl();
 let selectedSymbol = initialUrlSymbol || 'AAPL';
 let requestSequence = 0;
@@ -150,20 +152,31 @@ function formatIndex(value) {
   return `$${Math.round(value)}`;
 }
 
-function renderChart(points) {
+function stockPriceFor(point) {
+  return point.close ?? point.adjusted_close;
+}
+
+function renderChart(points, currency = lastChartCurrency) {
   lastChartPoints = points;
+  lastChartCurrency = currency;
   const chartHeight = mobileChartMode ? 520 : CHART.height;
   chart.setAttribute('viewBox', `0 0 ${CHART.width} ${chartHeight}`);
   const maxValue = Math.max(...points.map((point) => point.performance));
   const minExponent = 2;
   const maxExponent = Math.ceil(Math.log10(maxValue));
+  const prices = points.map(stockPriceFor).filter((value) => Number.isFinite(value) && value > 0);
+  const minPriceExponent = Math.floor(Math.log10(Math.min(...prices)));
+  const maxPriceExponent = Math.max(minPriceExponent + 1, Math.ceil(Math.log10(Math.max(...prices))));
   const plotWidth = CHART.width - CHART.left - CHART.right;
   const plotHeight = chartHeight - CHART.top - CHART.bottom;
   const minLog = minExponent;
   const maxLog = Math.max(maxExponent, minExponent + 1);
   const x = (index) => CHART.left + (index / (points.length - 1)) * plotWidth;
   const y = (value) => CHART.top + (1 - (Math.log10(Math.max(10 ** minExponent, value)) - minLog) / (maxLog - minLog)) * plotHeight;
+  const priceY = (value) => CHART.top + (1 - (Math.log10(Math.max(10 ** minPriceExponent, value)) - minPriceExponent) / (maxPriceExponent - minPriceExponent)) * plotHeight;
   const makePath = (key) => points.map((point, index) => `${index ? 'L' : 'M'}${x(index).toFixed(2)},${y(point[key]).toFixed(2)}`).join(' ');
+  const makePricePath = () => points.map((point, index) => `${index ? 'L' : 'M'}${x(index).toFixed(2)},${priceY(stockPriceFor(point)).toFixed(2)}`).join(' ');
+  chart.setAttribute('aria-label', `Selected company's indexed performance with its ${currency} stock price on a separate logarithmic axis, plus linear and quadratic trendlines`);
 
   chart.replaceChildren();
   const defs = svgElement('defs');
@@ -186,6 +199,19 @@ function renderChart(points) {
 
   const baselineY = chartHeight - CHART.bottom;
   chart.append(svgElement('line', { class: 'chart-axis', x1: CHART.left, x2: CHART.width - CHART.right, y1: baselineY, y2: baselineY }));
+  chart.append(
+    svgElement('text', { class: 'performance-axis-title', x: CHART.left, y: CHART.top - 8 }, 'INDEXED VALUE'),
+    svgElement('line', { class: 'price-axis', x1: CHART.width - CHART.right, x2: CHART.width - CHART.right, y1: CHART.top, y2: baselineY }),
+    svgElement('text', { class: 'price-axis-title', x: CHART.width - CHART.right + 7, y: CHART.top - 8 }, `PRICE · ${currency}`),
+  );
+  for (let exponent = minPriceExponent; exponent <= maxPriceExponent; exponent += 1) {
+    const tickValue = 10 ** exponent;
+    const tickY = priceY(tickValue);
+    chart.append(
+      svgElement('line', { class: 'price-axis-tick', x1: CHART.width - CHART.right - 4, x2: CHART.width - CHART.right, y1: tickY, y2: tickY }),
+      svgElement('text', { class: 'price-axis-label', x: CHART.width - CHART.right + 7, y: tickY + 3 }, formatMoney(tickValue, currency)),
+    );
+  }
   for (let tick = 0; tick <= 4; tick += 1) {
     const index = Math.round(tick * (points.length - 1) / 4);
     chart.append(svgElement('text', {
@@ -200,19 +226,92 @@ function renderChart(points) {
   const areaPath = `${actualPath} L${x(points.length - 1)},${baselineY} L${x(0)},${baselineY} Z`;
   const actualArea = svgElement('path', { class: 'performance-area series-toggle', 'data-series': 'actual', d: areaPath });
   const actualLine = svgElement('path', { class: 'series-actual series-toggle', 'data-series': 'actual', d: actualPath });
+  const priceLine = svgElement('path', { class: 'series-price series-toggle', 'data-series': 'price', d: makePricePath() });
   const quadratic = svgElement('path', { class: 'series-quadratic series-toggle', 'data-series': 'quadratic', d: makePath('quadratic_fit') });
   const linear = svgElement('path', { class: 'series-linear series-toggle', 'data-series': 'linear', d: makePath('linear_fit') });
-  chart.append(actualArea, linear, quadratic, actualLine);
+  chart.append(actualArea, linear, quadratic, actualLine, priceLine);
+
+  const hoverLayer = svgElement('g', { class: 'chart-hover-layer', 'aria-hidden': 'true', 'pointer-events': 'none' });
+  const crosshair = svgElement('line', { class: 'chart-hover-crosshair', x1: CHART.left, x2: CHART.left, y1: CHART.top, y2: baselineY });
+  const performancePoint = svgElement('circle', { class: 'chart-hover-point chart-hover-performance', cx: CHART.left, cy: CHART.top, r: 5 });
+  const pricePoint = svgElement('circle', { class: 'chart-hover-point chart-hover-price', cx: CHART.left, cy: CHART.top, r: 5 });
+  const tooltipWidth = 270;
+  const tooltipHeight = 70;
+  const tooltip = svgElement('g', { class: 'chart-hover-tooltip' });
+  const hoverDate = svgElement('text', { class: 'chart-hover-date', x: 12, y: 20 });
+  const hoverPrice = svgElement('text', { class: 'chart-hover-price-text', x: 12, y: 42 });
+  const hoverPerformance = svgElement('text', { class: 'chart-hover-performance-text', x: 12, y: 60 });
+  tooltip.append(
+    svgElement('rect', { class: 'chart-hover-tooltip-bg', width: tooltipWidth, height: tooltipHeight, rx: 8 }),
+    hoverDate,
+    hoverPrice,
+    hoverPerformance,
+  );
+  hoverLayer.append(crosshair, performancePoint, pricePoint, tooltip);
+  hoverLayer.style.display = 'none';
+  chart.append(hoverLayer);
+  activeChartHover = {
+    points, currency, chartHeight, plotWidth, baselineY, x, y, priceY, hoverLayer, crosshair,
+    performancePoint, pricePoint, tooltip, hoverDate, hoverPrice, hoverPerformance, tooltipWidth, tooltipHeight,
+  };
+
   chart.querySelectorAll('.series-toggle').forEach((series) => {
     series.style.display = seriesVisibility[series.dataset.series] ? '' : 'none';
   });
 }
 
+function updateChartHover(event) {
+  const state = activeChartHover;
+  if (!state) return;
+  const bounds = chart.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return;
+  const chartX = ((event.clientX - bounds.left) / bounds.width) * CHART.width;
+  const chartY = ((event.clientY - bounds.top) / bounds.height) * state.chartHeight;
+  const minX = CHART.left;
+  const maxX = CHART.width - CHART.right;
+  if (chartX < minX || chartX > maxX || chartY < CHART.top || chartY > state.baselineY) {
+    state.hoverLayer.style.display = 'none';
+    return;
+  }
+
+  const index = Math.round(((chartX - minX) / state.plotWidth) * (state.points.length - 1));
+  const point = state.points[index];
+  const selectedX = state.x(index);
+  const performanceY = state.y(point.performance);
+  const stockPrice = stockPriceFor(point);
+  const priceY = state.priceY(stockPrice);
+  const tooltipX = selectedX + state.tooltipWidth + 14 > maxX
+    ? Math.max(minX, selectedX - state.tooltipWidth - 14)
+    : selectedX + 14;
+  const preferredTooltipY = chartY - state.tooltipHeight - 12;
+  const tooltipY = preferredTooltipY < CHART.top ? chartY + 12 : preferredTooltipY;
+  const boundedTooltipY = Math.min(state.baselineY - state.tooltipHeight, Math.max(CHART.top, tooltipY));
+
+  state.crosshair.setAttribute('x1', String(selectedX));
+  state.crosshair.setAttribute('x2', String(selectedX));
+  state.performancePoint.setAttribute('cx', String(selectedX));
+  state.performancePoint.setAttribute('cy', String(performanceY));
+  state.performancePoint.style.display = seriesVisibility.actual ? '' : 'none';
+  state.pricePoint.setAttribute('cx', String(selectedX));
+  state.pricePoint.setAttribute('cy', String(priceY));
+  state.pricePoint.style.display = seriesVisibility.price ? '' : 'none';
+  state.tooltip.setAttribute('transform', `translate(${tooltipX}, ${boundedTooltipY})`);
+  state.hoverDate.textContent = point.date;
+  state.hoverPrice.textContent = `Stock price: ${formatMoney(stockPrice, state.currency)}`;
+  state.hoverPerformance.textContent = `Performance: ${formatMoney(point.performance, state.currency)} per $100`;
+  state.hoverLayer.style.display = '';
+}
+
+chart.addEventListener('pointermove', updateChartHover);
+chart.addEventListener('pointerleave', () => {
+  if (activeChartHover) activeChartHover.hoverLayer.style.display = 'none';
+});
+
 window.addEventListener('resize', () => {
   const nextMobileChartMode = mobileChartQuery.matches;
   if (nextMobileChartMode === mobileChartMode) return;
   mobileChartMode = nextMobileChartMode;
-  if (lastChartPoints) renderChart(lastChartPoints);
+  if (lastChartPoints) renderChart(lastChartPoints, lastChartCurrency);
 });
 
 function renderAnalysis(data) {
@@ -240,7 +339,7 @@ function renderAnalysis(data) {
   chartHeading.textContent = `${data.company || data.symbol}: the shape of its climb`;
   updatePageMeta(data);
 
-  renderChart(data.points);
+  renderChart(data.points, currency);
   loadingPanel.hidden = true;
   errorPanel.hidden = true;
   chart.removeAttribute('hidden');

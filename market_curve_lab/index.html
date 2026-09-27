@@ -27,8 +27,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/styles.css?v=professional-5">
-  <script src="static/app.js?v=share-links-2" defer></script>
+  <link rel="stylesheet" href="static/styles.css?v=dual-axis-chart-1">
+  <script src="static/app.js?v=dual-axis-chart-1" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -82,13 +82,14 @@
       <section class="chart-section" aria-labelledby="chart-heading">
         <div class="chart-heading-row">
           <div>
-            <p class="eyebrow chart-eyebrow"><span>FIG. 01</span> ADJUSTED PERFORMANCE · $100 STARTING VALUE</p>
+            <p class="eyebrow chart-eyebrow"><span>FIG. 01</span> ADJUSTED PERFORMANCE · $100 STARTING VALUE + SHARE PRICE</p>
             <h2 id="chart-heading">The shape of the climb</h2>
           </div>
-          <div class="chart-scale-label"><span class="scale-icon" aria-hidden="true">⌁</span> LOG PERFORMANCE SCALE</div>
+          <div class="chart-scale-label"><span class="scale-icon" aria-hidden="true">⌁</span> LOG SCALE · DUAL AXIS</div>
         </div>
         <div class="chart-legend" aria-label="Chart line visibility">
-          <button class="legend-item is-active" type="button" data-series="actual" aria-pressed="true"><span class="legend-line actual-line"></span> Actual performance</button>
+          <button class="legend-item is-active" type="button" data-series="actual" aria-pressed="true"><span class="legend-line actual-line"></span> Indexed performance</button>
+          <button class="legend-item is-active" type="button" data-series="price" aria-pressed="true"><span class="legend-line price-line"></span> Stock price</button>
           <button class="legend-item is-active" type="button" data-series="quadratic" aria-pressed="true"><span class="legend-line quadratic-line"></span> Quadratic fit</button>
           <button class="legend-item is-active" type="button" data-series="linear" aria-pressed="true"><span class="legend-line linear-line"></span> Linear fit</button>
         </div>
@@ -103,7 +104,7 @@
             </div>
           </div>
           <div class="chart-error" id="chart-error" hidden><span class="error-mark">!</span><strong>Market data unavailable</strong><span id="error-copy">Check your connection and try again.</span><button id="retry-button" type="button">Try again <span aria-hidden="true">↗</span></button></div>
-          <svg id="performance-chart" viewBox="0 0 1000 390" role="img" aria-label="Selected company's all-time adjusted stock performance with linear and quadratic least-squares trendlines" hidden></svg>
+          <svg id="performance-chart" viewBox="0 0 1000 390" role="img" aria-label="Selected company's adjusted performance and stock price on separate logarithmic axes with linear and quadratic trendlines" hidden></svg>
         </div>
         <div class="chart-footnote"><span>MONTHLY OBSERVATIONS</span><span id="observation-count">—</span><span class="footnote-divider"></span><span>FIT METHOD</span><span>ORDINARY LEAST SQUARES</span><span class="footnote-source">SOURCE: YAHOO FINANCE · NASDAQ MARKET-CAP RANKING</span></div>
       </section>
@@ -112,6 +113,7 @@
         <div class="guide-heading"><span class="guide-spark" aria-hidden="true">✳</span><span>READING THE CURVE</span></div>
         <p><strong>Trendlines</strong> minimize squared error in log performance across the full set of monthly observations, so the fits match the logarithmic chart. R² describes model fit; the higher score is shown above.</p>
         <p><strong>Concavity</strong> comes from a quadratic least-squares fit to the latest 24 monthly observations. A positive second-order coefficient is concave up; a negative one is concave down. It describes historical curvature, not a forecast.</p>
+        <p><strong>Axes</strong> show indexed performance from a $100 starting value on the left and the share price in its trading currency on the right. Both use logarithmic scales.</p>
       </section>
 
       <footer class="footer"><span>FIELDNOTES / MARKET SERIES <span class="footer-separator">—</span> LARGE-CAP EQUITIES</span><span>Historical analysis, not investment advice.</span></footer>
