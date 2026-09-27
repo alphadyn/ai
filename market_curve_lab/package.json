@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@vercel/og": "^1.0.3"
+    "@vercel/og": "0.11.1"
   }
 }

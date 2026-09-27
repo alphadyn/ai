@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { ImageResponse } from '@vercel/og';
 import { fetchAnalysis, fetchSp500Companies, normalizeSymbol, normalizeTicker, searchSecurities, ValidationError } from './_lib/market.js';
 
 const DEFAULT_APP_URL = 'https://alphadyn.github.io/ai/market_curve_lab/';
@@ -166,6 +165,8 @@ function previewElement(security) {
 }
 
 async function sendImage(response, security) {
+  // Loaded lazily so a renderer failure only affects the image, not the preview page.
+  const { ImageResponse } = await import('@vercel/og');
   const image = new ImageResponse(previewElement(security), { width: IMAGE_WIDTH, height: IMAGE_HEIGHT });
   const bytes = Buffer.from(await image.arrayBuffer());
   response.status(200);
