@@ -137,7 +137,7 @@ function el(type, style, ...children) {
 function stat(label, value, color = COLORS.cream) {
   return el('div', { flexDirection: 'column', flex: 1, padding: '20px 24px', border: `1px solid ${COLORS.line}`, borderRadius: 14, background: COLORS.surface },
     el('div', { fontSize: 17, letterSpacing: 2, color: COLORS.quiet }, label),
-    el('div', { fontSize: 36, marginTop: 6, color }, value));
+    el('div', { fontSize: 30, marginTop: 8, color, whiteSpace: 'nowrap' }, value));
 }
 
 function previewElement(security) {
