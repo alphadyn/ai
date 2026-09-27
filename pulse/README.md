@@ -77,11 +77,12 @@ Instead, the Pages build runs [`build_share_pages.py`](build_share_pages.py) to
 fetch all public, active posts from Supabase and generate one static HTML page
 per post under `share/<post-id>/`. Post-title links use these per-post preview
 URLs. Each page contains the current title and a JPEG preview based on the first
-supported image attachment (or generic Pulse artwork) with up to two lines of
-the post excerpt overlaid at the bottom. The excerpt is included in the image
-because some link-preview clients omit text descriptions. The share domain
-appears below the image. Its link stays on `alphadyn.github.io` and opens the
-app's post detail when tapped.
+supported image attachment (or generic Pulse artwork). When the first
+attachment is a video, its first frame is used as the preview instead. Up to
+two lines of the post excerpt are overlaid at the bottom. The excerpt is
+included in the image because some link-preview clients omit text descriptions.
+The share domain appears below the image. Its link stays on
+`alphadyn.github.io` and opens the app's post detail when tapped.
 
 The Pages workflow runs after GitHub's branch-based Pages build, on demand,
 and on a scheduled five-minute interval. Running afterward ensures its

@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import re
 import shutil
+import subprocess
 import tempfile
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
@@ -22,6 +23,7 @@ APP_URL = 'https://alphadyn.github.io/ai/pulse/'
 FALLBACK_IMAGE = APP_URL + 'social-preview-mobile.png'
 PAGE_SIZE = 20  # Attachments can be large; do not load hundreds of posts at once.
 IMAGE_TYPES = {'image/png', 'image/jpeg', 'image/webp', 'image/gif'}
+MAX_VIDEO_BYTES = 5 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 24_000_000
 
 
@@ -142,31 +144,79 @@ def overlay_post_text(image, text):
     return image
 
 
+def video_screenshot(video_bytes):
+    try:
+        import imageio_ffmpeg
+
+        with tempfile.NamedTemporaryFile(suffix='.video') as video_file:
+            video_file.write(video_bytes)
+            video_file.flush()
+            result = subprocess.run(
+                [
+                    imageio_ffmpeg.get_ffmpeg_exe(), '-hide_banner', '-loglevel', 'error',
+                    '-i', video_file.name, '-frames:v', '1', '-vf',
+                    'scale=1200:1200:force_original_aspect_ratio=decrease',
+                    '-f', 'image2pipe', '-vcodec', 'mjpeg', 'pipe:1',
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=20,
+            )
+        if result.returncode != 0 or not result.stdout:
+            return None
+        with Image.open(BytesIO(result.stdout)) as frame:
+            frame.load()
+            frame = ImageOps.exif_transpose(frame)
+            frame.thumbnail((1200, 1200))
+            return frame.convert('RGBA')
+    except (ImportError, OSError, RuntimeError, subprocess.SubprocessError,
+            ValueError, UnidentifiedImageError, Image.DecompressionBombError):
+        return None
+
+
 def cover_image(post, post_dir, share_url):
     image = None
-    for attachment in post.get('attachments') or []:
-        if not isinstance(attachment, dict):
-            continue
-        mime = str(attachment.get('mimeType') or '').lower()
-        data_url = attachment.get('dataUrl') or ''
-        if (mime not in IMAGE_TYPES or not isinstance(data_url, str)
-                or len(data_url) > 3 * 1024 * 1024
-                or not data_url.startswith(f'data:{mime};base64,')):
-            continue
-        try:
-            data = base64.b64decode(data_url.split(',', 1)[1], validate=True)
-            if len(data) > 2 * 1024 * 1024:
+    attachments = post.get('attachments') or []
+    if not isinstance(attachments, list):
+        attachments = []
+
+    first_attachment = attachments[0] if attachments else None
+    first_mime = str(first_attachment.get('mimeType') or '').lower() if isinstance(first_attachment, dict) else ''
+    if first_mime.startswith('video/'):
+        data_url = first_attachment.get('dataUrl') or ''
+        prefix = f'data:{first_mime};base64,'
+        if isinstance(data_url, str) and data_url.startswith(prefix) and len(data_url) <= MAX_VIDEO_BYTES * 4 // 3 + 16:
+            try:
+                video_bytes = base64.b64decode(data_url[len(prefix):], validate=True)
+                if len(video_bytes) <= MAX_VIDEO_BYTES:
+                    image = video_screenshot(video_bytes)
+            except ValueError:
+                pass
+    else:
+        for attachment in attachments:
+            if not isinstance(attachment, dict):
                 continue
-            with Image.open(BytesIO(data)) as original:
-                if original.format.lower() != mime.split('/')[-1]:
+            mime = str(attachment.get('mimeType') or '').lower()
+            data_url = attachment.get('dataUrl') or ''
+            if (mime not in IMAGE_TYPES or not isinstance(data_url, str)
+                    or len(data_url) > 3 * 1024 * 1024
+                    or not data_url.startswith(f'data:{mime};base64,')):
+                continue
+            try:
+                data = base64.b64decode(data_url.split(',', 1)[1], validate=True)
+                if len(data) > 2 * 1024 * 1024:
                     continue
-                original.seek(0)  # The first frame is the preview for animations.
-                image = ImageOps.exif_transpose(original)
-                image.thumbnail((1200, 1200))
-                image = image.convert('RGBA')
-            break
-        except (ValueError, OSError, UnidentifiedImageError, Image.DecompressionBombError):
-            continue
+                with Image.open(BytesIO(data)) as original:
+                    if original.format.lower() != mime.split('/')[-1]:
+                        continue
+                    original.seek(0)  # The first frame is the preview for animations.
+                    image = ImageOps.exif_transpose(original)
+                    image.thumbnail((1200, 1200))
+                    image = image.convert('RGBA')
+                break
+            except (ValueError, OSError, UnidentifiedImageError, Image.DecompressionBombError):
+                continue
 
     if image is None:
         with Image.open(ROOT / 'social-preview-mobile.png') as original:

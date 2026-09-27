@@ -12,7 +12,7 @@ POST_ID = 'c21a369b-fee1-468f-8331-fee5f02b4858'
 
 def test_build_generates_safe_post_metadata_and_jpeg_cover(tmp_path):
     picture = BytesIO()
-    Image.new('RGB', (48, 32), '#aabbcc').save(picture, format='WEBP')
+    Image.new('RGB', (480, 320), '#aabbcc').save(picture, format='WEBP')
     post = {
         'id': POST_ID,
         'title': '</title><script>alert(1)</script> & Plane',
@@ -39,6 +39,39 @@ def test_build_generates_safe_post_metadata_and_jpeg_cover(tmp_path):
         overlay_pixel = image.getpixel((image.width // 2, image.height - 1))
         assert all(abs(actual - expected) < 20 for actual, expected in zip(top_pixel, (170, 187, 204)))
         assert sum(overlay_pixel) < sum(top_pixel)
+
+
+def test_first_video_attachment_supplies_screenshot_for_cover(monkeypatch, tmp_path):
+    video_bytes = b'video fixture'
+    encoded_video = base64.b64encode(video_bytes).decode()
+    later_image = BytesIO()
+    Image.new('RGB', (48, 32), '#aabbcc').save(later_image, format='PNG')
+    extracted = []
+
+    def fake_video_screenshot(data):
+        extracted.append(data)
+        return Image.new('RGBA', (48, 32), '#33aa66')
+
+    monkeypatch.setattr(previews, 'video_screenshot', fake_video_screenshot)
+    post_dir = tmp_path / POST_ID
+    post_dir.mkdir()
+    cover_url = previews.cover_image(
+        {
+            'body': '',
+            'attachments': [
+                {'mimeType': 'video/mp4', 'dataUrl': f'data:video/mp4;base64,{encoded_video}'},
+                {'mimeType': 'image/png', 'dataUrl': 'data:image/png;base64,' + base64.b64encode(later_image.getvalue()).decode()},
+            ],
+        },
+        post_dir,
+        previews.APP_URL + 'share/' + POST_ID + '/',
+    )
+
+    assert extracted == [video_bytes]
+    cover = post_dir / cover_url.rsplit('/', 1)[-1]
+    with Image.open(cover) as image:
+        pixel = image.getpixel((image.width // 2, 1))
+        assert all(abs(actual - expected) < 20 for actual, expected in zip(pixel, (51, 170, 102)))
 
 
 def test_rebuild_removes_deleted_posts_and_old_images(tmp_path):
