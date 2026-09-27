@@ -38,7 +38,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--lime); outline-
 .header-note { display: flex; align-items: center; gap: 10px; padding: 9px 13px; border: 1px solid rgba(65, 84, 70, .64); border-radius: 999px; background: rgba(24, 36, 29, .58); color: #a2aea2; font: 9px var(--mono); letter-spacing: .1em; }
 .market-pulse { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(120, 198, 155, .1); }
 .intro { position: relative; min-height: 350px; display: flex; align-items: center; justify-content: space-between; gap: 60px; margin-top: 26px; padding: 48px 54px; overflow: hidden; border: 1px solid rgba(73, 94, 76, .68); border-radius: 22px; background: radial-gradient(ellipse at 5% 0%, rgba(117, 153, 91, .12), transparent 53%), linear-gradient(135deg, rgba(25, 39, 30, .94), rgba(17, 27, 22, .9) 64%, rgba(23, 35, 28, .92)); box-shadow: 0 24px 70px rgba(0, 0, 0, .18), inset 0 1px rgba(255, 255, 255, .025); }
-.intro::after { position: absolute; top: -80px; right: 39%; width: 1px; height: 520px; background: linear-gradient(transparent, rgba(211, 239, 131, .12), transparent); content: ''; transform: rotate(28deg); pointer-events: none; }
 .intro-copy { max-width: 600px; }
 .eyebrow { display: flex; align-items: center; gap: 12px; margin: 0; color: #aab69f; font: 9px var(--mono); letter-spacing: .14em; }
 .eyebrow > span { color: var(--lime); }
