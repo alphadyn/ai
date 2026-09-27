@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 from uuid import UUID
 
-from PIL import Image, ImageDraw, ImageFont, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 
 ROOT = Path(__file__).resolve().parent
@@ -77,71 +77,6 @@ def fetch_posts(supabase_url, api_key):
         offset += PAGE_SIZE
 
 
-def wrap_preview_text(text, draw, font, max_width, max_lines=2):
-    words = str(text or '').split()
-    lines = []
-    current = ''
-    for word in words:
-        candidate = f'{current} {word}'.strip()
-        if draw.textlength(candidate, font=font) <= max_width:
-            current = candidate
-            continue
-
-        if current:
-            lines.append(current)
-        current = word
-        while draw.textlength(current, font=font) > max_width and len(current) > 1:
-            split_at = len(current) - 1
-            while split_at > 1 and draw.textlength(current[:split_at], font=font) > max_width:
-                split_at -= 1
-            lines.append(current[:split_at])
-            current = current[split_at:]
-
-    if current:
-        lines.append(current)
-    if len(lines) > max_lines:
-        lines = lines[:max_lines]
-        last = lines[-1]
-        while last and draw.textlength(last + '…', font=font) > max_width:
-            last = last[:-1]
-        lines[-1] = last.rstrip() + '…'
-    return lines
-
-
-def overlay_post_text(image, text):
-    image = image.convert('RGBA')
-    width, height = image.size
-    font_size = max(12, round(min(width, height) * 0.04))
-    font = ImageFont.load_default(size=font_size)
-    draw = ImageDraw.Draw(image)
-    padding = round(width * 0.055)
-    line_height = round(font_size * 1.35)
-    lines = wrap_preview_text(text, draw, font, width - padding * 2)
-    if not lines:
-        return image
-
-    panel_height = min(height, line_height * len(lines) + padding * 2)
-    gradient = Image.new('RGBA', (width, panel_height))
-    gradient_draw = ImageDraw.Draw(gradient)
-    for y in range(panel_height):
-        alpha = round(225 * (y / max(1, panel_height - 1)) ** 0.65)
-        gradient_draw.line((0, y, width, y), fill=(4, 11, 16, alpha))
-    image.alpha_composite(gradient, (0, height - panel_height))
-
-    draw = ImageDraw.Draw(image)
-    first_y = height - padding - line_height * len(lines)
-    for index, line in enumerate(lines):
-        draw.text(
-            (padding, first_y + index * line_height),
-            line,
-            font=font,
-            fill=(255, 255, 255, 255),
-            stroke_width=max(1, font_size // 18),
-            stroke_fill=(0, 0, 0, 180),
-        )
-    return image
-
-
 def cover_image(post, post_dir, share_url):
     image = None
     for attachment in post.get('attachments') or []:
@@ -173,7 +108,6 @@ def cover_image(post, post_dir, share_url):
             image = ImageOps.exif_transpose(original).convert('RGBA')
             image.thumbnail((1200, 1200))
 
-    image = overlay_post_text(image, plain_text(post.get('body')))
     background = Image.new('RGB', image.size, '#0f181f')
     background.paste(image, mask=image.getchannel('A'))
     output = BytesIO()
@@ -186,8 +120,10 @@ def cover_image(post, post_dir, share_url):
 
 def render_page(post, share_url, image_url):
     title = str(post.get('title') or 'Pulse post')[:140]
+    description = truncate(plain_text(post.get('body')), 220)
     app_url = APP_URL + '?post=' + post['id']
     escaped_title = html.escape(title, quote=True)
+    escaped_description = html.escape(description, quote=True)
     escaped_image = html.escape(image_url, quote=True)
     escaped_share = html.escape(share_url, quote=True)
     escaped_app = html.escape(app_url, quote=True)
@@ -206,19 +142,22 @@ def render_page(post, share_url, image_url):
   <meta property="og:site_name" content="Pulse">
   <meta property="og:url" content="{escaped_share}">
   <meta property="og:title" content="{escaped_title}">
+    {f'<meta property="og:description" content="{escaped_description}">' if description else ''}
   <meta property="og:image" content="{escaped_image}">
   <meta property="og:image:secure_url" content="{escaped_image}">
   <meta property="og:image:type" content="{image_type}">
   <meta property="og:image:alt" content="Image from the Pulse post {escaped_title}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{escaped_title}">
+    {f'<meta name="twitter:description" content="{escaped_description}">' if description else ''}
   <meta name="twitter:image" content="{escaped_image}">
   <title>{escaped_title} · Pulse</title>
-    <style>body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#071117;color:#edf4f8;font:16px/1.5 system-ui,sans-serif}}main{{width:min(90%,480px);padding:24px;border:1px solid #30414c;border-radius:20px;background:#101c24}}img{{display:block;width:100%;height:auto;border-radius:12px}}a{{color:#8fe7ab}}h1{{overflow-wrap:anywhere}}.domain{{margin:10px 0 0;color:#7c909c;font-size:12px;text-align:center}}</style>
+    <style>body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#071117;color:#edf4f8;font:16px/1.5 system-ui,sans-serif}}main{{width:min(90%,480px);padding:24px;border:1px solid #30414c;border-radius:20px;background:#101c24}}img{{display:block;width:100%;height:auto;border-radius:12px}}a{{color:#8fe7ab}}h1{{overflow-wrap:anywhere}}.description{{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;margin:10px 0;color:#c1d0d8}}.domain{{margin:10px 0 0;color:#7c909c;font-size:12px;text-align:center}}</style>
 </head>
 <body>
   <main>
     <h1>{escaped_title}</h1>
+        {f'<p class="description">{escaped_description}</p>' if description else ''}
         <img src="{escaped_image}" alt="Preview image for {escaped_title}">
     <p class="domain">{domain}</p>
     <a href="{escaped_app}">Open in Pulse</a>
