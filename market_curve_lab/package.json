@@ -1,5 +1,8 @@
 {
   "name": "market-curve-lab",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@vercel/og": "^1.0.3"
+  }
 }

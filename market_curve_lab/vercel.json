@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "rewrites": [
+    { "source": "/s/:symbol/preview.png", "destination": "/api/share?symbol=:symbol&image=1" },
+    { "source": "/s/:symbol", "destination": "/api/share?symbol=:symbol" }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

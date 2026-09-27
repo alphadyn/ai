@@ -1,5 +1,8 @@
 const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api';
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
+// Share links point at the Vercel host because GitHub Pages can't serve per-ticker preview tags.
+const SHARE_ORIGIN = window.location.hostname.endsWith('github.io') ? new URL(VERCEL_API).origin : window.location.origin;
+const TICKER_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
 const $ = (selector) => document.querySelector(selector);
 const chart = $('#performance-chart');
 const loadingPanel = $('#chart-loading');
@@ -9,6 +12,7 @@ const errorCopy = $('#error-copy');
 const tickerSearch = $('#ticker-search');
 const tickerResults = $('#ticker-results');
 const refreshButton = $('#refresh-button');
+const shareButton = $('#share-button');
 const cacheNote = $('#cache-note');
 const loadStatus = $('#load-status');
 const loadProgressBar = $('#load-progress-bar');
@@ -35,10 +39,11 @@ const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 
 const mobileChartQuery = window.matchMedia('(max-width: 600px)');
 let mobileChartMode = mobileChartQuery.matches;
 let lastChartPoints = null;
-let selectedSymbol = 'AAPL';
+const initialUrlSymbol = symbolFromUrl();
+let selectedSymbol = initialUrlSymbol || 'AAPL';
 let requestSequence = 0;
 let companiesBySymbol = new Map();
-let selectedSecurity = { symbol: 'AAPL', company: 'Apple Inc.' };
+let selectedSecurity = initialUrlSymbol ? { symbol: initialUrlSymbol, company: initialUrlSymbol, exchange: '' } : { symbol: 'AAPL', company: 'Apple Inc.' };
 let sp500Companies = [];
 let visibleMatches = [];
 let activeMatchIndex = -1;
@@ -47,6 +52,28 @@ let searchController;
 const searchResultsCache = new Map();
 let userHasEditedSearch = false;
 let isRefreshing = false;
+tickerSearch.value = selectedSymbol;
+
+function symbolFromUrl() {
+  const value = (new URLSearchParams(window.location.search).get('symbol') || '').trim().toUpperCase();
+  return TICKER_PATTERN.test(value) ? value : null;
+}
+
+function syncLocation(symbol, push) {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('symbol') === symbol) return;
+  url.searchParams.set('symbol', symbol);
+  window.history[push ? 'pushState' : 'replaceState']({ symbol }, '', url);
+}
+
+function updatePageMeta(data) {
+  const name = data.company || data.symbol;
+  document.title = `${data.symbol} · ${name} — Market Curve Lab`;
+  const description = document.querySelector('meta[name="description"]');
+  if (description) {
+    description.setAttribute('content', `${name} (${data.symbol}): ${formatPercent(data.total_return_pct)} adjusted total return since ${data.period_start.slice(0, 4)}, ${data.best_fit} best fit, currently ${data.concavity}.`);
+  }
+}
 
 // Shared server-side cache (Supabase/Postgres) so page loads read saved results instead of
 // re-ranking the S&P 500 and re-fetching price history every time; the refresh button overwrites it.
@@ -211,6 +238,7 @@ function renderAnalysis(data) {
   concavityDetail.textContent = `Recent quadratic fit · ${data.concavity_window_months} monthly observations`;
   observationCount.textContent = `${data.observations} POINTS`;
   chartHeading.textContent = `${data.company || data.symbol}: the shape of its climb`;
+  updatePageMeta(data);
 
   renderChart(data.points);
   loadingPanel.hidden = true;
@@ -218,9 +246,10 @@ function renderAnalysis(data) {
   chart.removeAttribute('hidden');
 }
 
-async function loadAnalysis(security, { forceRefresh = false, prefetchedCache } = {}) {
+async function loadAnalysis(security, { forceRefresh = false, prefetchedCache, pushHistory = false } = {}) {
   const symbol = typeof security === 'string' ? security : security.symbol;
   selectedSymbol = symbol;
+  syncLocation(symbol, pushHistory);
   selectedSecurity = typeof security === 'string' ? companiesBySymbol.get(symbol) || { symbol } : security;
   const requestId = ++requestSequence;
   const selectedCompany = selectedSecurity;
@@ -316,7 +345,8 @@ async function loadCompanies(forceRefresh = false) {
       await searchTicker(tickerSearch.value);
       return;
     }
-    const preferred = companiesBySymbol.get(selectedSymbol) || sp500Companies[0];
+    const preferred = companiesBySymbol.get(selectedSymbol)
+      || (initialUrlSymbol === selectedSymbol ? selectedSecurity : sp500Companies[0]);
     if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
     tickerSearch.value = preferred.symbol;
     await loadAnalysis(preferred, { forceRefresh, prefetchedCache });
@@ -342,7 +372,7 @@ function chooseSecurity(security) {
   clearTimeout(searchTimer);
   tickerSearch.value = security.symbol;
   closeSearchResults();
-  loadAnalysis(security);
+  loadAnalysis(security, { pushHistory: true });
 }
 
 function renderSearchResults(matches, message = '') {
@@ -503,6 +533,29 @@ document.querySelectorAll('.legend-item').forEach((button) => {
 $('#retry-button').addEventListener('click', () => {
   loadAnalysis(selectedSecurity);
 });
+window.addEventListener('popstate', () => {
+  const symbol = symbolFromUrl() || 'AAPL';
+  if (symbol === selectedSymbol) return;
+  tickerSearch.value = symbol;
+  closeSearchResults();
+  loadAnalysis(companiesBySymbol.get(symbol) || { symbol, company: symbol, exchange: '' });
+});
+if (shareButton) {
+  shareButton.addEventListener('click', async () => {
+    const url = `${SHARE_ORIGIN}/s/${encodeURIComponent(selectedSymbol)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: document.title, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      if (cacheNote) cacheNote.textContent = `Link copied · ${url}`;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      if (cacheNote) cacheNote.textContent = url;
+    }
+  });
+}
 if (refreshButton) {
   refreshButton.addEventListener('click', async () => {
     if (isRefreshing) return;

@@ -73,6 +73,8 @@ h1 em { color: var(--lime); font-style: normal; }
 .ticker-rule span { width: 40%; height: 1px; display: block; background: var(--lime); }
 .ticker-caption { color: #a8b4a8; font-size: 11px; }
 .ticker-refresh-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.ticker-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cache-note { overflow-wrap: anywhere; }
 .refresh-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid #52674f; border-radius: 8px; background: rgba(15, 24, 18, .56); color: var(--lime); cursor: pointer; font: 10px var(--mono); letter-spacing: .04em; transition: border-color .18s ease, background .18s ease, transform .18s ease; }
 .refresh-button:hover { border-color: #91a96c; background: var(--panel-soft); transform: translateY(-1px); }
 .refresh-button:disabled { cursor: wait; opacity: .6; }

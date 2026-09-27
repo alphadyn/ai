@@ -8,6 +8,23 @@ For the selected company, the app plots split- and dividend-adjusted total perfo
 
 Page loads read the S&P 500 ranking and each ticker's analysis from a shared Supabase table ([`supabase-schema.sql`](supabase-schema.sql)) instead of recomputing them, so visiting the page doesn't re-rank the index or re-fetch price history every time. A newly searched ticker that isn't cached yet is fetched once and saved for later visitors. The "Refresh data" button next to the ticker card bypasses the cache and recomputes the current ranking and selected ticker, overwriting the saved rows. The loading panel shows progress through these steps (checking saved results, loading rankings/history, fitting trendlines).
 
+## Security URLs and link previews
+
+Every security has its own URL: `?symbol=<TICKER>` (for example
+`https://alphadyn.github.io/ai/market_curve_lab/?symbol=NVDA`). Picking a stock
+updates the address bar, and the browser's back and forward buttons move between
+securities you've viewed.
+
+The **Share** button copies (or opens the system share sheet for) a preview link
+such as `https://ai-orcin-eta-15.vercel.app/s/NVDA`. GitHub Pages returns the same
+static tags for every query string, so these links go through
+[`api/share.js`](api/share.js) on Vercel. It returns Open Graph and Twitter tags
+with the security's name, S&P rank, total return, best fit, and concavity, along
+with a 1200×630 PNG chart generated for that ticker (`/s/<TICKER>/preview.png`,
+rendered with `@vercel/og`). Visitors who open the link are sent to the app with
+that ticker selected. Previews use the shared Supabase cache when it has data and
+otherwise fetch the price history live.
+
 ## Deployment
 
 `index.html` is the static web app entry point. The [`api/`](api/) directory contains Vercel serverless functions for company data, search, and analysis. GitHub Pages serves the static frontend and calls the configured Vercel API because market-data providers do not allow browser cross-origin requests. The frontend uses same-origin `/api` on Vercel and the configured Vercel API on `github.io`.
