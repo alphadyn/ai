@@ -111,7 +111,7 @@ def wrap_preview_text(text, draw, font, max_width, max_lines=2):
 def overlay_post_text(image, text):
     image = image.convert('RGBA')
     width, height = image.size
-    font_size = max(12, round(min(width, height) * 0.035))
+    font_size = max(12, round(min(width, height) * 0.04))
     font = ImageFont.load_default(size=font_size)
     draw = ImageDraw.Draw(image)
     padding = round(width * 0.055)
