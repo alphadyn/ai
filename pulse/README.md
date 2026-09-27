@@ -75,11 +75,11 @@ unfurl a link — they just read the Open Graph tags of whatever HTML the URL
 returns. GitHub Pages serves the same generic HTML for every `?post=` query.
 Instead, the Pages build runs [`build_share_pages.py`](build_share_pages.py) to
 fetch all public, active posts from Supabase and generate one static HTML page
-per post under `share/<post-id>/`. Each page contains the current title, a
-two-line post excerpt after the title, a clean JPEG preview based on the first
-supported image attachment (or generic Pulse artwork), and the share domain
-after the excerpt. The excerpt is not burned into the image, so the title is not
-preceded by duplicate text in link previews. Its share link stays on
+per post under `share/<post-id>/`. Each page contains the current title and a
+JPEG preview based on the first supported image attachment (or generic Pulse
+artwork) with up to two lines of the post excerpt overlaid at the bottom. The
+excerpt is included in the image because some link-preview clients omit text
+descriptions. The share domain appears below the image. Its link stays on
 `alphadyn.github.io` and opens the app's post detail when tapped.
 
 The Pages workflow runs after GitHub's branch-based Pages build, on demand,

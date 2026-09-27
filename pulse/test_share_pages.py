@@ -1,7 +1,7 @@
 import base64
 from io import BytesIO
 
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import pytest
 
 from pulse import build_share_pages as previews
@@ -25,17 +25,20 @@ def test_build_generates_safe_post_metadata_and_jpeg_cover(tmp_path):
     assert previews.build_pages(output, [post]) == 1
     page = (output / POST_ID / 'index.html').read_text()
     assert 'og:title" content="&lt;/title&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; Plane"' in page
-    assert 'og:description" content="Flying fast &amp; far."' in page
+    assert 'og:description' not in page
     assert 'og:url" content="https://alphadyn.github.io/ai/pulse/share/' + POST_ID + '/"' in page
     assert 'og:image:type" content="image/jpeg"' in page
     assert 'location.replace("https://alphadyn.github.io/ai/pulse/?post=' + POST_ID + '")' in page
     assert '<script>alert(1)' not in page
-    assert page.index('<h1>') < page.index('<p class="description">Flying fast &amp; far.</p>') < page.index('<p class="domain">')
+    assert 'Flying fast' not in page
+    assert page.index('<h1>') < page.index('<img src=') < page.index('<p class="domain">')
     cover = next((output / POST_ID).glob('cover-*.jpg'))
     with Image.open(cover) as image:
         assert image.format == 'JPEG'
-        pixel = image.getpixel((image.width // 2, image.height - 2))
-        assert all(abs(actual - expected) < 20 for actual, expected in zip(pixel, (170, 187, 204)))
+        top_pixel = image.getpixel((image.width // 2, 1))
+        overlay_pixel = image.getpixel((image.width // 2, image.height - 1))
+        assert all(abs(actual - expected) < 20 for actual, expected in zip(top_pixel, (170, 187, 204)))
+        assert sum(overlay_pixel) < sum(top_pixel)
 
 
 def test_rebuild_removes_deleted_posts_and_old_images(tmp_path):
@@ -58,18 +61,19 @@ def test_rejects_invalid_ids_without_overwriting_previous_build(tmp_path):
     assert (output / POST_ID / 'index.html').exists()
 
 
-def test_rendered_card_places_post_text_after_title_and_before_domain():
+def test_rendered_card_keeps_body_text_outside_image_and_metadata():
     page = previews.render_page(
         {'id': POST_ID, 'title': 'Safe', 'body': '<p>A &quot;quote&quot; &amp; &lt;word&gt;</p>'},
         previews.APP_URL + 'share/' + POST_ID + '/',
         previews.FALLBACK_IMAGE,
     )
-    assert 'og:description" content="A &quot;quote&quot; &amp; &lt;word&gt;"' in page
+    assert 'og:description' not in page
+    assert 'A &quot;quote&quot; &amp; &lt;word&gt;' not in page
     assert 'og:image:type" content="image/png"' in page
-    assert page.index('<h1>Safe</h1>') < page.index('<p class="description">A &quot;quote&quot; &amp; &lt;word&gt;</p>') < page.index('<p class="domain">alphadyn.github.io</p>')
+    assert page.index('<h1>Safe</h1>') < page.index('<img src=') < page.index('<p class="domain">alphadyn.github.io</p>')
 
 
-def test_fallback_preview_has_no_post_text_overlay(tmp_path):
+def test_fallback_preview_displays_post_text_overlay(tmp_path):
     post_dir = tmp_path / POST_ID
     post_dir.mkdir()
     cover_url = previews.cover_image(
@@ -82,4 +86,13 @@ def test_fallback_preview_has_no_post_text_overlay(tmp_path):
         assert image.format == 'JPEG'
         sample = (image.width // 2, image.height - 1)
         expected = original.convert('RGB').getpixel(sample)
-        assert all(abs(actual - source) < 30 for actual, source in zip(image.getpixel(sample), expected))
+        assert sum(image.getpixel(sample)) < sum(expected)
+
+
+def test_preview_excerpt_is_limited_to_two_lines():
+    image = Image.new('RGB', (240, 120))
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default(size=14)
+    lines = previews.wrap_preview_text('Pulse post text ' * 30, draw, font, 150)
+    assert len(lines) == 2
+    assert lines[-1].endswith('…')
