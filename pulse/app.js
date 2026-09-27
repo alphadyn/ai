@@ -166,50 +166,33 @@ async function rpcFetch(name, args) {
   return data;
 }
 
-function appBaseUrl() {
-  const url = new URL('./', window.location.href);
-  url.pathname = url.pathname.replace(/share\/[^/]+\/?$/, '');
-  if (!url.pathname.endsWith('/')) url.pathname += '/';
-  url.search = '';
-  url.hash = '';
-  return url;
-}
-
-function postUrl(id) {
-  return shareablePostUrl(id);
-}
-
-function absolutePostUrl(id) {
-  return shareablePostUrl(id);
-}
-
-function shareablePostUrl(id) {
-  // This per-post static page has its own preview metadata and redirects to the app post.
-  return new URL(`share/${encodeURIComponent(id)}/`, appBaseUrl()).href;
-}
-
-function postIdFromLocation() {
-  const url = new URL(window.location.href);
-  const queryPostId = url.searchParams.get('post');
-  if (queryPostId) return queryPostId;
-
-  const shareMatch = url.pathname.match(/\/share\/([^/]+)\/?$/);
-  if (!shareMatch) return null;
-  try {
-    return decodeURIComponent(shareMatch[1]);
-  } catch {
-    return null;
+function anonId() {
+  let id = localStorage.getItem('pulse_anon_id');
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `anon-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem('pulse_anon_id', id);
   }
+  return id;
 }
 
-function feedUrl() {
-  const current = new URL(window.location.href);
-  const url = appBaseUrl();
-  url.search = current.search;
-  url.searchParams.delete('post');
-  url.searchParams.delete('user');
-  return `${url.pathname}${url.search}`;
-}
+/* ---- Whitelist HTML sanitizer (mirrors the server-side one from before   */
+/* the static rewrite) — applied at both submit time and read time, since   */
+/* a client bypassing our JS could otherwise POST raw HTML directly.        */
+const ALLOWED_RICH_TAGS = new Set(['b', 'strong', 'i', 'em', 'u', 'a', 'p', 'br', 'ul', 'ol', 'li',
+  'blockquote', 'code', 'pre', 'h3', 'h4', 'span']);
+
+function sanitizeRichText(raw) {
+  if (!raw) return '';
+  let text = raw.replace(/<(script|style|iframe|object|embed)[^>]*>[\s\S]*?<\/\1>/gi, '');
+  text = text.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*')/gi, '');
+  text = text.replace(/(href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*')/gi, '');
+  text = text.replace(/<\/?([a-zA-Z0-9]+)[^>]*>/g, (match, tag) => (ALLOWED_RICH_TAGS.has(tag.toLowerCase()) ? match : ''));
+  text = text.replace(/<a\b([^>]*)>/gi, (match, attributes) => {
+    const cleanAttributes = attributes
+      .replace(/\s(target|rel)\s*=\s*("[^"]*"|'[^']*')/gi, '')
+      .trim();
+    return `<a${cleanAttributes ? ` ${cleanAttributes}` : ''} target="_blank" rel="noopener noreferrer">`;
+  });
   return text;
 }
 
@@ -1121,31 +1104,48 @@ document.getElementById('search-form').addEventListener('submit', async (e) => {
 /* Feed rendering                                                          */
 /* ---------------------------------------------------------------------- */
 
-function postUrl(id) {
-  const url = new URL(window.location.href);
+function appBaseUrl() {
+  const url = new URL('./', window.location.href);
+  url.pathname = url.pathname.replace(/share\/[^/]+\/?$/, '');
+  if (!url.pathname.endsWith('/')) url.pathname += '/';
   url.search = '';
   url.hash = '';
-  url.searchParams.set('post', id);
-  return `${url.pathname}?${url.searchParams.toString()}`;
+  return url;
+}
+
+function postUrl(id) {
+  return shareablePostUrl(id);
 }
 
 function absolutePostUrl(id) {
-  // Resolve to the directory so /pulse/index.html and /pulse/ share the same URL.
-  const url = new URL('./', window.location.href);
-  url.searchParams.set('post', id);
-  return url.href;
+  return shareablePostUrl(id);
 }
 
 function shareablePostUrl(id) {
-  // Pages serves a separate HTML document for each post at its own path.
-  return new URL(`share/${encodeURIComponent(id)}/`, new URL('./', window.location.href)).href;
+  // This per-post static page has its own preview metadata and redirects to the app post.
+  return new URL(`share/${encodeURIComponent(id)}/`, appBaseUrl()).href;
+}
+
+function postIdFromLocation() {
+  const url = new URL(window.location.href);
+  const queryPostId = url.searchParams.get('post');
+  if (queryPostId) return queryPostId;
+
+  const shareMatch = url.pathname.match(/\/share\/([^/]+)\/?$/);
+  if (!shareMatch) return null;
+  try {
+    return decodeURIComponent(shareMatch[1]);
+  } catch {
+    return null;
+  }
 }
 
 function feedUrl() {
-  const url = new URL(window.location.href);
+  const current = new URL(window.location.href);
+  const url = appBaseUrl();
+  url.search = current.search;
   url.searchParams.delete('post');
   url.searchParams.delete('user');
-  url.hash = '';
   return `${url.pathname}${url.search}`;
 }
 
