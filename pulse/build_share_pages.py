@@ -40,6 +40,10 @@ def plain_text(value):
     return ' '.join(' '.join(extractor.parts).split())
 
 
+def truncate(text, limit):
+    return text if len(text) <= limit else f'{text[:limit].rstrip()}…'
+
+
 def public_config(path=ROOT / 'supabase-config.js'):
     config = path.read_text()
     values = {}
