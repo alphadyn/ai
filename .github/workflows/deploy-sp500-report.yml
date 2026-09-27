@@ -51,6 +51,9 @@ jobs:
           python3 -m pip install --disable-pip-version-check -r pulse/requirements-build.txt
           python3 pulse/build_share_pages.py
 
+      - name: Build Market Curve Lab security previews
+        run: python3 market_curve_lab/build_share_pages.py
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

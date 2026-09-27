@@ -15,15 +15,23 @@ Every security has its own URL: `?symbol=<TICKER>` (for example
 updates the address bar, and the browser's back and forward buttons move between
 securities you've viewed.
 
-The **Share** button copies (or opens the system share sheet for) a preview link
-such as `https://ai-orcin-eta-15.vercel.app/s/NVDA`. GitHub Pages returns the same
-static tags for every query string, so these links go through
-[`api/share.js`](api/share.js) on Vercel. It returns Open Graph and Twitter tags
-with the security's name, S&P rank, total return, best fit, and concavity, along
-with a 1200×630 PNG chart generated for that ticker (`/s/<TICKER>/preview.png`,
-rendered with `@vercel/og`). Visitors who open the link are sent to the app with
-that ticker selected. Previews use the shared Supabase cache when it has data and
-otherwise fetch the price history live.
+The **Share** button copies (or opens the system share sheet for) a GitHub Pages
+permalink such as `https://alphadyn.github.io/ai/market_curve_lab/s/NVDA/`.
+Link previews don't run JavaScript, and GitHub Pages returns the same static tags
+for every query string, so the Pages workflow runs
+[`build_share_pages.py`](build_share_pages.py) to generate a crawler-readable
+page for every S&P 500 constituent (the generated `s/` folder is not committed).
+Each page has Open Graph and Twitter tags with the security's name, S&P rank,
+and, when saved results exist, its total return, best fit, and concavity, and
+then sends visitors to the app with that ticker selected. Stocks outside the
+S&P 500 share the plain `?symbol=` URL with the generic preview.
+
+The preview image is a 1200×630 PNG chart generated per ticker by
+[`api/share.js`](api/share.js) on Vercel (`/s/<TICKER>/preview.png`, rendered with
+`@vercel/og`), because GitHub Pages can't render images. That endpoint also serves
+a Vercel-hosted preview page at `/s/<TICKER>` for any listed ticker. Previews use
+the shared Supabase cache when it has data and otherwise fetch the price history
+live.
 
 ## Deployment
 
