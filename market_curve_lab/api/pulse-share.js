@@ -36,6 +36,7 @@ function truncate(text, limit) {
 
 function sendPage(response, html, status = 200, scriptNonce = null) {
   response.status(status);
+  response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Content-Type', 'text/html; charset=utf-8');
   response.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
   response.setHeader('Content-Security-Policy', `default-src 'none'; img-src https:; style-src 'unsafe-inline'; script-src ${scriptNonce ? `'nonce-${scriptNonce}'` : "'none'"}; base-uri 'none'; frame-ancestors 'none'`);
@@ -68,6 +69,7 @@ function sendImage(response, attachment) {
     return;
   }
   response.status(200);
+  response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Content-Type', attachment.mimeType);
   response.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400, immutable');
   response.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");

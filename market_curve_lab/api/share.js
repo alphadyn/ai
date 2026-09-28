@@ -170,6 +170,7 @@ async function sendImage(response, security) {
   const image = new ImageResponse(previewElement(security), { width: IMAGE_WIDTH, height: IMAGE_HEIGHT });
   const bytes = Buffer.from(await image.arrayBuffer());
   response.status(200);
+  response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Content-Type', 'image/png');
   response.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=21600, stale-while-revalidate=86400');
   response.setHeader('X-Content-Type-Options', 'nosniff');
@@ -178,6 +179,7 @@ async function sendImage(response, security) {
 
 function sendPage(response, html, status, scriptNonce = null) {
   response.status(status);
+  response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Content-Type', 'text/html; charset=utf-8');
   response.setHeader('Cache-Control', 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400');
   response.setHeader('Content-Security-Policy', `default-src 'none'; img-src https:; style-src 'unsafe-inline'; script-src ${scriptNonce ? `'nonce-${scriptNonce}'` : "'none'"}; base-uri 'none'; frame-ancestors 'none'`);
