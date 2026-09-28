@@ -85,7 +85,6 @@ async function supabaseRequest(path, init = {}) {
     ...init,
     headers: {
       apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
       ...init.headers
     }
   });
