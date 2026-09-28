@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { isIP } from 'node:net';
 
 const ALLOWED_ORIGINS = new Set([
   'https://alphadyn.github.io',
@@ -22,20 +23,14 @@ function setCors(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 }
 
-function maskIp(request) {
+function getIp(request) {
   const forwarded = request.headers['x-forwarded-for'];
   const candidate = (Array.isArray(forwarded) ? forwarded[0] : forwarded || '').split(',')[0].trim();
-  const ipv4 = candidate.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (ipv4 && ipv4.slice(1).every((part) => Number(part) <= 255)) return `${Number(ipv4[1])}.${Number(ipv4[2])}.xxx.xxx`;
-  if (candidate.includes(':') && /^[0-9a-f:]+$/i.test(candidate)) {
-    const groups = candidate.split(':').filter(Boolean);
-    return `${groups.slice(0, 2).join(':')}::/32`;
-  }
-  return 'Not recorded';
+  return isIP(candidate) ? candidate : 'Not recorded';
 }
 
 function isRateLimited(request) {
-  const key = maskIp(request);
+  const key = getIp(request);
   const now = Date.now();
   let window = ingestRateWindows.get(key);
   if (!window || now - window.startedAt >= RATE_WINDOW_MS) {
@@ -125,7 +120,7 @@ export default async function handler(request, response) {
       const row = {
         visitor_id: body.visitorId,
         timestamp: new Date().toISOString(),
-        ip: maskIp(request),
+        ip: getIp(request),
         path: body.path,
         page: body.page,
         referrer: body.referrer,

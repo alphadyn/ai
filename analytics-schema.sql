@@ -12,13 +12,11 @@ create table if not exists public.traffic_events (
   device text not null check (device in ('Desktop', 'Mobile', 'Tablet')),
   status integer,
   session_seconds integer,
-  bounced boolean,
-  constraint traffic_events_masked_ip check (
-    ip = 'Not recorded'
-    or ip ~ '^([0-9]{1,3}\.){2}xxx\.xxx$'
-    or ip ~ '^[0-9a-f:]+::/32$'
-  )
+  bounced boolean
 );
+
+-- Also run this migration on existing tables before deploying the updated API.
+alter table public.traffic_events drop constraint if exists traffic_events_masked_ip;
 
 create index if not exists traffic_events_timestamp_desc on public.traffic_events (timestamp desc);
 create index if not exists traffic_events_path_timestamp_desc on public.traffic_events (path, timestamp desc);
