@@ -2088,6 +2088,8 @@ class SpectrumVisualizer {
   // ==========================================================================
   let audioContextInstance = null;
   let audioVisualizerAnimationId = null;
+  let lastViewerFullscreenExit = 0;
+  let imageFullscreenChangeHandler = null;
 
   function bindViewerEvents() {
     const closeBtn = document.getElementById('viewerCloseBtn');
@@ -2144,6 +2146,16 @@ class SpectrumVisualizer {
 
     fullscreenBtn.addEventListener('click', () => {
       toggleViewerFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFullscreen = document.fullscreenElement === document.getElementById('mediaViewerModal');
+      if (!isFullscreen && fullscreenBtn.getAttribute('aria-pressed') === 'true') {
+        lastViewerFullscreenExit = performance.now();
+      }
+      fullscreenBtn.setAttribute('aria-pressed', String(isFullscreen));
+      fullscreenBtn.setAttribute('aria-label', isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen');
+      fullscreenBtn.title = isFullscreen ? 'Exit Fullscreen Mode (F)' : 'Enter Fullscreen Mode (F)';
     });
 
     toggleSidebarBtn.addEventListener('click', () => {
@@ -2224,6 +2236,10 @@ class SpectrumVisualizer {
       cancelAnimationFrame(audioVisualizerAnimationId);
       audioVisualizerAnimationId = null;
     }
+    if (imageFullscreenChangeHandler) {
+      document.removeEventListener('fullscreenchange', imageFullscreenChangeHandler);
+      imageFullscreenChangeHandler = null;
+    }
     const stage = document.getElementById('viewerStage');
     stage.onclick = null;
     stage.classList.remove('image-controls-toggle');
@@ -2232,12 +2248,15 @@ class SpectrumVisualizer {
 
   function toggleViewerFullscreen() {
     const modal = document.getElementById('mediaViewerModal');
-    if (!document.fullscreenElement) {
+    if (document.fullscreenElement !== modal) {
       modal.requestFullscreen().catch((err) => {
         console.warn('Fullscreen request failed:', err);
+        showToast('Fullscreen is not available in this browser', 'error');
       });
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch((err) => {
+        console.warn('Could not exit fullscreen:', err);
+      });
     }
   }
 
@@ -2296,7 +2315,7 @@ class SpectrumVisualizer {
     const zoomLevelBtn = container.querySelector('#imgZoomResetBtn');
     stage.classList.add('image-controls-toggle');
     stage.onclick = (event) => {
-      if (event.target.closest('.image-display, .image-toolbar')) return;
+      if (event.target.closest('.image-toolbar')) return;
 
       imageToolbarVisible = !imageToolbarVisible;
       toolbar.classList.toggle('is-hidden', !imageToolbarVisible);
@@ -2311,6 +2330,14 @@ class SpectrumVisualizer {
     };
 
     updateTransform();
+
+    imageFullscreenChangeHandler = () => {
+      if (document.fullscreenElement === stage.closest('#mediaViewerModal')) {
+        scale = 1;
+        updateTransform();
+      }
+    };
+    document.addEventListener('fullscreenchange', imageFullscreenChangeHandler);
 
     container.querySelector('#imgZoomInBtn').onclick = () => {
       scale = Math.min(5, scale + 0.25);
@@ -2914,6 +2941,12 @@ class SpectrumVisualizer {
       if (e.key === 'Escape') {
         const viewerModal = document.getElementById('mediaViewerModal');
         if (viewerModal.classList.contains('open')) {
+          if (document.fullscreenElement === viewerModal) {
+            e.preventDefault();
+            document.exitFullscreen().catch(() => {});
+            return;
+          }
+          if (performance.now() - lastViewerFullscreenExit < 500) return;
           closeViewerModal();
           return;
         }
