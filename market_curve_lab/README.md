@@ -15,20 +15,21 @@ Every security has its own URL: `?symbol=<TICKER>` (for example
 updates the address bar, and the browser's back and forward buttons move between
 securities you've viewed.
 
-The **Share** button copies (or opens the system share sheet for) a Vercel
-permalink such as `https://ai-orcin-eta-15.vercel.app/s/NVDA`.
-The preview metadata identifies the Alphadyn app URL
-(`https://alphadyn.github.io/ai/market_curve_lab/?symbol=NVDA`) as its Open
-Graph URL and canonical destination, while Vercel serves the ticker-specific
-preview metadata and image.
+The **Share** button copies (or opens the system share sheet for) an Alphadyn
+permalink such as `https://alphadyn.github.io/ai/market_curve_lab/s/NVDA/` for
+S&P 500 constituents. That ticker-specific page shows Alphadyn as the preview
+domain and redirects visitors to
+`https://alphadyn.github.io/ai/market_curve_lab/?symbol=NVDA`. Other listed
+stocks use the Vercel dynamic preview URL because GitHub Pages has no generated
+page for them.
 Link previews don't run JavaScript, and GitHub Pages returns the same static tags
 for every query string, so the Pages workflow runs
 [`build_share_pages.py`](build_share_pages.py) to generate a crawler-readable
 page for every S&P 500 constituent (the generated `s/` folder is not committed).
 Each page has Open Graph and Twitter tags with the security's name and S&P rank,
 plus its total return, best fit, and concavity when saved results exist. Pages
-then send visitors to the app with that ticker selected. The Share button uses
-the Vercel endpoint for all listed stocks, including those outside the S&P 500.
+then send visitors to the app with that ticker selected. Each preview image is
+rendered per ticker by Vercel.
 
 That endpoint builds ticker-specific Open Graph metadata and a 1200×630 PNG chart
 on demand per ticker through

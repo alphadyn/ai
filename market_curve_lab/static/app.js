@@ -1,5 +1,6 @@
 const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api';
 const VERCEL_SHARE_URL = 'https://ai-orcin-eta-15.vercel.app/s/';
+const PAGES_APP_URL = 'https://alphadyn.github.io/ai/market_curve_lab/';
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
 const TICKER_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
 const $ = (selector) => document.querySelector(selector);
@@ -696,7 +697,10 @@ window.addEventListener('popstate', () => {
 });
 if (shareButton) {
   shareButton.addEventListener('click', async () => {
-    const url = `${VERCEL_SHARE_URL}${encodeURIComponent(selectedSymbol)}`;
+    const encodedSymbol = encodeURIComponent(selectedSymbol);
+    const url = companiesBySymbol.has(selectedSymbol)
+      ? `${PAGES_APP_URL}s/${encodedSymbol}/`
+      : `${VERCEL_SHARE_URL}${encodedSymbol}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: document.title, url });
