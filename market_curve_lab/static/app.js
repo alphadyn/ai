@@ -53,10 +53,10 @@ let lastChartPoints = null;
 let lastChartCurrency = 'USD';
 let activeChartSelection = null;
 const initialUrlSymbol = symbolFromUrl();
-let selectedSymbol = initialUrlSymbol || 'AAPL';
+let selectedSymbol = initialUrlSymbol || '';
 let requestSequence = 0;
 let companiesBySymbol = new Map();
-let selectedSecurity = initialUrlSymbol ? { symbol: initialUrlSymbol, company: initialUrlSymbol, exchange: '' } : { symbol: 'AAPL', company: 'Apple Inc.' };
+let selectedSecurity = initialUrlSymbol ? { symbol: initialUrlSymbol, company: initialUrlSymbol, exchange: '' } : null;
 let sp500Companies = [];
 let rankedSecurities = [];
 let currentSecuritiesPage = 0;
@@ -164,6 +164,18 @@ function renderSecuritiesPage() {
 
 function showSecurityDirectory() {
   requestSequence += 1;
+  selectedSymbol = '';
+  selectedSecurity = null;
+  tickerSearch.value = '';
+  tickerCompany.textContent = 'No security selected';
+  tickerSymbol.textContent = '—';
+  companyRank.textContent = 'SELECT A SECURITY';
+  tickerPrice.textContent = '—';
+  tickerCurrency.textContent = 'LATEST QUOTE';
+  dataAsOf.textContent = 'Select a security to begin';
+  cacheNote.textContent = '';
+  refreshButton.disabled = true;
+  shareButton.disabled = true;
   topSecuritiesSection.hidden = false;
   securityDetail.hidden = true;
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -505,6 +517,12 @@ async function loadAnalysis(security, { forceRefresh = false, prefetchedCache, p
   selectedSymbol = symbol;
   if (syncUrl) syncLocation(symbol, pushHistory);
   selectedSecurity = typeof security === 'string' ? companiesBySymbol.get(symbol) || { symbol } : security;
+  refreshButton.disabled = false;
+  shareButton.disabled = false;
+  tickerPrice.textContent = '—';
+  tickerCurrency.textContent = 'LATEST QUOTE';
+  dataAsOf.textContent = 'Loading quote…';
+  cacheNote.textContent = '';
   const requestId = ++requestSequence;
   const selectedCompany = selectedSecurity;
   if (selectedCompany) {
@@ -571,7 +589,7 @@ function updateCacheNote(timestamp) {
 async function loadCompanies(forceRefresh = false) {
   // Kicked off alongside the companies lookup below (not awaited yet) so the two independent
   // cache reads happen in parallel instead of one waiting on the other.
-  const analysisPrefetch = forceRefresh ? null : loadCachedRow(`analysis:${selectedSymbol}`);
+  const analysisPrefetch = forceRefresh || !initialUrlSymbol ? null : loadCachedRow(`analysis:${selectedSymbol}`);
   try {
     let companiesPayload = null;
     let cacheTimestamp = null;
@@ -600,7 +618,6 @@ async function loadCompanies(forceRefresh = false) {
     sp500Companies = companiesPayload;
     companiesBySymbol = new Map(sp500Companies.map((company) => [company.symbol, company]));
     renderTopSecurities();
-    updateCacheNote(cacheTimestamp);
     const prefetchedCache = await analysisPrefetch;
     if (userHasEditedSearch) {
       const selectedCompany = companiesBySymbol.get(selectedSymbol);
@@ -612,9 +629,6 @@ async function loadCompanies(forceRefresh = false) {
       return;
     }
     if (!initialUrlSymbol && !forceRefresh) {
-      const preferred = companiesBySymbol.get(selectedSymbol) || sp500Companies[0];
-      if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
-      await loadAnalysis(preferred, { prefetchedCache, showDetails: false, syncUrl: false });
       topSecuritiesSection.hidden = false;
       securityDetail.hidden = true;
       return;

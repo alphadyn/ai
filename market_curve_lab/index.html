@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/styles.css?v=ranked-list-intro-controls-search-empty">
-  <script src="static/app.js?v=ranked-list-intro-controls-search-empty" defer></script>
+  <link rel="stylesheet" href="static/styles.css?v=clear-ticker-card-on-load">
+  <script src="static/app.js?v=clear-ticker-card-on-directory-return" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -46,19 +46,19 @@
           <p class="lede">Browse all S&amp;P 500 securities ranked by market capitalization, or search for any listed stock. Select a company to see its adjusted performance, fitted trendlines, and recent curvature.</p>
         </div>
         <div class="ticker-card" aria-label="Selected company stock summary">
-          <label class="company-picker-label" for="ticker-search">SEARCH A TICKER OR COMPANY <span id="company-rank">S&amp;P 500</span></label>
+          <label class="company-picker-label" for="ticker-search">SEARCH A TICKER OR COMPANY <span id="company-rank">SELECT A SECURITY</span></label>
           <div class="ticker-search-wrap">
             <span class="search-icon" aria-hidden="true">⌕</span>
             <input id="ticker-search" type="search" value="" placeholder="e.g. AAPL or Apple" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ticker-results" aria-label="Search stocks by ticker or company name">
             <span class="search-shortcut" aria-hidden="true">↵</span>
             <div class="ticker-results" id="ticker-results" role="listbox" aria-label="Matching stocks" hidden></div>
           </div>
-          <div class="ticker-head"><span class="ticker-mark" aria-hidden="true">●</span><span id="ticker-company">SELECTED COMPANY</span><span class="ticker-symbol" id="ticker-symbol">NASDAQ · —</span></div>
+          <div class="ticker-head"><span class="ticker-mark" aria-hidden="true">●</span><span id="ticker-company">No security selected</span><span class="ticker-symbol" id="ticker-symbol">—</span></div>
           <div class="ticker-price" id="ticker-price">—</div>
-          <div class="ticker-foot"><span id="ticker-currency">USD · LATEST QUOTE</span><span id="data-asof">Waiting for data</span></div>
+          <div class="ticker-foot"><span id="ticker-currency">LATEST QUOTE</span><span id="data-asof">Select a security to begin</span></div>
           <div class="ticker-rule"><span></span></div>
           <div class="ticker-caption">The long arc, adjusted for corporate actions.</div>
-          <div class="ticker-refresh-row"><span class="ticker-actions"><button id="refresh-button" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh data</button><button id="share-button" class="refresh-button" type="button"><span aria-hidden="true">↗</span> Share</button></span><span id="cache-note" class="cache-note" aria-live="polite"></span></div>
+          <div class="ticker-refresh-row"><span class="ticker-actions"><button id="refresh-button" class="refresh-button" type="button" disabled><span aria-hidden="true">↻</span> Refresh data</button><button id="share-button" class="refresh-button" type="button" disabled><span aria-hidden="true">↗</span> Share</button></span><span id="cache-note" class="cache-note" aria-live="polite"></span></div>
         </div>
       </section>
 
