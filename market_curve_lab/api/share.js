@@ -188,12 +188,12 @@ function sendPage(response, html, status, scriptNonce = null) {
   response.send(html);
 }
 
-function renderPage(response, { symbol, security, selfUrl, imageUrl, appUrl }) {
+function renderPage(response, { symbol, security, imageUrl, appUrl }) {
   const title = security ? `${security.symbol} · ${security.company} — Market Curve Lab` : `${symbol} — Market Curve Lab`;
   const description = security ? describe(security) : `Long-term adjusted performance, fitted trendlines, and recent curvature for ${symbol}.`;
   const image = security ? imageUrl : FALLBACK_IMAGE;
   const scriptNonce = randomUUID();
-  const e = { title: escapeHtml(title), description: escapeHtml(description), image: escapeHtml(image), selfUrl: escapeHtml(selfUrl), appUrl: escapeHtml(appUrl) };
+  const e = { title: escapeHtml(title), description: escapeHtml(description), image: escapeHtml(image), appUrl: escapeHtml(appUrl) };
   const html = `<!doctype html>
 <html lang="en">
 <head>
@@ -205,7 +205,7 @@ function renderPage(response, { symbol, security, selfUrl, imageUrl, appUrl }) {
   <link rel="canonical" href="${e.appUrl}">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Market Curve Lab">
-  <meta property="og:url" content="${e.selfUrl}">
+  <meta property="og:url" content="${e.appUrl}">
   <meta property="og:title" content="${e.title}">
   <meta property="og:description" content="${e.description}">
   <meta property="og:image" content="${e.image}">
@@ -279,5 +279,5 @@ export default async function handler(request, response) {
   const imageUrl = `${selfUrl}/preview.png`;
   const appUrl = new URL(appBaseUrl());
   appUrl.searchParams.set('symbol', canonicalSymbol);
-  renderPage(response, { symbol: canonicalSymbol, security, selfUrl, imageUrl, appUrl: appUrl.href });
+  renderPage(response, { symbol: canonicalSymbol, security, imageUrl, appUrl: appUrl.href });
 }

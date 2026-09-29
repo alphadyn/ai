@@ -17,6 +17,10 @@ securities you've viewed.
 
 The **Share** button copies (or opens the system share sheet for) a Vercel
 permalink such as `https://ai-orcin-eta-15.vercel.app/s/NVDA`.
+The preview metadata identifies the Alphadyn app URL
+(`https://alphadyn.github.io/ai/market_curve_lab/?symbol=NVDA`) as its Open
+Graph URL and canonical destination, while Vercel serves the ticker-specific
+preview metadata and image.
 Link previews don't run JavaScript, and GitHub Pages returns the same static tags
 for every query string, so the Pages workflow runs
 [`build_share_pages.py`](build_share_pages.py) to generate a crawler-readable
