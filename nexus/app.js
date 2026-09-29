@@ -1475,8 +1475,17 @@ class SpectrumVisualizer {
 
     // Sidebar Mobile Toggle
     const sidebar = document.getElementById('appSidebar');
-    document.getElementById('toggleSidebarBtn').addEventListener('click', () => {
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    toggleSidebarBtn.setAttribute('aria-expanded', 'false');
+    toggleSidebarBtn.addEventListener('click', () => {
       sidebar.classList.toggle('open');
+      toggleSidebarBtn.setAttribute('aria-expanded', String(sidebar.classList.contains('open')));
+    });
+    document.addEventListener('click', (event) => {
+      if (sidebar.classList.contains('open') && !sidebar.contains(event.target) && !toggleSidebarBtn.contains(event.target)) {
+        sidebar.classList.remove('open');
+        toggleSidebarBtn.setAttribute('aria-expanded', 'false');
+      }
     });
 
     // Select All Checkbox in Toolbar
