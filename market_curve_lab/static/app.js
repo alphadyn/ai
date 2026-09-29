@@ -11,6 +11,16 @@ const errorPanel = $('#chart-error');
 const errorCopy = $('#error-copy');
 const tickerSearch = $('#ticker-search');
 const tickerResults = $('#ticker-results');
+const topSecuritiesSection = $('#top-securities');
+const securityList = $('#security-list');
+const securityListStatus = $('#security-list-status');
+const topSecuritiesCount = $('#top-securities-count');
+const securityPagination = $('#security-pagination');
+const previousSecuritiesButton = $('#securities-previous');
+const nextSecuritiesButton = $('#securities-next');
+const securitiesPageLabel = $('#securities-page-label');
+const securityDetail = $('#security-detail');
+const backToSecuritiesButton = $('#back-to-securities');
 const refreshButton = $('#refresh-button');
 const shareButton = $('#share-button');
 const cacheNote = $('#cache-note');
@@ -33,6 +43,7 @@ const concavitySymbol = $('#concavity-symbol');
 const concavityDetail = $('#concavity-detail');
 const observationCount = $('#observation-count');
 const chartHeading = $('#chart-heading');
+const SECURITIES_PER_PAGE = 100;
 const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const CHART = { width: 1000, height: 470, left: 76, right: 18, top: 22, bottom: 46 };
@@ -47,6 +58,8 @@ let requestSequence = 0;
 let companiesBySymbol = new Map();
 let selectedSecurity = initialUrlSymbol ? { symbol: initialUrlSymbol, company: initialUrlSymbol, exchange: '' } : { symbol: 'AAPL', company: 'Apple Inc.' };
 let sp500Companies = [];
+let rankedSecurities = [];
+let currentSecuritiesPage = 0;
 let visibleMatches = [];
 let activeMatchIndex = -1;
 let searchTimer;
@@ -54,7 +67,7 @@ let searchController;
 const searchResultsCache = new Map();
 let userHasEditedSearch = false;
 let isRefreshing = false;
-tickerSearch.value = selectedSymbol;
+tickerSearch.value = initialUrlSymbol || '';
 
 function symbolFromUrl() {
   const value = (new URLSearchParams(window.location.search).get('symbol') || '').trim().toUpperCase();
@@ -75,6 +88,91 @@ function updatePageMeta(data) {
   if (description) {
     description.setAttribute('content', `${name} (${data.symbol}): ${formatPercent(data.total_return_pct)} adjusted total return since ${data.period_start.slice(0, 4)}, ${data.best_fit} best fit, currently ${data.concavity}.`);
   }
+}
+
+function renderTopSecurities() {
+  rankedSecurities = [...sp500Companies]
+    .filter((company) => Number.isFinite(Number(company.rank)) && Number(company.rank) > 0)
+    .sort((a, b) => Number(a.rank) - Number(b.rank));
+
+  securityList.replaceChildren();
+  securityPagination.hidden = true;
+  if (rankedSecurities.length < 500 || !(Number(rankedSecurities[0]?.market_cap) > 0)) {
+    topSecuritiesCount.textContent = 'RANKINGS UNAVAILABLE';
+    securityListStatus.hidden = false;
+    securityListStatus.textContent = 'The complete S&P 500 market-cap ranking is not available right now. Please try again shortly.';
+    return;
+  }
+
+  currentSecuritiesPage = 0;
+  topSecuritiesCount.textContent = `${rankedSecurities.length} SECURITIES · RANKED BY MARKET CAP`;
+  securityListStatus.hidden = true;
+  renderSecuritiesPage();
+}
+
+function renderSecuritiesPage() {
+  const start = currentSecuritiesPage * SECURITIES_PER_PAGE;
+  const pageCompanies = rankedSecurities.slice(start, start + SECURITIES_PER_PAGE);
+  securityList.replaceChildren();
+  const compactCurrency = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 });
+  pageCompanies.forEach((company) => {
+    const item = document.createElement('li');
+    item.className = 'security-list-item';
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'security-row';
+    row.setAttribute('aria-label', `View ${company.company} (${company.symbol}), S&P 500 rank ${company.rank}`);
+
+    const rank = document.createElement('span');
+    rank.className = 'security-row-rank';
+    rank.textContent = `#${company.rank}`;
+    const symbol = document.createElement('strong');
+    symbol.className = 'security-row-symbol';
+    symbol.textContent = company.symbol;
+    const name = document.createElement('span');
+    name.className = 'security-row-name';
+    name.textContent = company.company;
+    row.append(rank, symbol, name);
+
+    if (Number.isFinite(Number(company.market_cap)) && Number(company.market_cap) > 0) {
+      const marketCap = document.createElement('span');
+      marketCap.className = 'security-row-cap';
+      marketCap.textContent = `$${compactCurrency.format(Number(company.market_cap))}`;
+      row.append(marketCap);
+    } else {
+      const marketCap = document.createElement('span');
+      marketCap.className = 'security-row-cap is-unavailable';
+      marketCap.textContent = '—';
+      row.append(marketCap);
+    }
+    const arrow = document.createElement('span');
+    arrow.className = 'security-row-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '→';
+    row.append(arrow);
+    row.addEventListener('click', () => chooseSecurity(company));
+    item.append(row);
+    securityList.append(item);
+  });
+
+  const end = start + pageCompanies.length;
+  securitiesPageLabel.textContent = `${start + 1}–${end} OF ${rankedSecurities.length}`;
+  previousSecuritiesButton.disabled = currentSecuritiesPage === 0;
+  nextSecuritiesButton.disabled = end >= rankedSecurities.length;
+  securityPagination.hidden = rankedSecurities.length <= SECURITIES_PER_PAGE;
+}
+
+function showSecurityDirectory() {
+  requestSequence += 1;
+  topSecuritiesSection.hidden = false;
+  securityDetail.hidden = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showSecurityDetail() {
+  topSecuritiesSection.hidden = true;
+  securityDetail.hidden = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Shared server-side cache (Supabase/Postgres) so page loads read saved results instead of
@@ -401,10 +499,11 @@ function renderAnalysis(data) {
   chart.removeAttribute('hidden');
 }
 
-async function loadAnalysis(security, { forceRefresh = false, prefetchedCache, pushHistory = false } = {}) {
+async function loadAnalysis(security, { forceRefresh = false, prefetchedCache, pushHistory = false, showDetails = true, syncUrl = true } = {}) {
   const symbol = typeof security === 'string' ? security : security.symbol;
+  if (showDetails) showSecurityDetail();
   selectedSymbol = symbol;
-  syncLocation(symbol, pushHistory);
+  if (syncUrl) syncLocation(symbol, pushHistory);
   selectedSecurity = typeof security === 'string' ? companiesBySymbol.get(symbol) || { symbol } : security;
   const requestId = ++requestSequence;
   const selectedCompany = selectedSecurity;
@@ -428,7 +527,13 @@ async function loadAnalysis(security, { forceRefresh = false, prefetchedCache, p
       if (requestId !== requestSequence) return;
       if (cached) {
         updateProgress(100, `Using saved ${symbol} results`);
-        renderAnalysis(cached.payload);
+        renderAnalysis({
+          ...cached.payload,
+          symbol,
+          company: selectedCompany?.company || cached.payload.company,
+          market_cap_rank: cached.payload.market_cap_rank || selectedCompany?.rank || null,
+          market_cap: cached.payload.market_cap ?? selectedCompany?.market_cap ?? null,
+        });
         updateCacheNote(cached.updatedAt);
         return;
       }
@@ -473,8 +578,13 @@ async function loadCompanies(forceRefresh = false) {
     if (!forceRefresh) {
       updateProgress(10, 'Checking saved results…');
       const cached = await loadCachedRow('companies');
-      if (cached) {
-        companiesPayload = cached.payload.companies;
+      const cachedCompanies = cached?.payload?.companies;
+      const hasRankedCache = Array.isArray(cachedCompanies)
+        && cachedCompanies.length >= 500
+        && cachedCompanies.filter((company) => Number(company.rank) > 0).length >= 500
+        && cachedCompanies.some((company) => Number(company.rank) === 1 && Number(company.market_cap) > 0);
+      if (hasRankedCache) {
+        companiesPayload = cachedCompanies;
         cacheTimestamp = cached.updatedAt;
       }
     }
@@ -489,6 +599,7 @@ async function loadCompanies(forceRefresh = false) {
     }
     sp500Companies = companiesPayload;
     companiesBySymbol = new Map(sp500Companies.map((company) => [company.symbol, company]));
+    renderTopSecurities();
     updateCacheNote(cacheTimestamp);
     const prefetchedCache = await analysisPrefetch;
     if (userHasEditedSearch) {
@@ -500,19 +611,33 @@ async function loadCompanies(forceRefresh = false) {
       await searchTicker(tickerSearch.value);
       return;
     }
+    if (!initialUrlSymbol && !forceRefresh) {
+      const preferred = companiesBySymbol.get(selectedSymbol) || sp500Companies[0];
+      if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
+      await loadAnalysis(preferred, { prefetchedCache, showDetails: false, syncUrl: false });
+      topSecuritiesSection.hidden = false;
+      securityDetail.hidden = true;
+      return;
+    }
     const preferred = companiesBySymbol.get(selectedSymbol)
       || (initialUrlSymbol === selectedSymbol ? selectedSecurity : sp500Companies[0]);
     if (!preferred) throw new Error('No S&P 500 companies were returned by the market-data provider.');
-    tickerSearch.value = preferred.symbol;
-    await loadAnalysis(preferred, { forceRefresh, prefetchedCache });
+    const showDetails = Boolean(initialUrlSymbol || !securityDetail.hidden);
+    if (showDetails) tickerSearch.value = preferred.symbol;
+    await loadAnalysis(preferred, { forceRefresh, prefetchedCache, showDetails, syncUrl: false });
   } catch (error) {
+    if (!initialUrlSymbol && !forceRefresh && !userHasEditedSearch) {
+      topSecuritiesSection.hidden = false;
+      securityDetail.hidden = true;
+      topSecuritiesCount.textContent = 'RANKINGS UNAVAILABLE';
+      securityListStatus.hidden = false;
+      securityListStatus.textContent = error instanceof Error ? error.message : 'Could not load S&P 500 rankings.';
+      return;
+    }
     // The ticker-search endpoint still allows any listed stock if the ranking feed is unavailable.
     companyRank.textContent = 'SEARCH ANY STOCK';
-    await searchTicker(tickerSearch.value || 'AAPL');
-    if (!userHasEditedSearch) {
-      const prefetchedCache = forceRefresh ? undefined : await analysisPrefetch;
-      await loadAnalysis({ symbol: selectedSymbol, company: selectedSymbol, exchange: '' }, { forceRefresh, prefetchedCache });
-    }
+    await searchTicker(tickerSearch.value || selectedSymbol || 'AAPL');
+    if (!userHasEditedSearch) await loadAnalysis({ symbol: selectedSymbol, company: selectedSymbol, exchange: '' }, { forceRefresh });
   }
 }
 
@@ -527,6 +652,7 @@ function chooseSecurity(security) {
   clearTimeout(searchTimer);
   tickerSearch.value = security.symbol;
   closeSearchResults();
+  showSecurityDetail();
   loadAnalysis(security, { pushHistory: true });
 }
 
@@ -688,11 +814,37 @@ document.querySelectorAll('.legend-item').forEach((button) => {
 $('#retry-button').addEventListener('click', () => {
   loadAnalysis(selectedSecurity);
 });
+previousSecuritiesButton.addEventListener('click', () => {
+  if (currentSecuritiesPage === 0) return;
+  currentSecuritiesPage -= 1;
+  renderSecuritiesPage();
+  topSecuritiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+nextSecuritiesButton.addEventListener('click', () => {
+  if ((currentSecuritiesPage + 1) * SECURITIES_PER_PAGE >= rankedSecurities.length) return;
+  currentSecuritiesPage += 1;
+  renderSecuritiesPage();
+  topSecuritiesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+backToSecuritiesButton.addEventListener('click', () => {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('symbol');
+  window.history.pushState({ directory: true }, '', url);
+  showSecurityDirectory();
+});
 window.addEventListener('popstate', () => {
-  const symbol = symbolFromUrl() || 'AAPL';
-  if (symbol === selectedSymbol) return;
+  const symbol = symbolFromUrl();
+  if (!symbol) {
+    showSecurityDirectory();
+    return;
+  }
+  if (symbol === selectedSymbol) {
+    showSecurityDetail();
+    return;
+  }
   tickerSearch.value = symbol;
   closeSearchResults();
+  showSecurityDetail();
   loadAnalysis(companiesBySymbol.get(symbol) || { symbol, company: symbol, exchange: '' });
 });
 if (shareButton) {

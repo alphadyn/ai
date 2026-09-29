@@ -28,8 +28,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="static/styles.css?v=annual-return-colors-2">
-  <script src="static/app.js?v=alphadyn-share-pages-2" defer></script>
+  <link rel="stylesheet" href="static/styles.css?v=ranked-list-intro-controls-search-empty">
+  <script src="static/app.js?v=ranked-list-intro-controls-search-empty" defer></script>
 </head>
 <body>
   <div class="site-shell">
@@ -43,13 +43,13 @@
         <div class="intro-copy">
           <p class="eyebrow"><span>01</span> PRICE HISTORY / TREND ANALYSIS</p>
           <h1 id="page-title">Company,<br><em>over time.</em></h1>
-          <p class="lede">Explore all 500 S&amp;P companies, ranked by market capitalization, or search for any other listed stock by ticker or name. Compare all-time performance, least-squares trendlines, and recent curvature.</p>
+          <p class="lede">Browse all S&amp;P 500 securities ranked by market capitalization, or search for any listed stock. Select a company to see its adjusted performance, fitted trendlines, and recent curvature.</p>
         </div>
         <div class="ticker-card" aria-label="Selected company stock summary">
           <label class="company-picker-label" for="ticker-search">SEARCH A TICKER OR COMPANY <span id="company-rank">S&amp;P 500</span></label>
           <div class="ticker-search-wrap">
             <span class="search-icon" aria-hidden="true">⌕</span>
-            <input id="ticker-search" type="search" value="AAPL" placeholder="e.g. AAPL or Apple" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ticker-results" aria-label="Search stocks by ticker or company name">
+            <input id="ticker-search" type="search" value="" placeholder="e.g. AAPL or Apple" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ticker-results" aria-label="Search stocks by ticker or company name">
             <span class="search-shortcut" aria-hidden="true">↵</span>
             <div class="ticker-results" id="ticker-results" role="listbox" aria-label="Matching stocks" hidden></div>
           </div>
@@ -62,6 +62,29 @@
         </div>
       </section>
 
+      <section class="top-securities" id="top-securities" aria-labelledby="top-securities-heading">
+        <div class="top-securities-heading">
+          <div>
+            <p class="eyebrow"><span>02</span> MARKET-CAP RANKING</p>
+            <h2 id="top-securities-heading">S&amp;P 500 securities</h2>
+            <p class="top-securities-intro">Ranked by market capitalization · select any security to open its complete analysis.</p>
+          </div>
+          <span class="top-securities-count" id="top-securities-count">Loading rankings…</span>
+        </div>
+        <ol class="security-list" id="security-list" aria-label="S&amp;P 500 securities ordered by market capitalization"></ol>
+        <nav class="security-pagination" id="security-pagination" aria-label="Security list pages" hidden>
+          <button class="page-button" id="securities-previous" type="button"><span aria-hidden="true">←</span> Previous</button>
+          <span class="page-label" id="securities-page-label" aria-live="polite"></span>
+          <button class="page-button" id="securities-next" type="button">Next <span aria-hidden="true">→</span></button>
+        </nav>
+        <p class="security-list-status" id="security-list-status" role="status" aria-live="polite">Loading S&amp;P 500 rankings…</p>
+      </section>
+
+      <section class="security-detail" id="security-detail" hidden aria-label="Selected security analysis">
+        <div class="detail-toolbar">
+          <button class="back-to-securities" id="back-to-securities" type="button"><span aria-hidden="true">←</span> All securities</button>
+          <span class="detail-kicker">SECURITY ANALYSIS</span>
+        </div>
       <section class="metrics" aria-label="All-time performance summary">
         <article class="metric metric-primary">
           <div class="metric-label"><span class="metric-number">A</span> ALL-TIME TOTAL RETURN</div>
@@ -114,6 +137,7 @@
         <p><strong>Trendlines</strong> minimize squared error in log performance across the full set of monthly observations, so the fits match the logarithmic chart. R² describes model fit; the higher score is shown above.</p>
         <p><strong>Concavity</strong> comes from a quadratic least-squares fit to the latest 24 monthly observations. A positive second-order coefficient is concave up; a negative one is concave down. It describes historical curvature, not a forecast.</p>
         <p><strong>Scale</strong> shows adjusted performance rebased to $100 on a logarithmic y-axis. Click the graph to inspect a month's date and indexed value.</p>
+      </section>
       </section>
 
       <footer class="footer"><span>FIELDNOTES / MARKET SERIES <span class="footer-separator">—</span> LARGE-CAP EQUITIES</span><span>Historical analysis, not investment advice.</span></footer>

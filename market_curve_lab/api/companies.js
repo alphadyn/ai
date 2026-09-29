@@ -16,7 +16,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const companies = await fetchSp500Companies();
+    const companies = await fetchSp500Companies(false, { includeMarketCaps: true });
     response.status(200).json({ companies });
   } catch (error) {
     response.status(502).json({ error: error.message || 'Could not load S&P 500 company rankings.' });
