@@ -166,8 +166,8 @@ function renderAnnualReturnBars(points) {
   if (!activeChartSelection) return;
   const returns = annualReturns(points);
   const { chartHeight, margins, plotRight, baselineY, x } = activeChartSelection;
-  const bandHeight = mobileChartMode ? 116 : 104;
-  const bandGap = mobileChartMode ? 18 : 20;
+  const bandHeight = mobileChartMode ? 142 : 104;
+  const bandGap = mobileChartMode ? 22 : 20;
   const annualBaseline = baselineY + bandGap + bandHeight * .5;
   const annualHalfHeight = bandHeight * .44;
   const maxRate = Math.max(.1, ...returns.map((item) => Math.abs(item.rate)));
@@ -214,11 +214,11 @@ function formatAnnualReturn(rate) {
 function renderChart(points, currency = lastChartCurrency) {
   lastChartPoints = points;
   lastChartCurrency = currency;
-  const chartHeight = mobileChartMode ? 520 : CHART.height;
-  const annualBandHeight = mobileChartMode ? 116 : 104;
-  const annualBandGap = mobileChartMode ? 18 : 20;
+  const chartHeight = mobileChartMode ? 660 : CHART.height;
+  const annualBandHeight = mobileChartMode ? 142 : 104;
+  const annualBandGap = mobileChartMode ? 22 : 20;
   const margins = mobileChartMode
-    ? { left: 120, right: 24, top: 70, bottom: 52 }
+    ? { left: 120, right: 24, top: 74, bottom: 58 }
     : { left: CHART.left, right: CHART.right, top: CHART.top, bottom: CHART.bottom };
   const plotRight = CHART.width - margins.right;
   chart.setAttribute('viewBox', `0 0 ${CHART.width} ${chartHeight}`);
@@ -285,7 +285,7 @@ function renderChart(points, currency = lastChartCurrency) {
   const tooltipWidth = mobileChartMode ? 580 : 270;
   const tooltipHeight = mobileChartMode ? 156 : 72;
   const tooltip = svgElement('g', { class: 'chart-selection-tooltip' });
-  const textScale = mobileChartMode ? 2 : 1;
+  const textScale = mobileChartMode ? 2.2 : 1;
   const selectedDate = svgElement('text', { class: 'chart-selection-date', x: 12 * textScale, y: 20 * textScale });
   const selectedPerformance = svgElement('text', { class: 'chart-selection-performance-text', x: 12 * textScale, y: 42 * textScale });
   const selectedAnnualReturn = svgElement('text', { class: 'chart-selection-annual-return', x: 12 * textScale, y: 64 * textScale });
