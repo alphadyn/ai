@@ -35,7 +35,7 @@ const observationCount = $('#observation-count');
 const chartHeading = $('#chart-heading');
 const seriesVisibility = { actual: true, quadratic: true, linear: true };
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const CHART = { width: 1000, height: 390, left: 76, right: 18, top: 22, bottom: 46 };
+const CHART = { width: 1000, height: 470, left: 76, right: 18, top: 22, bottom: 46 };
 const mobileChartQuery = window.matchMedia('(max-width: 600px)');
 let mobileChartMode = mobileChartQuery.matches;
 let lastChartPoints = null;
@@ -152,10 +152,71 @@ function formatIndex(value) {
   return `$${Math.round(value)}`;
 }
 
+function annualReturns(points) {
+  const years = new Map();
+  points.forEach((point, index) => {
+    const year = point.date.slice(0, 4);
+    if (!years.has(year)) years.set(year, { year, previous: index ? points[index - 1].performance : point.performance });
+    years.get(year).end = point.performance;
+  });
+  return [...years.values()].map((item) => ({ ...item, rate: item.end / item.previous - 1 }));
+}
+
+function renderAnnualReturnBars(points) {
+  if (!activeChartSelection) return;
+  const returns = annualReturns(points);
+  const { chartHeight, margins, plotRight, baselineY, x } = activeChartSelection;
+  const bandHeight = mobileChartMode ? 116 : 104;
+  const bandGap = mobileChartMode ? 18 : 20;
+  const annualBaseline = baselineY + bandGap + bandHeight * .5;
+  const annualHalfHeight = bandHeight * .44;
+  const maxRate = Math.max(.1, ...returns.map((item) => Math.abs(item.rate)));
+  const rateY = (rate) => annualBaseline - rate / maxRate * annualHalfHeight;
+  const barWidth = Math.max(4, Math.min(18, (plotRight - margins.left) / (points.length - 1) * 5));
+  const formatRate = (rate) => `${rate >= 0 ? '+' : '−'}${Math.abs(rate * 100).toFixed(1)}%`;
+  const layer = svgElement('g', { class: 'annual-returns-layer' });
+  const defs = chart.querySelector('defs');
+  const gainGradient = svgElement('linearGradient', { id: 'annual-gain-fill', x1: '0', x2: '0', y1: '0', y2: '1' });
+  gainGradient.append(svgElement('stop', { offset: '0%', 'stop-color': '#d3ef83', 'stop-opacity': '.8' }), svgElement('stop', { offset: '100%', 'stop-color': '#83d0a5', 'stop-opacity': '.45' }));
+  const lossGradient = svgElement('linearGradient', { id: 'annual-loss-fill', x1: '0', x2: '0', y1: '0', y2: '1' });
+  lossGradient.append(svgElement('stop', { offset: '0%', 'stop-color': '#ee9382', 'stop-opacity': '.45' }), svgElement('stop', { offset: '100%', 'stop-color': '#efc27e', 'stop-opacity': '.8' }));
+  defs.append(gainGradient, lossGradient);
+  [-maxRate, 0, maxRate].forEach((rate) => {
+    const y = rateY(rate);
+    layer.append(
+      svgElement('line', { class: rate === 0 ? 'annual-zero-line' : 'annual-grid-line', x1: margins.left, x2: plotRight, y1: y, y2: y }),
+      svgElement('text', { class: 'annual-grid-label', x: margins.left - 10, y: y + 4, 'text-anchor': 'end' }, formatRate(rate)),
+    );
+  });
+  layer.append(svgElement('text', { class: 'annual-axis-title', x: margins.left, y: annualBaseline - annualHalfHeight - 10 }, 'ANNUAL RETURN · %'));
+  returns.forEach((item) => {
+    const pointIndex = points.findIndex((point) => point.date.startsWith(item.year));
+    const centerX = x(pointIndex < 0 ? 0 : pointIndex);
+    const endY = rateY(item.rate);
+    const bar = svgElement('rect', {
+      class: `annual-bar ${item.rate >= 0 ? 'annual-bar-positive' : 'annual-bar-negative'}`,
+      x: centerX - barWidth / 2,
+      y: Math.min(annualBaseline, endY),
+      width: barWidth,
+      height: Math.max(1, Math.abs(endY - annualBaseline)),
+      rx: Math.min(3, barWidth / 3),
+    });
+    bar.append(svgElement('title', {}, `${item.year}: ${formatRate(item.rate)}`));
+    layer.append(bar);
+  });
+  chart.append(layer);
+}
+
+function formatAnnualReturn(rate) {
+  return `${rate >= 0 ? '+' : '−'}${Math.abs(rate * 100).toFixed(1)}%`;
+}
+
 function renderChart(points, currency = lastChartCurrency) {
   lastChartPoints = points;
   lastChartCurrency = currency;
   const chartHeight = mobileChartMode ? 520 : CHART.height;
+  const annualBandHeight = mobileChartMode ? 116 : 104;
+  const annualBandGap = mobileChartMode ? 18 : 20;
   const margins = mobileChartMode
     ? { left: 120, right: 24, top: 70, bottom: 52 }
     : { left: CHART.left, right: CHART.right, top: CHART.top, bottom: CHART.bottom };
@@ -165,7 +226,7 @@ function renderChart(points, currency = lastChartCurrency) {
   const minExponent = 2;
   const maxExponent = Math.ceil(Math.log10(maxValue));
   const plotWidth = plotRight - margins.left;
-  const plotHeight = chartHeight - margins.top - margins.bottom;
+  const plotHeight = chartHeight - margins.top - margins.bottom - annualBandHeight - annualBandGap;
   const minLog = minExponent;
   const maxLog = Math.max(maxExponent, minExponent + 1);
   const x = (index) => margins.left + (index / (points.length - 1)) * plotWidth;
@@ -192,7 +253,7 @@ function renderChart(points, currency = lastChartCurrency) {
     );
   }
 
-  const baselineY = chartHeight - margins.bottom;
+  const baselineY = chartHeight - margins.bottom - annualBandHeight;
   chart.append(svgElement('line', { class: 'chart-axis', x1: margins.left, x2: plotRight, y1: baselineY, y2: baselineY }));
   chart.append(svgElement('text', {
     class: 'performance-axis-title',
@@ -222,27 +283,31 @@ function renderChart(points, currency = lastChartCurrency) {
   const crosshair = svgElement('line', { class: 'chart-selection-crosshair', x1: margins.left, x2: margins.left, y1: margins.top, y2: baselineY });
   const performancePoint = svgElement('circle', { class: 'chart-selection-point chart-selection-performance', cx: margins.left, cy: margins.top, r: pointRadius });
   const tooltipWidth = mobileChartMode ? 580 : 270;
-  const tooltipHeight = mobileChartMode ? 108 : 54;
+  const tooltipHeight = mobileChartMode ? 156 : 72;
   const tooltip = svgElement('g', { class: 'chart-selection-tooltip' });
   const textScale = mobileChartMode ? 2 : 1;
   const selectedDate = svgElement('text', { class: 'chart-selection-date', x: 12 * textScale, y: 20 * textScale });
   const selectedPerformance = svgElement('text', { class: 'chart-selection-performance-text', x: 12 * textScale, y: 42 * textScale });
+  const selectedAnnualReturn = svgElement('text', { class: 'chart-selection-annual-return', x: 12 * textScale, y: 64 * textScale });
   tooltip.append(
     svgElement('rect', { class: 'chart-selection-tooltip-bg', width: tooltipWidth, height: tooltipHeight, rx: mobileChartMode ? 14 : 8 }),
     selectedDate,
     selectedPerformance,
+    selectedAnnualReturn,
   );
   selectionLayer.append(crosshair, performancePoint, tooltip);
   selectionLayer.style.display = 'none';
   chart.append(selectionLayer);
   activeChartSelection = {
     points, currency, chartHeight, margins, plotWidth, plotRight, baselineY, x, y, selectionLayer, crosshair,
-    performancePoint, tooltip, selectedDate, selectedPerformance, tooltipWidth, tooltipHeight,
+    performancePoint, tooltip, selectedDate, selectedPerformance, selectedAnnualReturn, tooltipWidth, tooltipHeight,
+    annualReturnsByYear: new Map(annualReturns(points).map((item) => [item.year, item.rate])),
   };
 
   chart.querySelectorAll('.series-toggle').forEach((series) => {
     series.style.display = seriesVisibility[series.dataset.series] ? '' : 'none';
   });
+  renderAnnualReturnBars(points);
 }
 
 function selectChartPoint(event) {
@@ -254,31 +319,18 @@ function selectChartPoint(event) {
   const chartY = ((event.clientY - bounds.top) / bounds.height) * state.chartHeight;
   const minX = state.margins.left;
   const maxX = state.plotRight;
-  if (chartX < minX || chartX > maxX || chartY < state.margins.top || chartY > state.baselineY) return;
+  if (chartX < minX || chartX > maxX || chartY < state.margins.top || chartY > state.chartHeight - state.margins.bottom) return;
 
-  let index = -1;
-  let selectedY = chartY;
-  let nearestDistance = Infinity;
-  const pixelScaleX = bounds.width / CHART.width;
-  const pixelScaleY = bounds.height / state.chartHeight;
+  let index = 0;
+  let nearestXDistance = Infinity;
   state.points.forEach((candidate, candidateIndex) => {
     const candidateX = state.x(candidateIndex);
-    const seriesYs = [];
-    if (seriesVisibility.actual) seriesYs.push(state.y(candidate.performance));
-    if (seriesVisibility.quadratic) seriesYs.push(state.y(candidate.quadratic_fit));
-    if (seriesVisibility.linear) seriesYs.push(state.y(candidate.linear_fit));
-    seriesYs.forEach((seriesY) => {
-      const dx = (candidateX - chartX) * pixelScaleX;
-      const dy = (seriesY - chartY) * pixelScaleY;
-      const distance = Math.hypot(dx, dy);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        index = candidateIndex;
-        selectedY = seriesY;
-      }
-    });
+    const distance = Math.abs(candidateX - chartX);
+    if (distance < nearestXDistance) {
+      nearestXDistance = distance;
+      index = candidateIndex;
+    }
   });
-  if (index < 0) return;
 
   const point = state.points[index];
   const selectedX = state.x(index);
@@ -286,8 +338,8 @@ function selectChartPoint(event) {
   const tooltipX = selectedX + state.tooltipWidth + 14 > maxX
     ? Math.max(minX, selectedX - state.tooltipWidth - 14)
     : selectedX + 14;
-  const preferredTooltipY = selectedY - state.tooltipHeight - 12;
-  const tooltipY = preferredTooltipY < state.margins.top ? selectedY + 12 : preferredTooltipY;
+  const preferredTooltipY = performanceY - state.tooltipHeight - 12;
+  const tooltipY = preferredTooltipY < state.margins.top ? performanceY + 12 : preferredTooltipY;
   const boundedTooltipY = Math.min(state.baselineY - state.tooltipHeight, Math.max(state.margins.top, tooltipY));
 
   state.crosshair.setAttribute('x1', String(selectedX));
@@ -297,6 +349,11 @@ function selectChartPoint(event) {
   state.tooltip.setAttribute('transform', `translate(${tooltipX}, ${boundedTooltipY})`);
   state.selectedDate.textContent = point.date;
   state.selectedPerformance.textContent = `Performance: ${formatMoney(point.performance, state.currency)} per $100`;
+  const year = point.date.slice(0, 4);
+  const yearReturn = state.annualReturnsByYear.get(year);
+  state.selectedAnnualReturn.classList.toggle('annual-return-positive', yearReturn != null && yearReturn >= 0);
+  state.selectedAnnualReturn.classList.toggle('annual-return-negative', yearReturn != null && yearReturn < 0);
+  state.selectedAnnualReturn.textContent = yearReturn == null ? `Annual return (${year}): unavailable` : `Annual return (${year}): ${formatAnnualReturn(yearReturn)}`;
   state.selectionLayer.style.display = '';
 }
 

@@ -125,6 +125,9 @@ h1 em { color: var(--lime); font-style: normal; }
 .chart-selection-date, .chart-selection-performance-text { font: 11.5px 'DM Mono', monospace; }
 .chart-selection-date { fill: var(--cream); font-weight: 600; }
 .chart-selection-performance-text { fill: var(--lime); }
+.chart-selection-annual-return { font: 600 11.5px 'DM Mono', monospace; }
+.chart-selection-annual-return.annual-return-positive { fill: #d3ef83; }
+.chart-selection-annual-return.annual-return-negative { fill: #ee9382; }
 .chart-loading, .chart-error { min-height: 385px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: #aab6ab; text-align: center; }
 .chart-loading strong, .chart-error strong { color: #e4e9df; font: 500 14px var(--display); }.chart-loading span:last-child, .chart-error span:not(.error-mark) { font-size: 11px; }
 .loader { width: 25px; height: 25px; margin-bottom: 7px; border: 1px solid #52614e; border-top-color: var(--lime); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -136,6 +139,9 @@ h1 em { color: var(--lime); font-style: normal; }
 .chart-error button { margin-top: 9px; padding: 8px 12px; border: 1px solid #445448; background: transparent; color: var(--lime); cursor: pointer; font-size: 10px; }
 .chart-error button:hover { background: var(--panel-soft); }
 .chart-footnote { display: flex; align-items: center; gap: 10px; min-height: 43px; color: #8b998e; font: 9px var(--mono); letter-spacing: .06em; }
+.annual-grid-line { stroke: #344139; stroke-width: 1; stroke-dasharray: 2 5; }.annual-zero-line { stroke: #71806f; stroke-width: 1; }
+.annual-grid-label, .annual-axis-title { fill: #839086; font-family: 'DM Mono', monospace; }.annual-grid-label { font-size: 11.5px; }.annual-axis-title { font-size: 9.5px; letter-spacing: .04em; }
+.annual-bar { cursor: pointer; transition: opacity .15s ease; }.annual-bar:hover { opacity: .72; }.annual-bar-positive { fill: #d3ef83; }.annual-bar-negative { fill: #ee9382; }
 .footnote-divider { width: 1px; height: 11px; margin: 0 5px; background: #3a463d; }.footnote-source { margin-left: auto; }
 .reading-guide { display: grid; grid-template-columns: .72fr 1fr 1fr 1fr; gap: 25px; margin: 20px 0 42px; padding: 23px 24px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, rgba(20, 30, 24, .95), rgba(16, 24, 20, .95)); }
 .guide-heading { display: flex; align-items: flex-start; gap: 9px; color: #b3bdb1; font: 9px var(--mono); letter-spacing: .1em; }.guide-spark { color: var(--lime); font-size: 13px; }
@@ -200,7 +206,7 @@ h1 em { color: var(--lime); font-style: normal; }
   #performance-chart { min-height: 0; height: auto; aspect-ratio: 1000 / 520; }
   .chart-grid-label, .chart-date-label { font-size: 25px; }
   .performance-axis-title { font-size: 21px; }
-  .chart-selection-date, .chart-selection-performance-text { font-size: 25px; }
+  .chart-selection-date, .chart-selection-performance-text, .chart-selection-annual-return { font-size: 25px; }
   .chart-loading, .chart-error { min-height: 280px; padding: 20px 16px; }
   .chart-loading span:last-child, .chart-error span:not(.error-mark) { max-width: 30ch; font-size: 12px; line-height: 1.5; }
   .load-progress { width: min(100%, 280px); }
