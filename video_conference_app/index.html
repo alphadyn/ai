@@ -41,6 +41,7 @@
           <button type="button" id="previewMicBtn" class="toggle-btn is-on" aria-pressed="true">🎙️ Mic</button>
           <button type="button" id="previewCamBtn" class="toggle-btn is-on" aria-pressed="true">📷 Camera</button>
         </div>
+        <button type="button" id="retryMediaBtn" class="ghost-btn hidden">Retry camera / microphone</button>
       </div>
 
       <p id="joinStatus" class="status-text" role="status"></p>
@@ -55,6 +56,7 @@
         <button type="button" id="copyLinkBtn" class="link-btn">Copy invite link</button>
       </div>
       <span id="connectionStatus" class="connection-status">Connecting…</span>
+      <span id="meetingMediaStatus" class="connection-status hidden" role="status"></span>
     </header>
 
     <div class="meeting-body">

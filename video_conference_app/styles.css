@@ -95,6 +95,7 @@ body {
   background: rgba(0,0,0,0.5); font-size: 0.8rem; color: var(--muted);
 }
 .preflight-toggles { display: flex; gap: 8px; margin-top: 10px; }
+#retryMediaBtn { margin-top: 10px; width: 100%; }
 .toggle-btn {
   flex: 1;
   padding: 8px;
@@ -105,6 +106,7 @@ body {
   cursor: pointer;
 }
 .toggle-btn:not(.is-on) { opacity: 0.5; }
+.toggle-btn:disabled, .control-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .status-text { color: var(--muted); font-size: 0.9rem; min-height: 1.2em; margin: 14px 0 0; }
 
@@ -117,6 +119,8 @@ body {
 }
 .meeting-info { display: flex; align-items: center; gap: 10px; }
 .meeting-info strong { letter-spacing: 0.02em; }
+.meeting-header { flex-wrap: wrap; gap: 8px; }
+#meetingMediaStatus { width: 100%; }
 .link-btn {
   background: transparent; border: 1px solid var(--line); color: var(--accent-2);
   border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; text-decoration: none;
@@ -149,7 +153,8 @@ body {
   position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
   font-size: 2rem; font-weight: 700; color: var(--muted); background: var(--panel-2);
 }
-.video-tile video:not([src]), .video-tile video[src=""] { display: none; }
+.video-tile:not(.has-video) video { display: none; }
+.video-tile:not(.has-video) .tile-avatar { display: flex; }
 .tile-name {
   position: absolute; left: 8px; bottom: 8px; font-size: 0.8rem;
   background: rgba(0,0,0,0.55); padding: 3px 8px; border-radius: 6px;

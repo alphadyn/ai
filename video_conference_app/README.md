@@ -25,8 +25,8 @@ no application server required, and all strongly encrypted end-to-end.
 ## Run it
 This app uses [PeerJS](https://peerjs.com/) (loaded from a CDN) for WebRTC signaling via its free
 public cloud broker, so an internet connection is required, along with browser permission to use
-the camera and microphone. Open [index.html](index.html) directly in a browser, or serve the
-folder locally:
+the camera and microphone. Camera/microphone access requires a secure context: use HTTPS when
+deployed, or serve the folder on localhost while developing:
 
 ```bash
 cd video_conference_app
@@ -39,7 +39,10 @@ the same meeting code in separate browser tabs, windows, or devices.
 ## How to use
 1. Enter your name and a meeting code (or click **Generate a new code**) and click **Join
    meeting**.
-2. Grant camera/microphone permission when prompted — you can still join without it.
+2. Grant camera/microphone permission when prompted. The app waits for your device permissions
+  before starting the meeting; if one device is unavailable, the other can still work. If you
+  change browser permissions or connect a device, click **Retry camera / microphone** on the
+  join screen. You can also join without either device to use chat and files.
 3. Use the control bar to mute your mic, stop your camera, open **Chat**, view **People**, share
    **Files**, or **Leave** the meeting.
 4. Click **Copy invite link** and send it to others so they can join the same meeting instantly.

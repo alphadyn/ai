@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run video conference app",
+			"type": "shell",
+			"command": "python3",
+			"args": [
+				"-m",
+				"http.server",
+				"8765",
+				"--directory",
+				"video_conference_app"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

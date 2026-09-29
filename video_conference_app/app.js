@@ -21,10 +21,12 @@
   const previewStatus = document.getElementById('previewStatus');
   const previewMicBtn = document.getElementById('previewMicBtn');
   const previewCamBtn = document.getElementById('previewCamBtn');
+  const retryMediaBtn = document.getElementById('retryMediaBtn');
 
   const roomLabel = document.getElementById('roomLabel');
   const copyLinkBtn = document.getElementById('copyLinkBtn');
   const connectionStatus = document.getElementById('connectionStatus');
+  const meetingMediaStatus = document.getElementById('meetingMediaStatus');
   const videoGrid = document.getElementById('videoGrid');
   const sidePanel = document.getElementById('sidePanel');
   const sideTabs = document.querySelectorAll('.side-tab');
@@ -47,6 +49,7 @@
 
   // ---- State ------------------------------------------------------------
   let localStream = null;
+  let mediaPromise = null;
   let peer = null;
   let myId = null;
   let myName = '';
@@ -149,19 +152,55 @@
 
   // ---- Local media preflight ---------------------------------------------
   async function acquireLocalStream() {
-    try {
-      localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    } catch (err) {
+    if (!localStream) localStream = new MediaStream();
+    const missingAudio = !localStream.getAudioTracks().some((track) => track.readyState === 'live');
+    const missingVideo = !localStream.getVideoTracks().some((track) => track.readyState === 'live');
+    if (navigator.mediaDevices?.getUserMedia && (missingAudio || missingVideo)) {
+      let captured = null;
       try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-        setStatus(previewStatus, 'Camera unavailable — joining with audio only.');
-      } catch (err2) {
-        localStream = new MediaStream();
-        setStatus(previewStatus, 'Microphone and camera are unavailable. You can still join and use chat/files.');
+        captured = await navigator.mediaDevices.getUserMedia({ video: missingVideo, audio: missingAudio });
+      } catch {
+        // A missing or blocked device must not prevent the other from working.
+        for (const kind of ['audio', 'video']) {
+          if ((kind === 'audio' && !missingAudio) || (kind === 'video' && !missingVideo)) continue;
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: kind === 'video', audio: kind === 'audio' });
+            stream.getTracks().forEach((track) => localStream.addTrack(track));
+          } catch {
+            // Joining with just the available devices (or chat only) is supported.
+          }
+        }
       }
+      if (captured) captured.getTracks().forEach((track) => localStream.addTrack(track));
     }
+    localStream.getTracks().filter((track) => track.readyState === 'ended').forEach((track) => localStream.removeTrack(track));
     previewVideo.srcObject = localStream;
+    const hasAudio = localStream.getAudioTracks().length > 0;
+    const hasVideo = localStream.getVideoTracks().length > 0;
+    const message = !navigator.mediaDevices?.getUserMedia
+      ? 'Camera and microphone require HTTPS or localhost in a supported browser. You can still use chat/files.'
+      : hasAudio && hasVideo ? ''
+        : hasAudio ? 'Camera unavailable — joining with audio only.'
+          : hasVideo ? 'Microphone unavailable — joining with video only.'
+            : 'Microphone and camera are unavailable. Check browser permissions or devices; you can still use chat/files.';
+    setStatus(previewStatus, message);
+    setStatus(meetingMediaStatus, message);
+    meetingMediaStatus.classList.toggle('hidden', !message);
+    retryMediaBtn.classList.toggle('hidden', hasAudio && hasVideo);
+    for (const [kind, buttons] of [['audio', [previewMicBtn, micBtn]], ['video', [previewCamBtn, camBtn]]]) {
+      const track = (kind === 'audio' ? localStream.getAudioTracks() : localStream.getVideoTracks())[0];
+      buttons.forEach((button) => {
+        button.disabled = !track;
+        button.classList.toggle('is-on', !!track?.enabled);
+        button.setAttribute('aria-pressed', String(!!track?.enabled));
+      });
+    }
     return localStream;
+  }
+
+  function requestLocalMedia() {
+    if (!mediaPromise) mediaPromise = acquireLocalStream().finally(() => { mediaPromise = null; });
+    return mediaPromise;
   }
 
   function toggleTrack(kind, btn) {
@@ -170,14 +209,19 @@
     if (!tracks.length) return;
     const enabled = !tracks[0].enabled;
     tracks.forEach((t) => { t.enabled = enabled; });
-    btn.classList.toggle('is-on', enabled);
-    btn.setAttribute('aria-pressed', String(enabled));
+    const otherBtn = kind === 'audio' ? (btn === micBtn ? previewMicBtn : micBtn) : (btn === camBtn ? previewCamBtn : camBtn);
+    [btn, otherBtn].forEach((button) => {
+      button.classList.toggle('is-on', enabled);
+      button.setAttribute('aria-pressed', String(enabled));
+    });
+    if (kind === 'video') updateTileVideoState(document.getElementById('tile-local'), localStream);
   }
 
   previewMicBtn.addEventListener('click', () => toggleTrack('audio', previewMicBtn));
   previewCamBtn.addEventListener('click', () => toggleTrack('video', previewCamBtn));
 
-  acquireLocalStream();
+  retryMediaBtn.addEventListener('click', () => requestLocalMedia());
+  requestLocalMedia();
 
   // Pre-fill room code from URL (?room=xyz) for invite links.
   const params = new URLSearchParams(window.location.search);
@@ -201,6 +245,9 @@
   });
 
   async function startMeeting(room) {
+    // Permission prompts can still be pending when the user clicks Join.
+    // PeerJS must never call/answer with a null stream.
+    await (mediaPromise || Promise.resolve(localStream));
     roomKey = await deriveRoomKey(room);
     hostPeerId = await deriveHostPeerId(room);
     await tryBecomeHost(room);
@@ -395,6 +442,7 @@
     const video = tile.querySelector('video');
     video.srcObject = localStream;
     video.muted = true;
+    updateTileVideoState(tile, localStream);
     videoGrid.appendChild(tile);
   }
 
@@ -406,6 +454,12 @@
       videoGrid.appendChild(tile);
     }
     tile.querySelector('video').srcObject = stream;
+    updateTileVideoState(tile, stream);
+  }
+
+  function updateTileVideoState(tile, stream) {
+    if (!tile) return;
+    tile.classList.toggle('has-video', stream.getVideoTracks().some((track) => track.readyState === 'live' && track.enabled));
   }
 
   function updateTileName(id, name) {
@@ -564,6 +618,8 @@
     roster.clear();
     if (peer) peer.destroy();
     if (localStream) localStream.getTracks().forEach((t) => t.stop());
+    localStream = null;
+    previewVideo.srcObject = null;
     videoGrid.innerHTML = '';
     chatLog.innerHTML = '';
     fileLog.innerHTML = '';
@@ -571,6 +627,6 @@
     joinScreen.classList.remove('hidden');
     joinForm.querySelector('button[type="submit"]').disabled = false;
     setStatus(joinStatus, '');
-    acquireLocalStream();
+    requestLocalMedia();
   }
 })();
