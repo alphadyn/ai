@@ -2234,6 +2234,14 @@ body {
   touch-action: pan-y;
 }
 
+.viewer-stage.image-controls-toggle {
+  cursor: pointer;
+}
+
+.image-display {
+  cursor: default;
+}
+
 /* Viewer Sidebar */
 .viewer-sidebar {
   width: 320px;
@@ -2290,15 +2298,20 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   position: relative;
 }
 
 .image-display {
-  max-width: 90vw;
-  max-height: 75vh;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  object-position: center;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   transition: transform 0.2s ease;
@@ -2317,6 +2330,10 @@ body {
   align-items: center;
   gap: 10px;
   z-index: 10;
+}
+
+.image-toolbar.is-hidden {
+  display: none;
 }
 
 .img-ctrl-btn {
@@ -3019,6 +3036,7 @@ body {
     max-width: calc(100vw - 20px);
     overflow-x: auto;
   }
+
 }
 
 @media (max-width: 380px) {

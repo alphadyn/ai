@@ -2225,6 +2225,8 @@ class SpectrumVisualizer {
       audioVisualizerAnimationId = null;
     }
     const stage = document.getElementById('viewerStage');
+    stage.onclick = null;
+    stage.classList.remove('image-controls-toggle');
     stage.innerHTML = '';
   }
 
@@ -2264,6 +2266,8 @@ class SpectrumVisualizer {
   }
 
   // --- Image Viewer with Zoom, Rotate, Flip, Pan ---
+  let imageToolbarVisible = true;
+
   function renderImageViewer(stage, item) {
     let scale = 1;
     let rotation = 0;
@@ -2274,7 +2278,7 @@ class SpectrumVisualizer {
     container.className = 'image-viewer-container';
     container.innerHTML = `
       <img src="${item.dataUrl}" alt="${escapeHtml(item.title)}" class="image-display" id="activeViewerImg">
-      <div class="image-toolbar">
+      <div class="image-toolbar${imageToolbarVisible ? '' : ' is-hidden'}" id="imageToolbar">
         <button class="img-ctrl-btn" id="imgZoomInBtn" title="Zoom In">🔍 +</button>
         <button class="img-ctrl-btn" id="imgZoomOutBtn" title="Zoom Out">🔍 -</button>
         <button class="img-ctrl-btn" id="imgZoomResetBtn" title="Reset Zoom">100%</button>
@@ -2288,9 +2292,25 @@ class SpectrumVisualizer {
     stage.appendChild(container);
 
     const img = container.querySelector('#activeViewerImg');
+    const toolbar = container.querySelector('#imageToolbar');
+    const zoomLevelBtn = container.querySelector('#imgZoomResetBtn');
+    stage.classList.add('image-controls-toggle');
+    stage.onclick = (event) => {
+      if (event.target.closest('.image-display, .image-toolbar')) return;
+
+      imageToolbarVisible = !imageToolbarVisible;
+      toolbar.classList.toggle('is-hidden', !imageToolbarVisible);
+    };
+
     const updateTransform = () => {
       img.style.transform = `scale(${scale * flipH}, ${scale * flipV}) rotate(${rotation}deg)`;
+      const zoomPercentage = Math.round(scale * 100);
+      zoomLevelBtn.textContent = `${zoomPercentage}%`;
+      zoomLevelBtn.title = `Reset to fit (${zoomPercentage}%)`;
+      zoomLevelBtn.setAttribute('aria-label', `Reset zoom; current zoom is ${zoomPercentage}%`);
     };
+
+    updateTransform();
 
     container.querySelector('#imgZoomInBtn').onclick = () => {
       scale = Math.min(5, scale + 0.25);
