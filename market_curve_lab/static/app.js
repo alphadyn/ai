@@ -1,7 +1,6 @@
 const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api';
+const VERCEL_SHARE_URL = 'https://ai-orcin-eta-15.vercel.app/s/';
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
-// S&P members have prebuilt crawler-readable pages under s/; other tickers share the plain app URL.
-const PAGES_APP_URL = 'https://alphadyn.github.io/ai/market_curve_lab/';
 const TICKER_PATTERN = /^[A-Z0-9^][A-Z0-9.^=_-]{0,19}$/;
 const $ = (selector) => document.querySelector(selector);
 const chart = $('#performance-chart');
@@ -697,9 +696,7 @@ window.addEventListener('popstate', () => {
 });
 if (shareButton) {
   shareButton.addEventListener('click', async () => {
-    const url = companiesBySymbol.has(selectedSymbol)
-      ? `${PAGES_APP_URL}s/${encodeURIComponent(selectedSymbol)}/`
-      : `${PAGES_APP_URL}?symbol=${encodeURIComponent(selectedSymbol)}`;
+    const url = `${VERCEL_SHARE_URL}${encodeURIComponent(selectedSymbol)}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: document.title, url });

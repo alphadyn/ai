@@ -15,18 +15,19 @@ Every security has its own URL: `?symbol=<TICKER>` (for example
 updates the address bar, and the browser's back and forward buttons move between
 securities you've viewed.
 
-The **Share** button copies (or opens the system share sheet for) a GitHub Pages
-permalink such as `https://alphadyn.github.io/ai/market_curve_lab/s/NVDA/`.
+The **Share** button copies (or opens the system share sheet for) a Vercel
+permalink such as `https://ai-orcin-eta-15.vercel.app/s/NVDA`.
 Link previews don't run JavaScript, and GitHub Pages returns the same static tags
 for every query string, so the Pages workflow runs
 [`build_share_pages.py`](build_share_pages.py) to generate a crawler-readable
 page for every S&P 500 constituent (the generated `s/` folder is not committed).
-Each page has Open Graph and Twitter tags with the security's name, S&P rank,
-and, when saved results exist, its total return, best fit, and concavity, and
-then sends visitors to the app with that ticker selected. Stocks outside the
-S&P 500 share the plain `?symbol=` URL with the generic preview.
+Each page has Open Graph and Twitter tags with the security's name and S&P rank,
+plus its total return, best fit, and concavity when saved results exist. Pages
+then send visitors to the app with that ticker selected. The Share button uses
+the Vercel endpoint for all listed stocks, including those outside the S&P 500.
 
-The preview image is a 1200×630 PNG chart generated per ticker by
+That endpoint builds ticker-specific Open Graph metadata and a 1200×630 PNG chart
+on demand per ticker through
 [`api/share.js`](api/share.js) on Vercel (`/s/<TICKER>/preview.png`, rendered with
 `@vercel/og`), because GitHub Pages can't render images. That endpoint also serves
 a Vercel-hosted preview page at `/s/<TICKER>` for any listed ticker. Previews use
