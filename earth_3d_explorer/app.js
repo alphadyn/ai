@@ -53,6 +53,10 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.minDistance = 2.6;
 controls.maxDistance = 10;
+// Let horizontal and vertical drags orbit freely around the globe's center.
+// Disable translation so right-drag and two-finger gestures cannot move the
+// orbit target away from the Earth; zooming also stays centered on the globe.
+controls.enablePan = false;
 
 // OrbitControls rotates by an angle per screen pixel, independent of zoom.
 // At the center of a perspective-projected globe, a surface point moves by

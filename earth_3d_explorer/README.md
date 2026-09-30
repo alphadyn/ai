@@ -6,7 +6,8 @@ distance between any two points you click.
 
 ## Features
 - **3D rotating globe** built with [Three.js](https://threejs.org/), textured with a real
-  earth image, drag-to-rotate and scroll/pinch-to-zoom via `OrbitControls`
+  earth image, drag in any direction to orbit around the globe's fixed center,
+  and scroll/pinch-to-zoom via `OrbitControls`
 - **Zoom controls** for zooming in and out, plus a reset button to restore the original view
 - **Double-click zoom** on the globe and a fullscreen toggle (press Esc to exit fullscreen)
 - **Optional national borders** overlaid on the globe surface, loaded from a public GeoJSON dataset
