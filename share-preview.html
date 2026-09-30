@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f2f2f7">
+  <meta name="robots" content="noindex,follow">
+  <title>Link share preview · Alphadyn AI</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17171a;
+      background: #f2f2f7;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+      background: radial-gradient(ellipse at 50% 0%, #fff 0, transparent 52%), #f2f2f7;
+    }
+
+    .preview { width: min(100%, 620px); }
+    .eyebrow { margin: 0 0 18px; color: #72727b; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-align: center; text-transform: uppercase; }
+    .messages {
+      overflow: hidden;
+      border: 1px solid #e3e3e9;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 30px 90px rgb(32 39 56 / 15%);
+    }
+    .status-bar { height: 37px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 14px; font-weight: 700; }
+    .status-icons { display: flex; align-items: center; gap: 7px; }
+    .signal { display: flex; align-items: end; gap: 2px; height: 13px; }
+    .signal i { width: 3px; border-radius: 2px; background: #202124; }
+    .signal i:nth-child(1) { height: 4px; }
+    .signal i:nth-child(2) { height: 7px; }
+    .signal i:nth-child(3) { height: 10px; }
+    .signal i:nth-child(4) { height: 13px; }
+    .wifi { width: 16px; height: 13px; }
+    .battery { position: relative; width: 22px; height: 11px; border: 1.5px solid #202124; border-radius: 3px; }
+    .battery::before { position: absolute; inset: 2px 4px 2px 2px; border-radius: 1px; background: #202124; content: ""; }
+    .battery::after { position: absolute; top: 3px; right: -4px; width: 2px; height: 4px; border-radius: 0 2px 2px 0; background: #202124; content: ""; }
+    .conversation-header { min-height: 65px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 20px 10px; border-bottom: 1px solid #ededf1; }
+    .back { color: #1684e8; font-size: 15px; }
+    .contact { display: grid; justify-items: center; gap: 3px; font-size: 11px; font-weight: 650; }
+    .avatar { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, #e7dbfa, #c8e6ef); color: #473c62; font-size: 14px; }
+    .video { justify-self: end; width: 28px; height: 22px; color: #1684e8; }
+    .conversation { min-height: 370px; padding: 28px 18px 14px; }
+    .date { margin: 0 0 17px; color: #8e8e95; font-size: 11px; text-align: center; }
+    .message-row { display: flex; align-items: end; gap: 8px; }
+    .contact-dot { width: 22px; height: 22px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #e8e1f2; color: #63577a; font-size: 10px; }
+    .bubble { width: min(100%, 410px); overflow: hidden; border: 1px solid #e2e2e7; border-radius: 19px 19px 19px 5px; background: #f0f0f2; }
+    .message-text { margin: 0; padding: 12px 14px 9px; color: #202024; font-size: 15px; line-height: 1.35; }
+    .link-card { display: block; margin: 0 5px 5px; overflow: hidden; border: 1px solid #e6e6ea; border-radius: 13px; background: #fff; color: inherit; text-decoration: none; }
+    .link-card:focus-visible { outline: 3px solid #1684e8; outline-offset: -3px; }
+    .cover { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; background: #0b1020; }
+    .copy { padding: 12px 14px 13px; }
+    h1 { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.25; }
+    .description { margin: 5px 0 10px; color: #64646b; font-size: 13px; line-height: 1.35; }
+    .domain { display: flex; align-items: center; gap: 6px; color: #77777f; font-size: 11px; letter-spacing: .035em; text-transform: uppercase; }
+    .domain img { width: 15px; height: 15px; border-radius: 4px; }
+    .delivered { margin: 6px 7px 0 0; color: #92929a; font-size: 11px; text-align: right; }
+    .composer { min-height: 62px; display: flex; align-items: center; gap: 10px; padding: 9px 17px; border-top: 1px solid #ededf1; }
+    .add { width: 32px; height: 32px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #ededf0; color: #66666e; font-size: 22px; line-height: 1; }
+    .input { height: 37px; flex: 1; display: flex; align-items: center; padding: 0 14px; border: 1px solid #d8d8df; border-radius: 20px; color: #a0a0a7; font-size: 13px; }
+    .mic { width: 15px; height: 20px; color: #85858d; }
+    .artwork-link { display: block; margin-top: 18px; color: #55555e; font-size: 13px; text-align: center; text-decoration: none; }
+    .artwork-link:hover { color: #1684e8; text-decoration: underline; }
+
+    @media (max-width: 480px) {
+      .preview { width: 100%; }
+      .eyebrow { margin-bottom: 14px; }
+      .messages { border-radius: 22px; }
+      .conversation { min-height: 320px; padding: 23px 10px 12px; }
+      .bubble { width: min(100%, 330px); }
+      .message-text { padding: 10px 12px 8px; font-size: 14px; }
+      .copy { padding: 10px 11px 11px; }
+      h1 { font-size: 14px; }
+      .description { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="preview">
+    <p class="eyebrow">How this link appears when shared</p>
+    <section class="messages" aria-label="Messages app link preview">
+      <div class="status-bar">
+        <time datetime="09:41">9:41</time>
+        <div class="status-icons" aria-hidden="true">
+          <span class="signal"><i></i><i></i><i></i><i></i></span>
+          <svg class="wifi" viewBox="0 0 16 12" fill="none"><path d="M1 4c4-4 10-4 14 0M4 7c2-2 6-2 8 0M7 10c.6-.6 1.4-.6 2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span class="battery"></span>
+        </div>
+      </div>
+      <header class="conversation-header">
+        <span class="back" aria-hidden="true">‹ Messages</span>
+        <div class="contact"><span class="avatar" aria-hidden="true">A</span><span>Alex</span></div>
+        <svg class="video" viewBox="0 0 32 24" fill="none" aria-hidden="true"><rect x="1" y="2" width="22" height="20" rx="6" stroke="currentColor" stroke-width="1.7"/><path d="m24 8 7-4v16l-7-4V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      </header>
+      <div class="conversation">
+        <p class="date">Today 9:41 AM</p>
+        <div class="message-row">
+          <span class="contact-dot" aria-hidden="true">A</span>
+          <article class="bubble">
+            <p class="message-text">Take a look at this collection of AI projects.</p>
+            <a class="link-card" href="./" aria-label="Open Alphadyn AI apps and experiments">
+              <img class="cover" src="social-preview.png" alt="Alphadyn AI portfolio share image">
+              <div class="copy">
+                <h1>Alphadyn AI — Apps, Ideas &amp; Experiments</h1>
+                <p class="description">A collection of interactive tools, dashboards, reports, and experiments by Alphadyn AI.</p>
+                <span class="domain"><img src="alphadyn-ai-mark.svg" alt=""> alphadyn.github.io</span>
+              </div>
+            </a>
+          </article>
+        </div>
+        <p class="delivered">Delivered</p>
+      </div>
+      <div class="composer" aria-hidden="true">
+        <span class="add">+</span>
+        <span class="input">iMessage</span>
+        <svg class="mic" viewBox="0 0 16 22" fill="none"><rect x="5" y="1" width="6" height="13" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10v1a6 6 0 0 0 12 0v-1M8 17v4m-3 0h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+    </section>
+    <a class="artwork-link" href="social-preview.png" target="_blank" rel="noreferrer">View the 1200 × 630 share image</a>
+  </main>
+</body>
+</html>
