@@ -101,11 +101,139 @@ h1 {
   aspect-ratio: 4 / 3;
   border-radius: 12px;
   overflow: hidden;
+  position: relative;
   cursor: grab;
 }
 
 #globeContainer:active {
   cursor: grabbing;
+}
+
+#globeContainer canvas {
+  display: block;
+}
+
+#globeContainer:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: auto;
+  border-radius: 0;
+  background: var(--bg);
+}
+
+#globeContainer::backdrop {
+  background: var(--bg);
+}
+
+.map-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.map-labels[hidden],
+.city-label[hidden] {
+  display: none;
+}
+
+.city-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transform: translate(0, -50%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px #05070d, 0 -1px 4px #05070d;
+  white-space: nowrap;
+}
+
+.city-label::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd166;
+  box-shadow: 0 0 0 2px #05070d;
+}
+
+.city-label:not(.show-name) .city-name {
+  display: none;
+}
+
+.zoom-controls,
+.fullscreen-btn {
+  position: absolute;
+  top: 12px;
+  z-index: 2;
+}
+
+.zoom-controls {
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fullscreen-btn {
+  left: 12px;
+}
+
+.zoom-controls button,
+.fullscreen-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #465675;
+  border-radius: 8px;
+  background: rgba(15, 20, 32, 0.92);
+  color: var(--text-primary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zoom-controls button:hover:not(:disabled),
+.zoom-controls button:focus-visible,
+.fullscreen-btn:hover:not(:disabled),
+.fullscreen-btn:focus-visible {
+  border-color: var(--accent);
+  background: #19314b;
+}
+
+.zoom-controls button:disabled,
+.fullscreen-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.map-layers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 12px 4px 2px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+}
+
+.layer-heading {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.map-layers label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.map-layers input {
+  accent-color: var(--accent);
 }
 
 .hint {

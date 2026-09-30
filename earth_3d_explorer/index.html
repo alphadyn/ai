@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>3D Earth Explorer</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <div class="app-shell">
@@ -22,8 +22,22 @@
 
       <main class="app-grid">
         <section class="globe-panel">
-          <div id="globeContainer"></div>
-          <p class="hint">Drag to rotate &middot; scroll or pinch to zoom &middot; click the surface to interact</p>
+          <div id="globeContainer">
+            <div id="mapLabels" class="map-labels" aria-hidden="true"></div>
+            <button id="fullscreenBtn" class="fullscreen-btn" type="button" aria-label="Enter fullscreen" title="Enter fullscreen" aria-pressed="false">&#10530;</button>
+            <div class="zoom-controls" role="group" aria-label="Globe zoom controls">
+              <button id="zoomInBtn" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+              <button id="zoomOutBtn" type="button" aria-label="Zoom out" title="Zoom out">&minus;</button>
+              <button id="resetViewBtn" type="button" aria-label="Reset view" title="Reset view">&#8634;</button>
+            </div>
+          </div>
+          <p class="hint">Drag to rotate &middot; scroll, pinch, or double-click to zoom &middot; click the surface to interact</p>
+          <div class="map-layers" role="group" aria-label="Map layers">
+            <span class="layer-heading">Map details</span>
+            <label><input id="bordersLayer" type="checkbox" checked /> National borders</label>
+            <label><input id="gridLayer" type="checkbox" checked /> Coordinate grid</label>
+            <label><input id="citiesLayer" type="checkbox" checked /> Cities</label>
+          </div>
         </section>
 
         <aside class="side-panel">
@@ -74,6 +88,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=6"></script>
   </body>
 </html>

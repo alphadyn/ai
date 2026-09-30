@@ -7,7 +7,12 @@ distance between any two points you click.
 ## Features
 - **3D rotating globe** built with [Three.js](https://threejs.org/), textured with a real
   earth image, drag-to-rotate and scroll/pinch-to-zoom via `OrbitControls`
-- **Country boundaries** overlaid on the globe surface, loaded from a public GeoJSON dataset
+- **Zoom controls** for zooming in and out, plus a reset button to restore the original view
+- **Double-click zoom** on the globe and a fullscreen toggle (press Esc to exit fullscreen)
+- **Optional national borders** overlaid on the globe surface, loaded from a public GeoJSON dataset
+- **Progressive map details**: optional 30° grid and major-city markers at a distance;
+  zooming in reveals 15° and 5° grid lines, regional and local cities, and more names.
+  Labels avoid overlaps and markers on the far side of the globe are hidden
 - **Inspect Point mode**: click anywhere on the globe to drop a marker and see its latitude,
   longitude, hemisphere, and the country it falls within (with a flag and a link to that
   country's Wikipedia article, opened in a new tab)
@@ -37,6 +42,11 @@ Then open http://localhost:8000 in your browser.
    marker), then a second point (yellow marker). An arc is drawn between them and the panel shows
    the surface distance. Clicking again after two points are set starts a new measurement.
 3. Use **Reset Points** to clear the current measurement.
+4. Use **+**, **−**, or the scroll wheel/pinch gesture to zoom. The circular arrow resets
+  the zoom and globe orientation. Use the checkboxes below the globe to show or hide
+  national borders, coordinate grid, or cities. More grid lines and city names appear as you zoom in.
+5. Double-click the globe to zoom in without selecting a point. Use the fullscreen button
+  in the upper-left corner of the globe to expand it; click again or press Esc to exit.
 
 ## Main files
 - `index.html` — page structure, mode toggle, and side panels

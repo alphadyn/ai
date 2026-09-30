@@ -3,8 +3,18 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const EARTH_RADIUS_KM = 6371;
 const GLOBE_RADIUS = 2;
+const MARKER_RADIUS = 0.035;
+const MARKER_DIAMETER_PX = 7;
 
 const container = document.getElementById("globeContainer");
+const zoomInBtn = document.getElementById("zoomInBtn");
+const zoomOutBtn = document.getElementById("zoomOutBtn");
+const resetViewBtn = document.getElementById("resetViewBtn");
+const fullscreenBtn = document.getElementById("fullscreenBtn");
+const bordersLayer = document.getElementById("bordersLayer");
+const gridLayer = document.getElementById("gridLayer");
+const citiesLayer = document.getElementById("citiesLayer");
+const mapLabels = document.getElementById("mapLabels");
 const inspectModeBtn = document.getElementById("inspectModeBtn");
 const measureModeBtn = document.getElementById("measureModeBtn");
 const inspectPanel = document.getElementById("inspectPanel");
@@ -43,7 +53,67 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.minDistance = 2.6;
 controls.maxDistance = 10;
-controls.rotateSpeed = 0.5;
+
+// OrbitControls rotates by an angle per screen pixel, independent of zoom.
+// At the center of a perspective-projected globe, a surface point moves by
+// R / (distance - R) pixels per radian (times the camera's focal length).
+// Match that motion to the pointer so zooming in does not amplify a swipe.
+function updateRotateSpeed() {
+  const distance = camera.position.distanceTo(controls.target);
+  controls.rotateSpeed =
+    ((distance - GLOBE_RADIUS) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) /
+    (Math.PI * GLOBE_RADIUS);
+}
+
+updateRotateSpeed();
+controls.addEventListener("change", updateRotateSpeed);
+
+function updateZoomButtons() {
+  const distance = camera.position.distanceTo(controls.target);
+  zoomInBtn.disabled = distance <= controls.minDistance + 0.001;
+  zoomOutBtn.disabled = distance >= controls.maxDistance - 0.001;
+}
+
+function zoomBy(factor) {
+  const offset = camera.position.clone().sub(controls.target);
+  const distance = THREE.MathUtils.clamp(
+    offset.length() * factor, controls.minDistance, controls.maxDistance
+  );
+  camera.position.copy(controls.target).add(offset.setLength(distance));
+  controls.update();
+  updateZoomButtons();
+}
+
+zoomInBtn.addEventListener("click", () => zoomBy(1 / 1.3));
+zoomOutBtn.addEventListener("click", () => zoomBy(1.3));
+resetViewBtn.addEventListener("click", () => {
+  controls.reset();
+  updateZoomButtons();
+});
+controls.addEventListener("change", updateZoomButtons);
+updateZoomButtons();
+
+fullscreenBtn.disabled = !container.requestFullscreen || !document.exitFullscreen;
+fullscreenBtn.addEventListener("click", async () => {
+  try {
+    if (document.fullscreenElement === container) {
+      await document.exitFullscreen();
+    } else {
+      await container.requestFullscreen();
+    }
+  } catch (error) {
+    console.warn("Unable to toggle fullscreen:", error);
+  }
+});
+
+document.addEventListener("fullscreenchange", () => {
+  const isFullscreen = document.fullscreenElement === container;
+  fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
+  fullscreenBtn.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
+  fullscreenBtn.title = isFullscreen ? "Exit fullscreen" : "Enter fullscreen";
+  fullscreenBtn.textContent = isFullscreen ? "⤡" : "⤢";
+  resizeRendererToDisplaySize();
+});
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.55));
 const sunLight = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -98,6 +168,61 @@ scene.add(atmosphereMesh);
 const COUNTRY_BORDERS_URL =
   "https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json";
 const BORDER_RADIUS = GLOBE_RADIUS * 1.002;
+let borderMesh = null;
+
+bordersLayer.addEventListener("change", () => {
+  if (borderMesh) borderMesh.visible = bordersLayer.checked;
+});
+
+// Reveal progressively finer coordinate lines as the camera approaches the globe.
+const coordinateGrids = [];
+
+function makeCoordinateGrid(step, opacity) {
+  const positions = [];
+  const radius = GLOBE_RADIUS * 1.006;
+  function addSegment(lat1, lon1, lat2, lon2) {
+    const a = latLonToVector3(lat1, lon1, radius);
+    const b = latLonToVector3(lat2, lon2, radius);
+    positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
+  }
+  for (let lat = -90 + step; lat < 90; lat += step) {
+    if (step < 30 && lat % (step === 5 ? 15 : 30) === 0) continue;
+    for (let lon = -180; lon < 180; lon += 2) {
+      addSegment(lat, lon, lat, lon + 2);
+    }
+  }
+  for (let lon = -180; lon < 180; lon += step) {
+    if (step < 30 && lon % (step === 5 ? 15 : 30) === 0) continue;
+    for (let lat = -90; lat < 90; lat += 2) {
+      addSegment(lat, lon, lat + 2, lon);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  const grid = new THREE.LineSegments(
+    geometry,
+    new THREE.LineBasicMaterial({ color: 0xa7cdeb, transparent: true, opacity })
+  );
+  scene.add(grid);
+  return grid;
+}
+
+coordinateGrids.push(
+  { maxDistance: Infinity, mesh: makeCoordinateGrid(30, 0.22) },
+  { maxDistance: 4.8, mesh: makeCoordinateGrid(15, 0.16) },
+  { maxDistance: 3.5, mesh: makeCoordinateGrid(5, 0.12) }
+);
+
+function updateCoordinateGrids() {
+  const distance = camera.position.distanceTo(controls.target);
+  for (const { maxDistance, mesh } of coordinateGrids) {
+    mesh.visible = gridLayer.checked && distance <= maxDistance;
+  }
+}
+
+gridLayer.addEventListener("change", updateCoordinateGrids);
+controls.addEventListener("change", updateCoordinateGrids);
+updateCoordinateGrids();
 
 function addRingSegments(ring, positions) {
   for (let i = 0; i < ring.length - 1; i++) {
@@ -135,7 +260,9 @@ async function loadCountryBorders() {
     transparent: true,
     opacity: 0.55,
   });
-  scene.add(new THREE.LineSegments(geometry, material));
+  borderMesh = new THREE.LineSegments(geometry, material);
+  borderMesh.visible = bordersLayer.checked;
+  scene.add(borderMesh);
 }
 
 loadCountryBorders().catch((error) => {
@@ -252,13 +379,30 @@ function resizeRendererToDisplaySize() {
 
 resizeRendererToDisplaySize();
 window.addEventListener("resize", resizeRendererToDisplaySize);
+new ResizeObserver(resizeRendererToDisplaySize).observe(container);
+
+const cameraForward = new THREE.Vector3();
+const markerOffset = new THREE.Vector3();
+
+function updateMarkerSizes() {
+  camera.getWorldDirection(cameraForward);
+  const pixelsToWorld = (MARKER_DIAMETER_PX * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) /
+    (MARKER_RADIUS * renderer.domElement.clientHeight);
+  function scaleMarker(marker) {
+    const depth = markerOffset.subVectors(marker.position, camera.position).dot(cameraForward);
+    marker.scale.setScalar(depth * pixelsToWorld);
+  }
+  if (inspectMarker) scaleMarker(inspectMarker);
+  for (const marker of measureMarkers) scaleMarker(marker);
+}
 
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
+  updateMarkerSizes();
+  updateCityLabels();
   renderer.render(scene, camera);
 }
-animate();
 
 // --- Coordinate helpers ---------------------------------------------------
 // These match the UV unwrap of THREE.SphereGeometry for a standard equirectangular
@@ -284,6 +428,113 @@ function latLonToVector3(lat, lon, radius) {
   );
 }
 
+const CITY_TIERS = [
+  // Major hubs remain visible from the default view.
+  { maxDistance: Infinity, nameDistance: 5.2, cities: [
+  ["Los Angeles", 34.05, -118.24], ["New York", 40.71, -74.01],
+  ["Mexico City", 19.43, -99.13], ["São Paulo", -23.55, -46.63],
+  ["Buenos Aires", -34.60, -58.38], ["London", 51.51, -0.13],
+  ["Paris", 48.86, 2.35], ["Cairo", 30.04, 31.24],
+  ["Lagos", 6.52, 3.38], ["Johannesburg", -26.20, 28.05],
+  ["Dubai", 25.20, 55.27], ["Mumbai", 19.08, 72.88],
+  ["Singapore", 1.35, 103.82], ["Beijing", 39.90, 116.40],
+  ["Tokyo", 35.68, 139.69], ["Sydney", -33.87, 151.21],
+  ] },
+  // Regional cities emerge alongside the 15° coordinate grid.
+  { maxDistance: 4.8, nameDistance: 4.8, cities: [
+    ["Vancouver", 49.28, -123.12], ["Seattle", 47.61, -122.33],
+    ["San Francisco", 37.77, -122.42], ["Chicago", 41.88, -87.63],
+    ["Toronto", 43.65, -79.38], ["Miami", 25.76, -80.19],
+    ["Bogotá", 4.71, -74.07], ["Lima", -12.05, -77.04],
+    ["Santiago", -33.45, -70.67], ["Rio de Janeiro", -22.91, -43.17],
+    ["Lisbon", 38.72, -9.14], ["Madrid", 40.42, -3.70],
+    ["Rome", 41.90, 12.50], ["Berlin", 52.52, 13.41],
+    ["Istanbul", 41.01, 28.98], ["Moscow", 55.76, 37.62],
+    ["Nairobi", -1.29, 36.82], ["Addis Ababa", 9.03, 38.75],
+    ["Cape Town", -33.92, 18.42], ["Casablanca", 33.57, -7.59],
+    ["Riyadh", 24.71, 46.67], ["Karachi", 24.86, 67.01],
+    ["Delhi", 28.61, 77.21], ["Bangkok", 13.76, 100.50],
+    ["Hanoi", 21.03, 105.85], ["Jakarta", -6.21, 106.85],
+    ["Hong Kong", 22.32, 114.17], ["Shanghai", 31.23, 121.47],
+    ["Seoul", 37.57, 126.98], ["Osaka", 34.69, 135.50],
+    ["Melbourne", -37.81, 144.96], ["Auckland", -36.85, 174.76],
+  ] },
+  // Nearby cities become useful only at the closest zoom levels.
+  { maxDistance: 3.5, nameDistance: 3.5, cities: [
+    ["Portland", 45.52, -122.68], ["Las Vegas", 36.17, -115.14],
+    ["San Diego", 32.72, -117.16], ["Phoenix", 33.45, -112.07],
+    ["Dallas", 32.78, -96.80], ["Houston", 29.76, -95.37],
+    ["Boston", 42.36, -71.06], ["Washington, DC", 38.91, -77.04],
+    ["Montréal", 45.50, -73.57], ["Medellín", 6.24, -75.58],
+    ["Brasília", -15.79, -47.88], ["Porto Alegre", -30.03, -51.23],
+    ["Manchester", 53.48, -2.24], ["Amsterdam", 52.37, 4.90],
+    ["Brussels", 50.85, 4.35], ["Munich", 48.14, 11.58],
+    ["Milan", 45.46, 9.19], ["Athens", 37.98, 23.73],
+    ["Alexandria", 31.20, 29.92], ["Accra", 5.60, -0.19],
+    ["Abu Dhabi", 24.45, 54.38], ["Bengaluru", 12.97, 77.59],
+    ["Chennai", 13.08, 80.27], ["Kolkata", 22.57, 88.36],
+    ["Ho Chi Minh City", 10.82, 106.63], ["Kuala Lumpur", 3.14, 101.69],
+    ["Taipei", 25.03, 121.56], ["Guangzhou", 23.13, 113.26],
+    ["Kyoto", 35.01, 135.77], ["Canberra", -35.28, 149.13],
+  ] },
+];
+
+const cityLabels = CITY_TIERS.flatMap(({ maxDistance, nameDistance, cities }) => cities.map(([name, lat, lon]) => {
+  const element = document.createElement("span");
+  element.className = "city-label";
+  const nameElement = document.createElement("span");
+  nameElement.className = "city-name";
+  nameElement.textContent = name;
+  element.appendChild(nameElement);
+  mapLabels.appendChild(element);
+  return { position: latLonToVector3(lat, lon, GLOBE_RADIUS * 1.012), element,
+    maxDistance, nameDistance, nameWidth: name.length * 6.5 + 14 };
+}));
+
+const projectedCity = new THREE.Vector3();
+
+function updateCityLabels() {
+  mapLabels.hidden = !citiesLayer.checked;
+  if (!citiesLayer.checked) return;
+  const width = renderer.domElement.clientWidth;
+  const height = renderer.domElement.clientHeight;
+  const distance = camera.position.distanceTo(controls.target);
+  // Reserve the corners for fullscreen and zoom buttons, then prioritize
+  // major city names when labels are close together.
+  const occupied = [
+    { left: 0, right: 56, top: 0, bottom: 52 },
+    { left: width - 56, right: width, top: 0, bottom: 136 },
+  ];
+  for (const { position, element, maxDistance, nameDistance, nameWidth } of cityLabels) {
+    if (distance > maxDistance) {
+      element.hidden = true;
+      continue;
+    }
+    // Hide points behind the sphere, including those close to its horizon.
+    if (position.dot(camera.position) <= position.lengthSq()) {
+      element.hidden = true;
+      continue;
+    }
+    projectedCity.copy(position).project(camera);
+    element.hidden = Math.abs(projectedCity.x) > 1 || Math.abs(projectedCity.y) > 1;
+    if (element.hidden) continue;
+    const x = (projectedCity.x + 1) * width / 2;
+    const y = (1 - projectedCity.y) * height / 2;
+    element.style.left = `${x}px`;
+    element.style.top = `${y}px`;
+    const label = { left: x - 3, right: x + nameWidth, top: y - 9, bottom: y + 9 };
+    const showName = distance < nameDistance && label.left >= 0 && label.right < width &&
+      label.top >= 0 && label.bottom < height &&
+      !occupied.some((other) => label.left < other.right && label.right > other.left &&
+        label.top < other.bottom && label.bottom > other.top);
+    element.classList.toggle("show-name", showName);
+    if (showName) occupied.push(label);
+  }
+}
+
+citiesLayer.addEventListener("change", updateCityLabels);
+animate();
+
 function formatCoordinate(lat, lon) {
   const latDir = lat >= 0 ? "N" : "S";
   const lonDir = lon >= 0 ? "E" : "W";
@@ -304,7 +555,7 @@ function surfaceDistanceKm(pointA, pointB) {
 
 function makeMarker(color) {
   const marker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.035, 16, 16),
+    new THREE.SphereGeometry(MARKER_RADIUS, 16, 16),
     new THREE.MeshBasicMaterial({ color })
   );
   scene.add(marker);
@@ -343,22 +594,35 @@ function buildArcLine(pointA, pointB) {
 const raycaster = new THREE.Raycaster();
 const pointerNdc = new THREE.Vector2();
 let pointerDownPos = null;
+let pendingSelection = null;
 
 function onPointerDown(event) {
-  pointerDownPos = { x: event.clientX, y: event.clientY };
+  if (event.button !== 0) return;
+  pointerDownPos = { x: event.clientX, y: event.clientY, id: event.pointerId };
 }
 
 function onPointerUp(event) {
-  if (!pointerDownPos) return;
+  if (!pointerDownPos || event.pointerId !== pointerDownPos.id) return;
   const dx = event.clientX - pointerDownPos.x;
   const dy = event.clientY - pointerDownPos.y;
   pointerDownPos = null;
   // Ignore clicks that were actually drags used to rotate the globe
   if (Math.hypot(dx, dy) > 4) return;
 
+  // Wait for the browser's dblclick event before selecting a point, so a
+  // double-click zoom doesn't also drop an inspect/measurement marker.
+  const { clientX, clientY } = event;
+  clearTimeout(pendingSelection);
+  pendingSelection = setTimeout(() => {
+    pendingSelection = null;
+    selectPoint(clientX, clientY);
+  }, 300);
+}
+
+function selectPoint(clientX, clientY) {
   const rect = renderer.domElement.getBoundingClientRect();
-  pointerNdc.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  pointerNdc.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(pointerNdc, camera);
   const hits = raycaster.intersectObject(earthMesh);
@@ -374,6 +638,13 @@ function onPointerUp(event) {
 
 renderer.domElement.addEventListener("pointerdown", onPointerDown);
 renderer.domElement.addEventListener("pointerup", onPointerUp);
+renderer.domElement.addEventListener("pointercancel", () => { pointerDownPos = null; });
+renderer.domElement.addEventListener("dblclick", (event) => {
+  event.preventDefault();
+  clearTimeout(pendingSelection);
+  pendingSelection = null;
+  zoomBy(1 / 1.3);
+});
 
 function handleInspectClick(point) {
   const { lat, lon } = pointToLatLon(point);
