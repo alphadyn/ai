@@ -173,14 +173,31 @@ h1 {
 }
 
 .zoom-controls {
-  right: 12px;
+  left: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .fullscreen-btn {
-  left: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+}
+
+.fullscreen-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.fullscreen-exit-icon,
+.fullscreen-btn[aria-pressed="true"] .fullscreen-enter-icon {
+  display: none;
+}
+
+.fullscreen-btn[aria-pressed="true"] .fullscreen-exit-icon {
+  display: inline;
 }
 
 .zoom-controls button,

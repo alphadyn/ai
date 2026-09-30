@@ -111,7 +111,6 @@ document.addEventListener("fullscreenchange", () => {
   fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
   fullscreenBtn.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
   fullscreenBtn.title = isFullscreen ? "Exit fullscreen" : "Enter fullscreen";
-  fullscreenBtn.textContent = isFullscreen ? "⤡" : "⤢";
   resizeRendererToDisplaySize();
 });
 
@@ -502,8 +501,8 @@ function updateCityLabels() {
   // Reserve the corners for fullscreen and zoom buttons, then prioritize
   // major city names when labels are close together.
   const occupied = [
-    { left: 0, right: 56, top: 0, bottom: 52 },
-    { left: width - 56, right: width, top: 0, bottom: 136 },
+    { left: 0, right: 56, top: 0, bottom: 136 },
+    { left: width - 56, right: width, top: 0, bottom: 52 },
   ];
   for (const { position, element, maxDistance, nameDistance, nameWidth } of cityLabels) {
     if (distance > maxDistance) {

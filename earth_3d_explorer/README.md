@@ -46,7 +46,7 @@ Then open http://localhost:8000 in your browser.
   the zoom and globe orientation. Use the checkboxes below the globe to show or hide
   national borders, coordinate grid, or cities. More grid lines and city names appear as you zoom in.
 5. Double-click the globe to zoom in without selecting a point. Use the fullscreen button
-  in the upper-left corner of the globe to expand it; click again or press Esc to exit.
+  in the upper-right corner of the globe to expand it; click again or press Esc to exit.
 
 ## Main files
 - `index.html` — page structure, mode toggle, and side panels
