@@ -69,6 +69,14 @@ body::before {
   margin-bottom: 12px;
 }
 
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  display: block;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.14);
+}
+
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -116,6 +124,21 @@ h1 {
   border-radius: 28px;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.09), 0 2px 0 rgba(255, 255, 255, 0.7) inset;
   padding: 28px;
+}
+
+.preview-strip {
+  margin-bottom: 22px;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(240, 246, 255, 0.9), rgba(255, 255, 255, 0.8));
+}
+
+.preview-art {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 18px 30px rgba(37, 99, 235, 0.09);
 }
 
 .form-section {

@@ -5,12 +5,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Contact Card Generator</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="page-shell">
       <header class="topbar">
         <div class="brand-bar">
+          <img class="brand-mark" src="logo.svg" alt="Contact Card Generator logo" />
           <p class="eyebrow">Digital Business Card</p>
           <span class="status-pill">Professional export</span>
         </div>
@@ -22,6 +24,10 @@
       </header>
 
       <main class="app-card">
+        <div class="preview-strip" aria-label="App preview">
+          <img class="preview-art" src="ui-preview.svg" alt="Application UI preview" />
+        </div>
+
         <form id="contactForm" class="form-grid" novalidate>
           <fieldset class="form-section">
             <legend>Name</legend>
