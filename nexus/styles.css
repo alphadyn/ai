@@ -1737,6 +1737,26 @@ body {
   margin-left: auto;
 }
 
+#textShareModal { z-index: 160; }
+.text-share-dialog { max-width: 520px; }
+.text-share-preview { overflow: hidden; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-primary); }
+.text-share-header { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.78rem; font-weight: 600; }
+.text-share-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-success); }
+.text-share-thread { display: flex; justify-content: flex-end; padding: 14px 12px; }
+.text-share-bubble { width: min(100%, 360px); overflow: hidden; border-radius: 16px 16px 4px 16px; background: #16804a; color: #fff; }
+.text-share-bubble-text { margin: 0; padding: 10px 12px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.88rem; line-height: 1.4; }
+.text-share-bubble-text:empty { display: none; }
+.text-share-link-card { display: block; margin: 8px; overflow: hidden; border-radius: var(--radius-sm); background: #f5f7f8; color: #17212b; text-decoration: none; }
+.text-share-image { display: block; width: 100%; max-height: 190px; aspect-ratio: 1.91; object-fit: cover; }
+.text-share-image[hidden] { display: none; }
+.text-share-card-copy { display: flex; flex-direction: column; gap: 3px; padding: 9px 10px; overflow-wrap: anywhere; }
+.text-share-card-copy strong { font-size: 0.84rem; line-height: 1.3; }
+.text-share-card-copy span { color: #52616a; font-size: 0.76rem; line-height: 1.35; }
+.text-share-card-copy small { color: #78868e; font-size: 0.68rem; }
+.text-share-label { display: block; margin: 2px 0 6px; color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; }
+#textShareMessage { width: 100%; resize: vertical; }
+.text-share-length { margin: 6px 0 0; color: var(--text-muted); font-size: 0.75rem; }
+
 /* Upload Dropzone */
 .upload-dropzone {
   border: 2px dashed var(--border-color-strong);

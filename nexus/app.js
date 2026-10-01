@@ -386,6 +386,36 @@
     return `${baseUrl}?item=${encodeURIComponent(id)}`;
   }
 
+  function renderTextSharePreview(item, message) {
+    const url = getDirectItemUrl(item);
+    const image = document.getElementById('textShareImage');
+    document.getElementById('textShareBubbleText').textContent = message.split(url).join('').trim();
+    document.getElementById('textShareLinkCard').href = url;
+    document.getElementById('textShareCardTitle').textContent = item.title || item.filename || 'Shared file';
+    document.getElementById('textShareCardDescription').textContent = item.description || item.filename || 'Open this file in Nexus CMS.';
+    document.getElementById('textShareCardDomain').textContent = window.location.hostname || 'Nexus CMS';
+    image.hidden = item.type !== 'image' || !item.dataUrl;
+    if (!image.hidden) {
+      image.src = item.dataUrl;
+      image.alt = item.title || item.filename || 'Shared image';
+    } else {
+      image.removeAttribute('src');
+      image.alt = '';
+    }
+    const length = message.length;
+    const segments = Math.max(1, Math.ceil(length / 160));
+    document.getElementById('textShareLength').textContent =
+      `${length} characters · about ${segments} SMS ${segments === 1 ? 'message' : 'messages'}`;
+  }
+
+  function openTextShare(item) {
+    const message = document.getElementById('textShareMessage');
+    message.value = `${item.title || item.filename || 'Check this out'}\n\n${getDirectItemUrl(item)}`;
+    renderTextSharePreview(item, message.value);
+    openModal('textShareModal');
+    message.focus();
+  }
+
   function copyItemDirectUrl(itemOrId) {
     const url = getDirectItemUrl(itemOrId);
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1199,6 +1229,9 @@ class SpectrumVisualizer {
             <button class="card-act-btn" data-action="copy-link" data-id="${item.id}" title="Copy Direct URL Link">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
             </button>
+            <button class="card-act-btn" data-action="text-share" data-id="${item.id}" title="Preview text message" aria-label="Preview text message">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"></path></svg>
+            </button>
             <button class="card-act-btn" data-action="edit" data-id="${item.id}" title="Edit Properties">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </button>
@@ -1251,6 +1284,9 @@ class SpectrumVisualizer {
           </button>
           <button class="card-act-btn" data-action="copy-link" data-id="${item.id}" title="Copy Direct URL Link">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          </button>
+          <button class="card-act-btn" data-action="text-share" data-id="${item.id}" title="Preview text message" aria-label="Preview text message">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"></path></svg>
           </button>
           <button class="card-act-btn" data-action="edit" data-id="${item.id}" title="Edit">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -1328,6 +1364,8 @@ class SpectrumVisualizer {
           downloadFileItem(item);
         } else if (action === 'copy-link') {
           copyItemDirectUrl(item);
+        } else if (action === 'text-share') {
+          openTextShare(item);
         } else if (action === 'delete') {
           openDeleteConfirmModal([item]);
         }
@@ -2099,8 +2137,10 @@ class SpectrumVisualizer {
     const toggleSidebarBtn = document.getElementById('viewerToggleSidebarBtn');
     const downloadBtn = document.getElementById('viewerDownloadBtn');
     const copyLinkBtn = document.getElementById('viewerCopyLinkBtn');
+    const shareTextBtn = document.getElementById('viewerShareTextBtn');
     const editPropsBtn = document.getElementById('viewerEditPropsBtn');
     const viewerStage = document.getElementById('viewerStage');
+    const shareMessage = document.getElementById('textShareMessage');
     let swipeStartX = 0;
     let swipeStartY = 0;
     let swipeTargetIsInteractive = false;
@@ -2173,6 +2213,30 @@ class SpectrumVisualizer {
         if (item) copyItemDirectUrl(item);
       });
     }
+
+    shareTextBtn.addEventListener('click', () => {
+      const item = state.activeViewerList[state.activeViewerIndex];
+      if (item) openTextShare(item);
+    });
+
+    shareMessage.addEventListener('input', () => {
+      const item = state.activeViewerList[state.activeViewerIndex];
+      if (item) renderTextSharePreview(item, shareMessage.value);
+    });
+
+    document.getElementById('textShareCopyBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareMessage.value);
+        showToast('Message copied', 'success');
+      } catch (error) {
+        showToast('Could not copy message', 'danger');
+      }
+    });
+
+    document.getElementById('textShareSendBtn').addEventListener('click', () => {
+      const separator = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? '&' : '?';
+      window.location.href = `sms:${separator}body=${encodeURIComponent(shareMessage.value)}`;
+    });
 
     editPropsBtn.addEventListener('click', () => {
       const item = state.activeViewerList[state.activeViewerIndex];
