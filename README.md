@@ -44,6 +44,7 @@ The landing page highlights these projects:
 - [prime_counter_app](prime_counter_app/) — Prime counting utility with charting and timing.
 - [pulse](pulse/) — Social/news-style app with posts, tags, and discussion flows.
 - [resume](resume/) — Portfolio-style resume page.
+- [vault](vault/) — Browser-based text and file encryption app; all processing stays on-device.
 - [market_lens_app](market_lens_app/) — Dashboard for screening and reviewing large-cap equities.
 - [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
 - [meetings](meetings/) — Encrypted WebRTC meetings with chat, file sharing, fullscreen mode, and responsive mobile controls.
@@ -61,7 +62,6 @@ The landing page highlights these projects:
 
 - [crawler_indexer](crawler_indexer/) — Domain-scoped crawler and indexer utility.
 - [google_page_capture_app](google_page_capture_app/) — Local Flask web app that captures Google News headlines and related stories, displays them in a browser, and downloads the results as JSON.
-- [secure_file_tool](secure_file_tool/) — Encryption and decryption utility with CLI and GUI options.
 
 ## Quick start
 
@@ -136,15 +136,13 @@ python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages
 python3 -m pip install -r google_page_capture_app/requirements.txt
 python3 -m playwright install chromium
 python3 google_page_capture_app/app.py
-python3 secure_file_tool/file_crypto.py encrypt /path/to/input.txt /path/to/output.bin --password "your-strong-password"
-python3 secure_file_tool/gui_app.py
 ```
 
 The Google News Capture app runs as a local web app. After starting it, open <http://127.0.0.1:5000> to capture and view headlines, then download the structured JSON results.
 
 ## Testing
 
-This repo includes automated tests for the crawler and security utility tooling. Install the dev dependencies and run the suite:
+This repo includes automated tests for the crawler and search engine utilities. Install the dev dependencies and run the suite:
 
 ```bash
 python3 -m pip install -r requirements-dev.txt
