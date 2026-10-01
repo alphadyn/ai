@@ -12,15 +12,15 @@ The preview-page generation steps use public app configuration and do not need d
 
 ## Vercel projects
 
-Vercel projects remain separate because their serverless APIs and runtime configuration are app-specific. Set each project's Root Directory in Vercel to the corresponding folder; do not move its Vercel configuration into a repository-wide file.
+Vercel projects can remain separate when an app needs its own frontend or runtime configuration. The repository-root project also provides API proxy routes for the GitHub Pages apps.
 
 | App | Vercel Root Directory | Configuration |
 | --- | --- | --- |
 | Market Curve Lab | `market-curve-lab` | [vercel.json](market-curve-lab/vercel.json), `api/` functions |
-| Market Lens | `market-lens` | `api/` functions; Vercel's default routing is sufficient |
+| Market Lens | repository root (`.`) for the Pages API; optional standalone root `market-lens` | [root proxy](api/market-lens/[...path].js) and app `api/` functions |
 | Alphadyn AI site and analytics API | repository root (`.`) | [package.json](package.json), [api/events.js](api/events.js) |
 
-Set the `ai-orcin-eta-15` Vercel project's Root Directory to the repository root (`.`) so `/api/events` and `/api/market-curve-lab/*` are discovered. The latter routes reuse Market Curve Lab's companies, search, and analysis handlers. The Vercel site's root page will then be the repository catalog; Contact Card Generator remains available at `/vcard-generator/`. The Market Curve Lab project can also be deployed separately, rooted at `market-curve-lab`, when its share-preview routes are needed. Market Lens uses its own Vercel API endpoint configured in its frontend.
+Set the `ai-orcin-eta-15` Vercel project's Root Directory to the repository root (`.`) so `/api/events`, `/api/market-curve-lab/*`, and `/api/market-lens/*` are discovered. The market routes reuse their app-level handlers. The Vercel site's root page will then be the repository catalog; Contact Card Generator remains available at `/vcard-generator/`. Market Curve Lab can also be deployed separately, rooted at `market-curve-lab`, when its share-preview routes are needed. Market Lens keeps direct `/api` routing when served locally or from its standalone Vercel project.
 
 ## Local validation
 

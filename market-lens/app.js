@@ -1,5 +1,6 @@
-const VERCEL_API = 'https://sp-six-gamma.vercel.app/api';
-const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : '/api';
+const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api/market-lens';
+const API_HOST = new URL(VERCEL_API).hostname;
+const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : window.location.hostname === API_HOST ? '/api/market-lens' : '/api';
 const CONSTITUENTS_URL = 'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv';
 const TOP_N_PER_SIGNAL = 20;
 // Used only if the live S&P 500 constituent list can't be fetched (offline, blocked, etc.)
