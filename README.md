@@ -8,55 +8,55 @@ The root landing page in [index.html](index.html) links to the most relevant app
 
 The landing page highlights these projects:
 
-1. [pulse](pulse/) — Social/news app with posts, tags, and threaded discussion
-2. [market_curve_lab](market_curve_lab/) — S&P 500 rankings, performance, trendlines, and concavity
-3. [experiences_app](experiences_app/) — Maps and authenticated trip journal
-4. [market_lens_app](market_lens_app/) — Large-cap equity screening dashboard
-5. [nexus](nexus/) — Content and media workspace
-6. [online_store_app](online_store_app/) — Storefront and checkout experience
-7. [photo_gallery_app](photo_gallery_app/) — Responsive photo gallery
-8. [meetings](meetings/) — Encrypted video meetings with chat, file sharing, fullscreen mode, and a mobile-friendly interface
+1. [Pulse](pulse/) — Social/news app with posts, tags, and threaded discussion
+2. [Market Curve Lab](market-curve-lab/) — S&P 500 rankings, performance, trendlines, and concavity
+3. [Experiences](experiences/) — Maps and authenticated trip journal
+4. [Market Lens](market-lens/) — Large-cap equity screening dashboard
+5. [Nexus](nexus/) — Content and media workspace
+6. [Atlas Store](atlas-store/) — Storefront and checkout experience
+7. [Photo Gallery](photo-gallery/) — Responsive photo gallery
+8. [Meetings](meetings/) — Encrypted video meetings with chat, file sharing, fullscreen mode, and a mobile-friendly interface
 
 ## Repository layout
 
 ### Web apps and interactive demos
 
-- [market_curve_lab](market_curve_lab/) — Rank all 500 S&P 500 companies by market cap, search stocks, and inspect selected-ticker all-time performance, trendlines, and concavity.
-- [architectural_design_app](architectural_design_app/) — Architectural concept board and home design presentation.
-- [audio_equalizer_app](audio_equalizer_app/) — Browser media player with live waveform and spectrum analysis.
-- [business_site](business_site/) — Marketing landing page for an AI company.
-- [car_sketch_project](car_sketch_project/) — Image-to-car-sketch generator.
-- [experiences_app](experiences_app/) — Experiences: a Supabase-backed journal with trips, shareable Experience collections, Event maps, precise location picking, and media carousels.
-- [earth_3d_explorer](earth_3d_explorer/) — Three.js globe with overlays and inspection interactions.
-- [ehr_web_app](ehr_web_app/) — Electronic health record demo interface.
-- [enterprise_executive_dashboard](enterprise_executive_dashboard/) — Multi-page executive dashboard.
-- [fractal_patterns_app](fractal_patterns_app/) — Interactive fractal visualizer.
-- [game_videos_site](game_videos_site/) — Gaming video showcase page.
-- [iphone_17_simulator](iphone_17_simulator/) — Interactive iPhone simulator experience.
-- [iphone_duo_app](iphone_duo_app/) — Dual-device phone simulator with companion UI.
-- [legal_docketing_app](legal_docketing_app/) — Matter and deadline tracking app.
-- [multi_search_engine_app](multi_search_engine_app/) — Search comparison page across multiple engines.
+- [Market Curve Lab](market-curve-lab/) — Rank all 500 S&P 500 companies by market cap, search stocks, and inspect selected-ticker all-time performance, trendlines, and concavity.
+- [Architectural Design](architectural-design/) — Architectural concept board and home design presentation.
+- [Audio Equalizer](audio-equalizer/) — Browser media player with live waveform and spectrum analysis.
+- [Business Site](business-site/) — Marketing landing page for an AI company.
+- [Car Sketch Project](car-sketch-project/) — Image-to-car-sketch generator.
+- [Experiences](experiences/) — Experiences: a Supabase-backed journal with trips, shareable Experience collections, Event maps, precise location picking, and media carousels.
+- [Earth 3D Explorer](earth-3d-explorer/) — Three.js globe with overlays and inspection interactions.
+- [EHR Web App](ehr-web-app/) — Electronic health record demo interface.
+- [Executive Dashboard](executive-dashboard/) — Multi-page executive dashboard.
+- [Fractal Patterns](fractal-patterns/) — Interactive fractal visualizer.
+- [Game Videos](game-videos/) — Gaming video showcase page.
+- [iPhone 17 Pro](iphone-17-pro/) — Interactive iPhone simulator experience.
+- [iPhone Duo](iphone-duo/) — Dual-device phone simulator with companion UI.
+- [Legal Docketing](legal-docketing/) — Matter and deadline tracking app.
+- [Multi-Search Engine](multi-search-engine/) — Search comparison page across multiple engines.
 - [nexus](nexus/) — Content and media management system with SQLite-backed local storage and server-side API.
-- [online_store_app](online_store_app/) — Storefront mockup with catalog, cart, and checkout flow.
-- [pencil_sketch_app](pencil_sketch_app/) — Image-to-pencil-sketch converter.
-- [photo_gallery_app](photo_gallery_app/) — Responsive gallery app.
-- [postboard_app](postboard_app/) — Personal post archive with rich text, uploads, and Supabase integration.
-- [prime_counter_app](prime_counter_app/) — Prime counting utility with charting and timing.
+- [Atlas Store](atlas-store/) — Storefront mockup with catalog, cart, and checkout flow.
+- [Pencil Sketch](pencil-sketch/) — Image-to-pencil-sketch converter.
+- [Photo Gallery](photo-gallery/) — Responsive gallery app.
+- [Postboard](postboard/) — Personal post archive with rich text, uploads, and Supabase integration.
+- [Prime Counter](prime-counter/) — Prime counting utility with charting and timing.
 - [pulse](pulse/) — Social/news-style app with posts, tags, and discussion flows.
-- [resume](resume/) — Portfolio-style resume page.
-- [vault](vault/) — Browser-based text and file encryption app; all processing stays on-device.
-- [market_lens_app](market_lens_app/) — Dashboard for screening and reviewing large-cap equities.
-- [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
-- [meetings](meetings/) — Encrypted WebRTC meetings with chat, file sharing, fullscreen mode, and responsive mobile controls.
+- [Resume](resume/) — Portfolio-style resume page.
+- [Vault](vault/) — Browser-based text and file encryption app; all processing stays on-device.
+- [Market Lens](market-lens/) — Dashboard for screening and reviewing large-cap equities.
+- [vCard Generator](vcard-generator/) — Card generation and QR code output.
+- [Meetings](meetings/) — Encrypted WebRTC meetings with chat, file sharing, fullscreen mode, and responsive mobile controls.
 
 ### Reports and presentation pages
 
-- [top_20_occupations_income_report](top_20_occupations_income_report/) — Income report across top occupations.
+- [Top Occupations](top-occupations/) — Income report across top occupations.
 
 ### Python utilities and tooling
 
-- [crawler_indexer](crawler_indexer/) — Domain-scoped crawler and indexer utility.
-- [google_page_capture_app](google_page_capture_app/) — Local Flask web app that captures Google News headlines and related stories, displays them in a browser, and downloads the results as JSON.
+- [Crawler Indexer](crawler-indexer/) — Domain-scoped crawler and indexer utility.
+- [Google News Capture](google-news-capture/) — Local Flask web app that captures Google News headlines and related stories, displays them in a browser, and downloads the results as JSON.
 
 ## Quick start
 
@@ -72,19 +72,19 @@ Then visit http://localhost:8000.
 Examples:
 
 ```bash
-cd audio_equalizer_app
+cd audio-equalizer
 python3 -m http.server 8000
 
-cd earth_3d_explorer
+cd earth-3d-explorer
 python3 -m http.server 8000
 
-cd iphone_17_simulator
+cd iphone-17-pro
 python3 -m http.server 8000
 
-cd online_store_app
+cd atlas-store
 python3 -m http.server 8000
 
-cd market_lens_app
+cd market-lens
 python3 -m http.server 8000
 ```
 
@@ -101,10 +101,10 @@ Then open the app from the local server or direct to the generated HTML entrypoi
 
 ### Market Curve Lab
 
-The [market_curve_lab](market_curve_lab/) web app builds a market-cap ranking of all 500 S&P 500 companies and lets you search any listed equity by ticker or company name. It computes adjusted all-time performance, linear and quadratic trendlines, and recent concavity for the selected ticker; histories are fetched on demand instead of requesting all 500 at startup. Start it with:
+The [Market Curve Lab](market-curve-lab/) web app builds a market-cap ranking of all 500 S&P 500 companies and lets you search any listed equity by ticker or company name. It computes adjusted all-time performance, linear and quadratic trendlines, and recent concavity for the selected ticker; histories are fetched on demand instead of requesting all 500 at startup. Start it with:
 
 ```bash
-cd market_curve_lab
+cd market-curve-lab
 python3 -m pip install -r requirements.txt
 python3 app.py
 ```
@@ -113,11 +113,11 @@ Open <http://127.0.0.1:5001>, type a ticker or company name, and choose a matchi
 
 ### Postboard setup
 
-The [postboard_app](postboard_app/) project uses Supabase for persistence and API access. Configure it once:
+The [Postboard](postboard/) project uses Supabase for persistence and API access. Configure it once:
 
 1. Create a Supabase project.
-2. In the SQL editor, run [postboard_app/supabase-schema.sql](postboard_app/supabase-schema.sql).
-3. Copy [postboard_app/supabase-config.js](postboard_app/supabase-config.js) and replace the placeholder URL and anon key with your project values.
+2. In the SQL editor, run [postboard/supabase-schema.sql](postboard/supabase-schema.sql).
+3. Copy [postboard/supabase-config.js](postboard/supabase-config.js) and replace the placeholder URL and anon key with your project values.
 4. Serve the folder locally or deploy it to GitHub Pages.
 
 If the app reports a `NetworkError`, the config file still contains placeholder values, or the Supabase URL is unreachable, re-check the project settings and the generated config file.
@@ -127,10 +127,10 @@ If the app reports a `NetworkError`, the config file still contains placeholder 
 Run utility scripts from the repo root or from the project folder as needed:
 
 ```bash
-python3 crawler_indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
-python3 -m pip install -r google_page_capture_app/requirements.txt
+python3 crawler-indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
+python3 -m pip install -r google-news-capture/requirements.txt
 python3 -m playwright install chromium
-python3 google_page_capture_app/app.py
+python3 google-news-capture/app.py
 ```
 
 The Google News Capture app runs as a local web app. After starting it, open <http://127.0.0.1:5000> to capture and view headlines, then download the structured JSON results.
@@ -162,7 +162,7 @@ The pytest configuration is defined in [pytest.ini](pytest.ini).
 
 The root catalog and top-level app entry pages load [analytics.js](analytics.js), which sends page-view events to the existing Market Curve Lab Vercel API deployment. The tracker uses a session-only random visitor identifier, records the page path/title, referrer without query strings, a coarse device category, the page's HTTP status (from the Navigation Timing API where the browser supports it), and session duration (updated when the tab is hidden or closed). The API marks a view as bounced until the same session views a second page, derives an approximate city/region/country location from Vercel's IP geolocation headers, and stores the full forwarded IP address when valid (or `Not recorded` when unavailable); treat IPs and locations as sensitive data. A best-effort per-instance throttle limits writes; add Vercel Firewall/rate limiting for stronger abuse protection. GitHub Pages does not expose server request logs, so these are browser page views only—not bot traffic or every asset request.
 
-To enable ingestion, run [analytics-schema.sql](analytics-schema.sql) on a dedicated Supabase project (including the constraint migration for existing tables), configure the Vercel environment variables `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ANALYTICS_READ_TOKEN`, then deploy `market_curve_lab` to the existing `ai-orcin-eta-15` Vercel project. Keep the service-role key and read token out of this repository. Configure the analytics dashboard with the same read token; the events endpoint refuses reads without it. For data minimization, use the optional cleanup statement in the SQL file to enforce a retention period.
+To enable ingestion, run [analytics-schema.sql](analytics-schema.sql) on a dedicated Supabase project (including the constraint migration for existing tables), configure the Vercel environment variables `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `ANALYTICS_READ_TOKEN`, then deploy `market-curve-lab` to the existing `ai-orcin-eta-15` Vercel project. Update that Vercel project's root directory setting to `market-curve-lab` after this folder rename. Keep the service-role key and read token out of this repository. Configure the analytics dashboard with the same read token; the events endpoint refuses reads without it. For data minimization, use the optional cleanup statement in the SQL file to enforce a retention period.
 
 ## License
 

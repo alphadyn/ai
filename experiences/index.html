@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script defer src="/ai/analytics.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f3f6f1" />
+    <title>Experiences — Every Place Has a Story</title>
+    <meta name="description" content="Map your travels and share your experiences with friends." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Experiences" />
+    <meta property="og:title" content="Experiences — Every Place Has a Story" />
+    <meta property="og:description" content="Map your travels and share your experiences with friends." />
+    <meta property="og:url" content="https://alphadyn.github.io/ai/experiences/" />
+    <meta property="og:image" content="https://alphadyn.github.io/ai/experiences/assets/experience-pin-photos.png" />
+    <meta property="og:image:secure_url" content="https://alphadyn.github.io/ai/experiences/assets/experience-pin-photos.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1080" />
+    <meta property="og:image:height" content="1080" />
+    <meta property="og:image:alt" content="Travel photos of Santorini, Athens, and the Aegean coast connected to map pins." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Experiences — Every Place Has a Story" />
+    <meta name="twitter:description" content="Map your travels and share your experiences with friends." />
+    <meta name="twitter:image" content="https://alphadyn.github.io/ai/experiences/assets/experience-pin-photos.png" />
+    <meta name="twitter:image:alt" content="Travel photos linked to location pins on a trip map." />
+    <link rel="icon" href="assets/experiences-favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css?v=20260925-share-preview" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Location Journal</p>
+          <h1><a href="./" aria-label="Experiences home"><img class="brand-logo" src="assets/experiences-logo.svg" alt="Experiences" /></a></h1>
+          <p class="topbar-subtitle">A living atlas for the places, moments, and stories that make a trip yours.</p>
+        </div>
+        <div class="account-bar">
+          <span id="userStatus" class="status-text">Sign in to continue</span>
+          <img id="userAvatar" class="user-avatar" alt="" hidden />
+          <button type="button" id="loginBtn" class="auth-tab primary-btn is-active">Log in</button>
+          <button type="button" id="createProfileBtn" class="auth-tab secondary-btn">Sign up</button>
+          <button type="button" id="profileBtn" class="secondary-btn" hidden>Profile</button>
+          <button type="button" id="experiencesBtn" class="secondary-btn" hidden>Experiences</button>
+          <button type="button" id="tripsBtn" class="secondary-btn" hidden>Trips</button>
+          <button type="button" id="signOutBtn" class="secondary-btn" hidden>Sign out</button>
+        </div>
+      </header>
+
+      <section id="authPanel" class="panel auth-panel" hidden>
+        <div class="section-heading auth-switcher-heading">
+          <h2 id="authModeLabel">Log in</h2>
+        </div>
+        <form id="authForm" class="auth-form">
+          <input id="authUsername" type="text" placeholder="Username" autocomplete="username" pattern="[A-Za-z0-9_.\-]{3,32}" required />
+          <input id="authPassword" type="password" placeholder="Password" autocomplete="current-password" minlength="6" required />
+          <button type="submit" id="authSubmitBtn" class="primary-btn">Log in</button>
+        </form>
+        <span id="authStatus" class="status-text" role="status"></span>
+      </section>
+
+      <section id="profilePanel" class="panel profile-panel" hidden>
+        <div class="section-heading profile-heading"><div><p class="panel-kicker">Account</p><h2>Profile</h2></div><div class="profile-heading-actions"><button type="submit" form="profileForm" class="primary-btn profile-save-btn">Save</button><button type="button" id="closeProfileBtn" class="secondary-btn icon-btn" aria-label="Close profile" title="Close profile">&times;</button></div></div>
+        <form id="profileForm" class="profile-form">
+          <div class="profile-avatar-row"><img id="profileAvatarPreview" class="profile-avatar-preview" alt="Profile picture preview" /><label class="file-picker">Choose picture<input id="profileAvatarInput" type="file" accept="image/*" /></label></div>
+          <label>Username<input id="profileUsername" type="text" readonly /></label>
+          <label>Name<input id="profileDisplayName" type="text" maxlength="80" placeholder="How should we display your name?" /></label>
+          <label>Status<input id="profileStatusInput" type="text" maxlength="160" placeholder="What are you up to?" /></label>
+          <label>URL<input id="profileUrlInput" type="url" maxlength="240" placeholder="https://example.com/your-profile" /></label>
+        </form>
+        <span id="profileStatus" class="status-text" role="status"></span>
+      </section>
+
+      <main id="appContent" class="app-grid" hidden>
+        <section id="welcomePanel" class="welcome-panel" hidden>
+          <div class="welcome-panel-main">
+            <p class="welcome-kicker">Your place-based journal</p>
+            <h2>Make every place part of your story.</h2>
+            <p class="welcome-intro">Capture the moments that matter, keep them organized, and turn your travels into a living atlas you can return to.</p>
+            <div class="welcome-actions">
+              <button type="button" id="welcomeExploreBtn" class="primary-btn">Explore Experiences</button>
+              <button type="button" id="welcomeNewTripBtn" class="secondary-btn">Start a trip</button>
+            </div>
+          </div>
+          <div class="welcome-features" aria-label="Application features">
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">◈</span>
+              <div><h3>Build Experiences</h3><p>Group events, photos, and memories into rich stories that are easy to revisit.</p></div>
+            </article>
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">+</span>
+              <div><h3>Check in anywhere</h3><p>Drop a pin, add context, and build a personal map of the places you have been.</p></div>
+            </article>
+            <article class="welcome-feature-card">
+              <span class="welcome-feature-icon" aria-hidden="true">↗</span>
+              <div><h3>Share your view</h3><p>Give friends a beautiful public link to an experience while keeping your private journal yours.</p></div>
+            </article>
+          </div>
+        </section>
+        <section id="tripPanel" class="panel trip-panel" hidden>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Trips</h2></div><div class="trip-heading-actions"><button type="button" id="newTripBtn" class="secondary-btn icon-btn" aria-label="New trip" title="New trip">+</button><button type="button" id="closeTripsBtn" class="secondary-btn icon-btn" aria-label="Close trips" title="Close trips">&times;</button></div></div>
+          <div id="tripList" class="trip-list"></div>
+          <span id="tripStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section id="experiencePanel" class="panel experience-panel" hidden>
+          <section id="experienceIndexScreen">
+            <div class="section-heading"><div><p class="panel-kicker">Remember</p><h2>Experiences</h2></div><div class="trip-heading-actions"><button type="button" id="newExperienceBtn" class="secondary-btn icon-btn" aria-label="New experience" title="New experience">+</button><button type="button" id="closeExperiencesBtn" class="secondary-btn icon-btn" aria-label="Close experiences" title="Close experiences">&times;</button></div></div>
+            <span id="experienceStatus" class="status-text" role="status"></span>
+            <div id="experienceList" class="experience-list"></div>
+          </section>
+          <section id="experienceCreateScreen" class="experience-create-screen" hidden>
+            <div class="section-heading experience-create-heading"><div><p class="panel-kicker">Remember</p><h2>New experience</h2></div><div class="experience-create-actions"><button type="submit" form="experienceForm" id="experienceSaveBtn" class="primary-btn">Save</button><button type="button" id="backFromExperienceCreateBtn" class="secondary-btn icon-btn" aria-label="Back to experiences" title="Back to experiences">&larr;</button></div></div>
+            <form id="experienceForm" class="experience-form experience-create-form">
+              <input id="experienceIdInput" type="hidden" />
+              <label>Experience name<input id="experienceNameInput" type="text" maxlength="100" placeholder="e.g. Sunset in Lisbon" required /></label>
+              <label>Story or description<textarea id="experienceDescriptionInput" rows="3" maxlength="1000" placeholder="Capture the feeling, people, or details you want to remember."></textarea></label>
+            </form>
+          </section>
+          <section id="experienceDetail" class="experience-detail" hidden>
+            <div class="experience-detail-heading"><div><p id="experienceDetailKicker" class="panel-kicker">Experience</p><button type="button" id="activeExperienceName" class="experience-name-button" aria-label="Edit experience name"></button></div><div class="experience-detail-actions"><button type="button" id="shareActiveExperienceBtn" class="secondary-btn share-experience-btn" hidden>Share</button><button type="button" id="experienceEditDetailsBtn" class="secondary-btn">Edit</button><button type="button" id="experienceDoneBtn" class="secondary-btn icon-btn" aria-label="Close experience" title="Close experience">&times;</button></div></div>
+            <p id="activeExperienceDescription" class="experience-description"></p>
+            <div id="experienceMap" class="experience-map" aria-label="Experience events map"></div>
+            <div class="experience-events-heading"><h4>Events</h4><button type="button" id="newExperienceEventBtn" class="secondary-btn icon-btn" aria-label="Add event" title="Add event">+</button></div>
+            <ol id="experienceLocationList" class="experience-location-list"></ol>
+          </section>
+          <section id="experienceEventCreateScreen" class="experience-event-create-screen" hidden>
+            <div class="section-heading"><div><p class="panel-kicker">Experience event</p><h2>New event</h2></div><button type="button" id="backFromExperienceEventCreateBtn" class="secondary-btn icon-btn" aria-label="Back to experience" title="Back to experience">&larr;</button></div>
+            <form id="experienceLocationForm" class="experience-location-form experience-event-create-form">
+              <label>Event name<input id="experienceEventNameInput" type="text" maxlength="100" placeholder="e.g. Dinner at the harbor" required /></label>
+              <label>Location<input id="experienceLocationInput" type="text" placeholder="Search for a city, region, or country" required /><button type="button" id="findExperienceEventLocationBtn" class="secondary-btn event-location-find-btn">Find location</button></label>
+              <label>When<input id="experienceTimeInput" type="datetime-local" required /></label>
+              <label class="event-description-field">Description<textarea id="experienceEventDescriptionInput" rows="3" maxlength="500" placeholder="What made this event memorable?"></textarea></label>
+              <label class="event-attachment-picker"><span>Attachments</span><input id="experienceEventMediaInput" type="file" accept="image/*,video/*,audio/*" multiple /></label>
+              <div id="experienceEventMediaPreview" class="event-media-avatars" aria-label="Selected attachments"></div>
+              <div id="experienceEventCreateMap" class="experience-event-edit-map event-create-map" aria-label="Choose new event location on map"></div>
+              <div class="experience-form-actions"><button type="submit" class="primary-btn">Create event</button></div>
+            </form>
+          </section>
+          <section id="experienceEventEditScreen" class="experience-detail" hidden>
+            <div class="experience-detail-heading"><div><p class="panel-kicker">Edit event</p><h3 id="experienceEventEditName"></h3></div><button type="button" id="backFromExperienceEventEditBtn" class="secondary-btn icon-btn" aria-label="Back to experience" title="Back to experience">&larr;</button></div>
+            <div id="experienceEventEditContent"></div>
+            <div id="experienceEventEditMap" class="experience-event-edit-map" aria-label="Choose event location on map" hidden></div>
+          </section>
+        </section>
+
+        <section id="newTripPanel" class="panel new-trip-panel" hidden>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>New trip</h2></div><button type="button" id="backFromNewTripBtn" class="secondary-btn">Back</button></div>
+          <form id="newTripForm" class="new-trip-form">
+            <label>Trip name<input id="newTripNameInput" type="text" maxlength="100" placeholder="e.g. Summer in Japan" required /></label>
+            <div class="new-trip-actions"><button type="submit" class="primary-btn">Save trip</button><button type="button" id="cancelNewTripBtn" class="secondary-btn">Cancel</button></div>
+          </form>
+          <span id="newTripStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section id="renameTripPanel" class="panel new-trip-panel" hidden>
+          <div class="section-heading"><div><p class="panel-kicker">Organize</p><h2>Rename trip</h2></div><button type="button" id="backFromRenameBtn" class="secondary-btn">Cancel</button></div>
+          <form id="renameTripForm" class="new-trip-form">
+            <label>Trip name<input id="renameTripNameInput" type="text" maxlength="100" required /></label>
+            <div class="new-trip-actions"><button type="submit" class="primary-btn">Save name</button><button type="button" id="cancelRenameBtn" class="secondary-btn">Cancel</button></div>
+          </form>
+          <span id="renameTripStatus" class="status-text" role="status"></span>
+        </section>
+        <section class="panel map-panel">
+          <div class="map-panel-heading">
+            <div><p class="panel-kicker">Explore</p><h2>Trip map</h2></div>
+            <span class="map-mode-label">Right-click to drop a pin</span>
+          </div>
+          <div class="map-stage">
+            <div id="map"></div>
+            <img id="loggedOutPreviewImage" class="logged-out-preview-image" src="assets/logged-out-trip-preview.png" alt="Trip preview map" hidden />
+          </div>
+          <p class="map-hint">Right-click the map and select Drop pin to check in at that point.</p>
+          <form id="checkInForm" class="panel-actions">
+            <input
+              id="locationInput"
+              class="location-input"
+              type="text"
+              placeholder="Enter a known location, e.g. Paris, France"
+              autocomplete="off"
+              required
+            />
+            <button type="submit" id="checkInBtn" class="primary-btn">Check In</button>
+          </form>
+          <span id="checkInStatus" class="status-text" role="status"></span>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div><p class="panel-kicker">Your trail</p><h2>Check-Ins</h2></div>
+            <button type="button" id="clearCheckInsBtn" class="secondary-btn" disabled>Remove all</button>
+          </div>
+          <p id="checkInTripName" class="checkin-trip-name" aria-live="polite"></p>
+          <p class="hint">Attach images, video, or audio to any saved location.</p>
+          <ol id="checkInList" class="checkin-list">
+            <li class="empty-state">No check-ins yet.</li>
+          </ol>
+        </section>
+
+        <section id="photoPanel" class="panel">
+          <h2>Upload a Photo</h2>
+          <p class="hint">Choose a JPEG photo that has embedded GPS data (most phone camera photos do) to plot where it was taken.</p>
+          <label class="file-picker" for="photoInput">
+            <span>Choose a photo</span>
+            <input id="photoInput" type="file" accept="image/jpeg,image/jpg" />
+          </label>
+          <div id="photoStatus" class="status-text" role="status"></div>
+          <ol id="photoList" class="checkin-list">
+            <li class="empty-state">No photos mapped yet.</li>
+          </ol>
+        </section>
+
+        <section id="adminPanel" class="panel admin-panel" hidden>
+          <div class="section-heading"><h2>Admin</h2><span class="hint">Manage users, trips, and check-ins</span></div>
+          <div class="admin-toolbar"><button type="button" id="refreshAdminBtn" class="secondary-btn">Refresh</button><span id="adminStatus" class="status-text" role="status"></span></div>
+          <div id="adminContent"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="mediaViewer" class="media-viewer" hidden>
+      <button type="button" id="mediaViewerClose" class="media-viewer-close" aria-label="Close media viewer">&times;</button>
+      <button type="button" id="mediaViewerPrev" class="media-viewer-nav media-viewer-prev" aria-label="Previous media">&#8249;</button>
+      <div id="mediaViewerContent" class="media-viewer-content"></div>
+      <button type="button" id="mediaViewerNext" class="media-viewer-nav media-viewer-next" aria-label="Next media">&#8250;</button>
+      <p id="mediaViewerDescription" class="media-viewer-description"></p>
+      <p id="mediaViewerName" class="media-viewer-name"></p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/exif-js@2.3.0/exif.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="app.js?v=20260925-share-preview"></script>
+  </body>
+</html>

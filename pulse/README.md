@@ -98,7 +98,7 @@ the publicly readable Supabase API and the public key in
 `python3 pulse/build_share_pages.py` from the repository root. Generated pages
 are not committed; a fresh set is included with each Pages artifact.
 
-[`../market_curve_lab/api/pulse-share.js`](../market_curve_lab/api/pulse-share.js)
+[`../market-curve-lab/api/pulse-share.js`](../market-curve-lab/api/pulse-share.js)
 is a legacy Vercel preview endpoint for older links, not used for new shares.
 
 The Vercel project needs these environment variables:
@@ -111,7 +111,7 @@ The Vercel project needs these environment variables:
 
 Per-post link cards at the exact GitHub Pages `?post=` URL would require a
 dynamic host; GitHub Pages cannot vary its HTML in response to query strings.
-The legacy function lives in `market_curve_lab/` because that folder is the
+The legacy function lives in `market-curve-lab/` because that folder is the
 root directory of this repository's existing Vercel project.
 
 ### Making your first admin
@@ -157,4 +157,4 @@ rule has to hold up even against a client that skips `app.js` entirely:
 - `index.html` / `styles.css` / `app.js` — the entire application (feed, post detail, threaded comments, auth modals, rich-text/file-upload post composer, admin screen, and all Supabase REST/Auth calls).
 - `supabase-config.js` — your project's public URL + anon key (safe to commit; it's meaningless without the RLS policies in your project).
 - `supabase-schema.sql` — table definitions, RLS policies, and the vote-casting RPC functions. Run this once per Supabase project.
-- `../market_curve_lab/api/pulse-share.js` — Vercel serverless endpoint that renders per-post Open Graph metadata (and the post's image) so shared links preview the actual post in messaging apps.
+- `../market-curve-lab/api/pulse-share.js` — Vercel serverless endpoint that renders per-post Open Graph metadata (and the post's image) so shared links preview the actual post in messaging apps.

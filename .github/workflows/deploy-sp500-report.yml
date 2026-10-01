@@ -44,7 +44,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build S&P 500 market snapshot
-        run: python3 market_lens_app/build_data.py
+        run: python3 market-lens/build_data.py
 
       - name: Build Pulse post previews
         run: |
@@ -52,7 +52,7 @@ jobs:
           python3 pulse/build_share_pages.py
 
       - name: Build Market Curve Lab security previews
-        run: python3 market_curve_lab/build_share_pages.py
+        run: python3 market-curve-lab/build_share_pages.py
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
