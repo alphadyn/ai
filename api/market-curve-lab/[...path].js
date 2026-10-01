@@ -9,7 +9,8 @@ const handlers = {
 };
 
 export default async function handler(request, response) {
-  const path = Array.isArray(request.query.path) ? request.query.path.join('/') : request.query.path;
+  const requestUrl = new URL(request.url, `https://${request.headers.host || 'localhost'}`);
+  const path = requestUrl.pathname.split('/').filter(Boolean).pop();
   const routeHandler = handlers[path];
   if (!routeHandler) {
     response.status(404).json({ error: 'Market data route not found.' });
