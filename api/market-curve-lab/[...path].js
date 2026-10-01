@@ -12,9 +12,15 @@ const handlers = {
 export default async function handler(request, response) {
   const requestUrl = new URL(request.url, `https://${request.headers.host || 'localhost'}`);
   const lensPrefix = '/api/market-curve-lab/lens';
-  if (requestUrl.pathname.startsWith(`${lensPrefix}/`)) {
+  if (requestUrl.pathname === lensPrefix) {
+    const upstreamPath = requestUrl.searchParams.get('path');
+    if (!upstreamPath || !/^\/(?:quote|company)\//.test(upstreamPath)) {
+      response.status(400).json({ error: 'Invalid Market Lens API path.' });
+      return;
+    }
+    const upstreamUrl = new URL(upstreamPath, 'https://localhost');
     const proxiedRequest = Object.create(request);
-    proxiedRequest.url = requestUrl.pathname.replace(lensPrefix, '/api') + requestUrl.search;
+    proxiedRequest.url = `/api${upstreamUrl.pathname}${upstreamUrl.search}`;
     return marketLensHandler(proxiedRequest, response);
   }
   const path = requestUrl.pathname.split('/').filter(Boolean).pop();

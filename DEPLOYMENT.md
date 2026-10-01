@@ -20,7 +20,7 @@ Vercel projects can remain separate when an app needs its own frontend or runtim
 | Market Lens | repository root (`.`) for the Pages API; optional standalone root `market-lens` | [Market Curve Lab root proxy](api/market-curve-lab/[...path].js) and app `api/` functions |
 | Alphadyn AI site and analytics API | repository root (`.`) | [package.json](package.json), [api/events.js](api/events.js) |
 
-Set the `ai-orcin-eta-15` Vercel project's Root Directory to the repository root (`.`) so `/api/events` and `/api/market-curve-lab/*` are discovered. This catch-all routes Market Curve Lab endpoints and proxies Market Lens requests under `/api/market-curve-lab/lens/*` to its existing Nasdaq handler. The Vercel site's root page will then be the repository catalog; Contact Card Generator remains available at `/vcard-generator/`. Market Curve Lab can also be deployed separately, rooted at `market-curve-lab`, when its share-preview routes are needed. Market Lens keeps direct `/api` routing when served locally or from its standalone Vercel project.
+Set the `ai-orcin-eta-15` Vercel project's Root Directory to the repository root (`.`) so `/api/events` and `/api/market-curve-lab/*` are discovered. This catch-all routes Market Curve Lab endpoints and proxies Market Lens requests through `/api/market-curve-lab/lens?path=...` to its existing Nasdaq handler. The Vercel site's root page will then be the repository catalog; Contact Card Generator remains available at `/vcard-generator/`. Market Curve Lab can also be deployed separately, rooted at `market-curve-lab`, when its share-preview routes are needed. Market Lens keeps direct `/api` routing when served locally or from its standalone Vercel project.
 
 ## Local validation
 

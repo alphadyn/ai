@@ -1,5 +1,6 @@
 const VERCEL_API = 'https://ai-orcin-eta-15.vercel.app/api/market-curve-lab/lens';
 const API_HOST = new URL(VERCEL_API).hostname;
+const USE_ROOT_API_PROXY = window.location.hostname.endsWith('github.io') || window.location.hostname === API_HOST;
 const API = window.location.hostname.endsWith('github.io') ? VERCEL_API : window.location.hostname === API_HOST ? '/api/market-curve-lab/lens' : '/api';
 const CONSTITUENTS_URL = 'https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv';
 const TOP_N_PER_SIGNAL = 20;
@@ -149,7 +150,10 @@ const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character
 
 async function getJson(path) {
   const separator = path.includes('?') ? '&' : '?';
-  const response = await fetch(`${API}${path}${separator}_=${Date.now()}`, { cache: 'no-store', headers: { Accept: 'application/json' } });
+  const url = USE_ROOT_API_PROXY
+    ? `${API}?${new URLSearchParams({ path, _: String(Date.now()) })}`
+    : `${API}${path}${separator}_=${Date.now()}`;
+  const response = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
   if (!response.ok) throw new Error(`Market data request failed: ${response.status}`);
   const payload = await response.json();
   if (!payload.data) throw new Error('Market data was empty');
