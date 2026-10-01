@@ -4,6 +4,8 @@ This repository is a portfolio-style collection of 30 independent projects: inte
 
 The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
+Deployment configuration and host-specific setup are documented in [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## Featured projects
 
 The landing page highlights these projects:
