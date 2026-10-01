@@ -1,6 +1,6 @@
 # Alphadyn AI Apps and Experiments
 
-This repository is a portfolio-style collection of 35 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own.
+This repository is a portfolio-style collection of 30 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own.
 
 The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
@@ -51,11 +51,6 @@ The landing page highlights these projects:
 
 ### Reports and presentation pages
 
-- [business_plan](business_plan/) — Startup business plan presentation.
-- [expense_report](expense_report/) — Corporate expense report mockup.
-- [human_vs_ai_skills_report](human_vs_ai_skills_report/) — Comparison of human and AI capabilities.
-- [index_fund_report](index_fund_report/) — Index fund overview and risk breakdown.
-- [largest_companies_report](largest_companies_report/) — Large-company market cap summary.
 - [top_20_occupations_income_report](top_20_occupations_income_report/) — Income report across top occupations.
 
 ### Python utilities and tooling

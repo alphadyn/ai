@@ -51,7 +51,7 @@ draw.text((130, 52), "ALPHADYN", font=font(17, True), fill=(244, 247, 255, 255))
 draw.text((131, 76), "APPLIED INTELLIGENCE", font=font(9, True), fill=(148, 169, 192, 255))
 rounded(draw, (850, 55, 1135, 91), 18, (24, 36, 58, 230), (83, 106, 139, 120), 1)
 draw.ellipse((867, 69, 875, 77), fill=(110, 231, 210, 255))
-draw.text((885, 67), "35 INDEPENDENT PROJECTS", font=font(10, True), fill=(190, 208, 230, 255))
+draw.text((885, 67), "30 INDEPENDENT PROJECTS", font=font(10, True), fill=(190, 208, 230, 255))
 draw.line((66, 119, 1134, 119), fill=(136, 164, 194, 55), width=1)
 
 # Headline and supporting copy.
