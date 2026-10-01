@@ -386,14 +386,20 @@
     return `${baseUrl}?item=${encodeURIComponent(id)}`;
   }
 
+  function getTextShareUrl(item) {
+    const url = new URL('https://ai-orcin-eta-15.vercel.app/api/nexus-share');
+    url.searchParams.set('id', item.id);
+    return url.href;
+  }
+
   function renderTextSharePreview(item, message) {
-    const url = getDirectItemUrl(item);
+    const url = getTextShareUrl(item);
     const image = document.getElementById('textShareImage');
     document.getElementById('textShareBubbleText').textContent = message.split(url).join('').trim();
     document.getElementById('textShareLinkCard').href = url;
     document.getElementById('textShareCardTitle').textContent = item.title || item.filename || 'Shared file';
     document.getElementById('textShareCardDescription').textContent = item.description || item.filename || 'Open this file in Nexus CMS.';
-    document.getElementById('textShareCardDomain').textContent = window.location.hostname || 'Nexus CMS';
+    document.getElementById('textShareCardDomain').textContent = new URL(url).hostname;
     image.hidden = item.type !== 'image' || !item.dataUrl;
     if (!image.hidden) {
       image.src = item.dataUrl;
@@ -410,7 +416,7 @@
 
   function openTextShare(item) {
     const message = document.getElementById('textShareMessage');
-    message.value = `${item.title || item.filename || 'Check this out'}\n\n${getDirectItemUrl(item)}`;
+    message.value = `${item.title || item.filename || 'Check this out'}\n\n${getTextShareUrl(item)}`;
     renderTextSharePreview(item, message.value);
     openModal('textShareModal');
     message.focus();
