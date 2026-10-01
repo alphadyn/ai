@@ -19,8 +19,12 @@ export default async function handler(request, response) {
       return;
     }
     const upstreamUrl = new URL(upstreamPath, 'https://localhost');
+    const [, symbol, kind] = upstreamUrl.pathname.split('/').filter(Boolean);
     const proxiedRequest = Object.create(request);
     proxiedRequest.url = `/api${upstreamUrl.pathname}${upstreamUrl.search}`;
+    proxiedRequest.query = Object.fromEntries(upstreamUrl.searchParams);
+    proxiedRequest.query.symbol = symbol;
+    if (kind) proxiedRequest.query.kind = kind;
     return marketLensHandler(proxiedRequest, response);
   }
   const path = requestUrl.pathname.split('/').filter(Boolean).pop();
