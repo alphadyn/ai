@@ -43,9 +43,9 @@ live.
 
 ## Deployment
 
-`index.html` is the static web app entry point. The [`api/`](api/) directory contains Vercel serverless functions for company data, search, and analysis. GitHub Pages serves the static frontend and calls the configured Vercel API because market-data providers do not allow browser cross-origin requests. The frontend uses same-origin `/api` on Vercel and the configured Vercel API on `github.io`.
+`index.html` is the static web app entry point. The [`api/`](api/) directory contains Vercel serverless functions for company data, search, and analysis. GitHub Pages serves the static frontend and calls the configured Vercel API because market-data providers do not allow browser cross-origin requests. The frontend uses `/api/market-curve-lab` on Vercel and the configured root-project API on `github.io`.
 
-Deploy this directory as a Vercel project to host the frontend and API together. The existing Vercel project's root directory must be `market-curve-lab`. The repository's GitHub Pages deployment also publishes this directory as part of the static site; see the root [deployment guide](../DEPLOYMENT.md) for how the hosts work together.
+The repository-root Vercel project exposes the market-data API at `/api/market-curve-lab/*`; the GitHub Pages frontend calls that API because market-data providers do not allow browser cross-origin requests. The repository's GitHub Pages deployment publishes this directory as part of the static site. Deploy this directory separately with Vercel only when its share-preview routes are needed; see the root [deployment guide](../DEPLOYMENT.md) for details.
 
 ## Method
 
