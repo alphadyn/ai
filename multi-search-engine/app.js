@@ -9,7 +9,7 @@
 
   // State
   const state = {
-    selectedEngines: ['duckduckgo', 'bing', 'wikipedia', 'hackernews', 'github'],
+    selectedEngines: [],
     maxResultsPerEngine: 10,
     currentQuery: '',
     resultsData: null,

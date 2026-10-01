@@ -4,11 +4,31 @@
   <script defer src="/ai/analytics.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Multi-Engine Search Reporter</title>
+  <meta name="description" content="Compare web, research, and community results from a single search." />
+  <meta name="theme-color" content="#111714" />
+  <link rel="canonical" href="https://alphadyn.github.io/ai/multi-search-engine/" />
+  <title>Multi-Search Engine</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Multi-Search Engine" />
+  <meta property="og:url" content="https://alphadyn.github.io/ai/multi-search-engine/" />
+  <meta property="og:title" content="Multi-Search Engine" />
+  <meta property="og:description" content="Compare web, research, and community results from a single search." />
+  <meta property="og:image" content="https://alphadyn.github.io/ai/multi-search-engine/social-preview.png" />
+  <meta property="og:image:secure_url" content="https://alphadyn.github.io/ai/multi-search-engine/social-preview.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Multi-Search Engine interface comparing search sources and their results." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Multi-Search Engine" />
+  <meta name="twitter:description" content="Compare web, research, and community results from a single search." />
+  <meta name="twitter:image" content="https://alphadyn.github.io/ai/multi-search-engine/social-preview.png" />
+  <meta name="twitter:image:alt" content="Multi-Search Engine interface comparing search sources and their results." />
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body class="theme-dark">
   <div class="app-wrapper">
@@ -25,8 +45,8 @@
             </svg>
           </div>
           <div>
-            <div class="header-badge">Multi-Search Engine App</div>
-            <h1>MetaSearch Reporter</h1>
+            <div class="header-badge">Research Workspace</div>
+            <h1>Multi-Search Engine</h1>
           </div>
         </div>
 
@@ -62,7 +82,7 @@
             />
             <button type="button" id="clearInputBtn" class="clear-btn" title="Clear search input" aria-label="Clear input">&times;</button>
             <button type="submit" id="searchBtn" class="btn btn-primary submit-btn">
-              <span class="btn-text">Search Engines</span>
+              <span class="btn-text">Search</span>
               <span class="btn-spinner hidden"></span>
             </button>
           </div>
@@ -86,13 +106,13 @@
               <h2>Select Search Engines</h2>
               <p class="section-subtitle">Choose up to 5 search engines to query simultaneously</p>
             </div>
-            <div class="engine-counter-badge" id="engineCounter">5 / 5 Selected</div>
+            <div class="engine-counter-badge" id="engineCounter">0 / 5 Selected</div>
           </div>
 
           <div class="engine-grid" id="engineGrid">
             <!-- Engines checkboxes generated dynamically & statically -->
-            <label class="engine-card active" data-engine="duckduckgo">
-              <input type="checkbox" name="engine" value="duckduckgo" checked />
+            <label class="engine-card" data-engine="duckduckgo">
+              <input type="checkbox" name="engine" value="duckduckgo" />
               <div class="engine-icon-badge engine-duckduckgo">DDG</div>
               <div class="engine-info">
                 <span class="engine-name">DuckDuckGo</span>
@@ -101,8 +121,8 @@
               <span class="checkbox-indicator"></span>
             </label>
 
-            <label class="engine-card active" data-engine="bing">
-              <input type="checkbox" name="engine" value="bing" checked />
+            <label class="engine-card" data-engine="bing">
+              <input type="checkbox" name="engine" value="bing" />
               <div class="engine-icon-badge engine-bing">b</div>
               <div class="engine-info">
                 <span class="engine-name">Bing</span>
@@ -111,8 +131,8 @@
               <span class="checkbox-indicator"></span>
             </label>
 
-            <label class="engine-card active" data-engine="wikipedia">
-              <input type="checkbox" name="engine" value="wikipedia" checked />
+            <label class="engine-card" data-engine="wikipedia">
+              <input type="checkbox" name="engine" value="wikipedia" />
               <div class="engine-icon-badge engine-wikipedia">W</div>
               <div class="engine-info">
                 <span class="engine-name">Wikipedia</span>
@@ -121,8 +141,8 @@
               <span class="checkbox-indicator"></span>
             </label>
 
-            <label class="engine-card active" data-engine="hackernews">
-              <input type="checkbox" name="engine" value="hackernews" checked />
+            <label class="engine-card" data-engine="hackernews">
+              <input type="checkbox" name="engine" value="hackernews" />
               <div class="engine-icon-badge engine-hackernews">Y</div>
               <div class="engine-info">
                 <span class="engine-name">HackerNews</span>
@@ -131,8 +151,8 @@
               <span class="checkbox-indicator"></span>
             </label>
 
-            <label class="engine-card active" data-engine="github">
-              <input type="checkbox" name="engine" value="github" checked />
+            <label class="engine-card" data-engine="github">
+              <input type="checkbox" name="engine" value="github" />
               <div class="engine-icon-badge engine-github">GH</div>
               <div class="engine-info">
                 <span class="engine-name">GitHub</span>
@@ -183,7 +203,7 @@
 
             <label class="engine-card" data-engine="brave">
               <input type="checkbox" name="engine" value="brave" />
-              <div class="engine-icon-badge engine-brave">🦁</div>
+              <div class="engine-icon-badge engine-brave">BR</div>
               <div class="engine-info">
                 <span class="engine-name">Brave</span>
                 <span class="engine-desc">Independent Index</span>
@@ -193,7 +213,7 @@
 
             <label class="engine-card" data-engine="ecosia">
               <input type="checkbox" name="engine" value="ecosia" />
-              <div class="engine-icon-badge engine-ecosia">🌱</div>
+              <div class="engine-icon-badge engine-ecosia">E</div>
               <div class="engine-info">
                 <span class="engine-name">Ecosia</span>
                 <span class="engine-desc">Eco Search Engine</span>
@@ -347,15 +367,15 @@
             <path d="M11 7v4l3 3"></path>
           </svg>
         </div>
-        <h3>Ready to Search Up to 5 Search Engines</h3>
-        <p>Type a word or phrase above, select up to 5 search engines, and click <strong>Search Engines</strong> to generate a structured report where each summary links directly to the search result destination (up to 10 results per engine).</p>
+        <h3>No search report yet</h3>
+        <p>Search results will appear here.</p>
       </section>
     </main>
 
     <!-- Footer -->
     <footer class="app-footer">
       <div class="footer-container">
-        <p>MetaSearch Reporter &bull; Multi-Engine Query Aggregator &bull; Linked Findings Standard</p>
+        <p>Multi-Search Engine &bull; Linked Findings Standard</p>
         <p class="footer-sub">Outputs: <code>[Source] [Summary](destination_link)</code> (Up to 10 results per engine, max 5 engines)</p>
       </div>
     </footer>
