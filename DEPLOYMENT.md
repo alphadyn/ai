@@ -18,8 +18,9 @@ Vercel projects remain separate because their serverless APIs and runtime config
 | --- | --- | --- |
 | Market Curve Lab | `market-curve-lab` | [vercel.json](market-curve-lab/vercel.json), `api/` functions |
 | Market Lens | `market-lens` | `api/` functions; Vercel's default routing is sufficient |
+| Alphadyn AI site and analytics API | repository root (`.`) | [package.json](package.json), [api/events.js](api/events.js) |
 
-After renaming the Market Curve Lab folder, change the existing Vercel project's Root Directory from `market_curve_lab` to `market-curve-lab`, then redeploy. Its API also serves analytics ingestion and legacy Pulse link previews. Market Lens uses its own Vercel API endpoint configured in its frontend.
+Set the `ai-orcin-eta-15` Vercel project's Root Directory to the repository root (`.`) so `/api/events` is discovered. The Vercel site's root page will then be the repository catalog; Contact Card Generator remains available at `/vcard-generator/`. The Market Curve Lab API also serves legacy Pulse link previews; deploy it as a separate Vercel project rooted at `market-curve-lab` if those routes are needed. Market Lens uses its own Vercel API endpoint configured in its frontend.
 
 ## Local validation
 
