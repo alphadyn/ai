@@ -1,17 +1,19 @@
 :root {
-  --bg: #07111f;
-  --bg-2: #0d1b2a;
-  --panel: rgba(15, 23, 42, 0.9);
-  --panel-strong: rgba(17, 24, 39, 0.96);
-  --panel-soft: #172235;
-  --muted: #9bb0c9;
-  --text: #edf6ff;
-  --accent: #8ad9ff;
-  --accent-strong: #4ec8ff;
-  --accent-warm: #ffcf70;
-  --success: #7df2c8;
-  --border: rgba(148, 163, 184, 0.22);
-  --shadow: rgba(15, 23, 42, 0.45);
+  --bg: #eef4ff;
+  --bg-2: #f8fbff;
+  --panel: rgba(255, 255, 255, 0.94);
+  --panel-strong: #ffffff;
+  --panel-soft: #f3f7ff;
+  --muted: #53657d;
+  --muted-strong: #1e2a3a;
+  --text: #0f172a;
+  --accent: #2563eb;
+  --accent-strong: #1d4ed8;
+  --accent-soft: #e8f0ff;
+  --accent-warm: #fbbf24;
+  --success: #0f766e;
+  --border: rgba(148, 163, 184, 0.26);
+  --shadow: rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -27,53 +29,93 @@ body {
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(78, 200, 255, 0.18), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(255, 207, 112, 0.12), transparent 26%),
-    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 60%);
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.12), transparent 24%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
   color: var(--text);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20% auto auto -10%;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: rgba(96, 165, 250, 0.08);
+  filter: blur(20px);
+  pointer-events: none;
 }
 
 .page-shell {
-  max-width: 1040px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 40px 20px 64px;
+  padding: 44px 20px 72px;
+  position: relative;
+  z-index: 1;
 }
 
 .topbar {
   margin-bottom: 28px;
 }
 
+.brand-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
 .eyebrow {
-  margin: 0 0 12px;
+  margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--accent);
+  font-weight: 800;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  color: var(--accent-strong);
+  font-size: 0.68rem;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 h1 {
   margin: 0 0 10px;
-  font-size: clamp(2.2rem, 5vw, 3.5rem);
-  letter-spacing: -0.04em;
-  line-height: 1.02;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  letter-spacing: -0.07em;
+  line-height: 0.96;
+  color: var(--muted-strong);
+  font-weight: 900;
 }
 
 .subtitle {
   margin: 0;
   color: var(--muted);
-  max-width: 64ch;
+  max-width: 70ch;
   font-size: 1.02rem;
   line-height: 1.6;
 }
 
 .app-card {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 16, 28, 0.94));
-  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 251, 255, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 28px;
-  box-shadow: 0 28px 80px var(--shadow);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.09), 0 2px 0 rgba(255, 255, 255, 0.7) inset;
   padding: 28px;
-  backdrop-filter: blur(8px);
 }
 
 .form-section {
@@ -81,16 +123,17 @@ h1 {
   border-radius: 20px;
   padding: 18px 20px 20px;
   margin: 0 0 20px;
-  background: rgba(17, 24, 39, 0.68);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(243, 247, 255, 0.7));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .form-section legend {
   padding: 0 8px;
-  color: var(--accent);
-  font-size: 0.78rem;
+  color: var(--accent-strong);
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-weight: 800;
 }
 
 .field-row {
@@ -113,8 +156,8 @@ h1 {
 }
 
 .field > span {
-  font-weight: 600;
-  color: #dfeefe;
+  font-weight: 700;
+  color: var(--muted-strong);
 }
 
 .field-wide {
@@ -133,13 +176,13 @@ h1 {
 }
 
 .photo-preview {
-  width: 78px;
-  height: 78px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(138, 217, 255, 0.4);
-  background: linear-gradient(135deg, rgba(23, 34, 53, 0.9), rgba(15, 23, 42, 1));
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(37, 99, 235, 0.2);
+  background: linear-gradient(135deg, rgba(232, 240, 255, 1), rgba(255, 255, 255, 1));
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
 }
 
 .photo-picker-controls {
@@ -152,7 +195,7 @@ h1 {
 }
 
 .photo-picker-controls input[type="file"] {
-  width: min(100%, 300px);
+  width: min(100%, 340px);
   max-width: 100%;
   flex: 1 1 220px;
   min-width: 0;
@@ -163,34 +206,36 @@ h1 {
   padding: 10px 14px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(78, 200, 255, 0.2), rgba(78, 200, 255, 0.05));
-  color: var(--text);
-  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 700;
   cursor: pointer;
 }
 
 input,
 textarea {
-  background: rgba(23, 34, 53, 0.9);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 11px 12px;
   color: var(--text);
   font-size: 0.96rem;
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+  min-height: 44px;
 }
 
 input:hover,
 textarea:hover {
-  border-color: rgba(138, 217, 255, 0.5);
+  border-color: rgba(37, 99, 235, 0.32);
 }
 
 input:focus,
 textarea:focus {
   outline: none;
-  border-color: rgba(138, 217, 255, 0.9);
-  box-shadow: 0 0 0 4px rgba(78, 200, 255, 0.12);
+  border-color: rgba(37, 99, 235, 0.6);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
 }
 
 textarea {
@@ -211,21 +256,21 @@ textarea {
   border-radius: 999px;
   padding: 12px 22px;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
-  color: #06121f;
-  box-shadow: 0 12px 22px rgba(78, 200, 255, 0.3);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
 }
 
 .btn-secondary {
   background: rgba(148, 163, 184, 0.04);
   border: 1px solid var(--border);
-  color: var(--text);
+  color: var(--muted-strong);
 }
 
 .btn-primary:hover,
@@ -248,21 +293,22 @@ textarea {
   margin: 0 0 18px;
   font-size: 1.45rem;
   letter-spacing: -0.02em;
+  color: var(--muted-strong);
 }
 
 .result-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 320px) 1fr;
+  grid-template-columns: minmax(240px, 320px) 1fr;
   gap: 22px;
 }
 
 .qr-box,
 .vcf-box {
-  background: linear-gradient(180deg, rgba(23, 34, 53, 0.88), rgba(17, 24, 39, 0.88));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(243, 247, 255, 0.76));
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 20px;
-  box-shadow: 0 12px 26px rgba(2, 6, 23, 0.2);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 .qr-box {
@@ -274,7 +320,7 @@ textarea {
 
 .qr-code {
   background: #ffffff;
-  border-radius: 14px;
+  border-radius: 16px;
   padding: 12px;
   width: 220px;
   height: 220px;
@@ -305,15 +351,15 @@ textarea {
 
 .vcf-name {
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--success);
   font-size: 1.1rem;
 }
 
 .vcf-preview {
   margin: 0;
-  background: rgba(7, 17, 31, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 12px;
   padding: 14px;
   font-size: 0.8rem;
@@ -322,7 +368,7 @@ textarea {
   word-break: break-word;
   max-height: 260px;
   overflow-y: auto;
-  color: #e8f3ff;
+  color: #ebf3ff;
 }
 
 @media (max-width: 720px) {
