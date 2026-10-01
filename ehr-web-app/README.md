@@ -1,5 +1,7 @@
 # Northstar Health EHR
 
+> Standalone browser-based EHR interface demo. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A polished, single-page electronic health record web application designed to look and feel like a modern clinical dashboard. The experience combines patient search, vitals, medication tracking, appointments, billing context, and encounter documentation in one responsive interface.
 
 ## Features

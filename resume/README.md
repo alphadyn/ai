@@ -1,5 +1,7 @@
 # Resume
 
+> Standalone static portfolio document. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 This folder contains a polished HTML resume for an AI software engineer.
 
 ## What is included

@@ -1,6 +1,6 @@
 # Alphadyn AI Apps and Experiments
 
-This repository is a portfolio-style collection of 30 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own.
+This repository is a portfolio-style collection of 30 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own. The collection is intentionally mixed: some apps are static browser experiences, while others use Supabase, Flask, or Vercel APIs.
 
 The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
@@ -38,7 +38,7 @@ The landing page highlights these projects:
 - [iPhone Duo](iphone-duo/) — Dual-device phone simulator with companion UI.
 - [Legal Docketing](legal-docketing/) — Matter and deadline tracking app.
 - [Multi-Search Engine](multi-search-engine/) — Search comparison page across multiple engines.
-- [nexus](nexus/) — Content and media management system with SQLite-backed local storage and server-side API.
+- [Nexus](nexus/) — Content and media management system with browser UI, sample media, filtering, metadata editing, and optional Supabase persistence.
 - [Atlas Store](atlas-store/) — Storefront mockup with catalog, cart, and checkout flow.
 - [Pencil Sketch](pencil-sketch/) — Image-to-pencil-sketch converter.
 - [Photo Gallery](photo-gallery/) — Responsive gallery app.
@@ -90,16 +90,15 @@ cd market-lens
 python3 -m http.server 8000
 ```
 
-### Nexus server
+### Nexus
 
-The [nexus](nexus/) app includes an SQLite-backed backend:
+[Nexus](nexus/) is currently a static browser app. Serve the repository or the project folder, then open `nexus/index.html`. Configure `nexus/supabase-config.js` when persistence is needed; the built-in Samples action is available without a configured backend.
 
 ```bash
-cd nexus
-python3 server.py --port 8000
+python3 -m http.server 8000
 ```
 
-Then open the app from the local server or direct to the generated HTML entrypoint as applicable to the project.
+Then visit <http://localhost:8000/nexus/>.
 
 ### Market Curve Lab
 
@@ -153,6 +152,12 @@ A convenience wrapper is also included:
 ```
 
 The pytest configuration is defined in [pytest.ini](pytest.ini).
+
+## Documentation map
+
+- Use [index.html](index.html) as the visual project catalog and launch page.
+- Use each project README for its local features, dependencies, and service configuration.
+- Use [DEPLOYMENT.md](DEPLOYMENT.md) for GitHub Pages, Vercel, and local validation details.
 
 ## Notes
 

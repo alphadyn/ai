@@ -1,5 +1,7 @@
 # Experiences
 
+> Map-based journal and share-preview app. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A browser-based app for recording trips, Experiences, and named Events with maps, locations, and media. The logged-out home page introduces the app through a welcome screen; sign-in is required before creating or exploring private content.
 
 ## Features

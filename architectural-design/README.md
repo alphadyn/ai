@@ -1,5 +1,7 @@
 # Casa Lumen Architectural Design
 
+> Standalone static presentation. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A standalone concept design board for Casa Lumen, a modern two-storey, five-bedroom, five-bathroom single-family home.
 
 The page includes:

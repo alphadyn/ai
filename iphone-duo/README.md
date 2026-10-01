@@ -1,5 +1,7 @@
 # iPhone Duo Simulator
 
+> Standalone dual-device browser simulator. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A completely standalone iPhone Duo simulation built with plain HTML, CSS, and JavaScript. It has no build step and no external runtime dependencies.
 
 ## Included

@@ -1,5 +1,7 @@
 # Postboard
 
+> Supabase-backed personal publishing workspace. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 Postboard is a small personal activity log for saving short updates with metadata, attachments, and optional rich-text formatting.
 
 ## Features

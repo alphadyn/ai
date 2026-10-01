@@ -1,5 +1,7 @@
 # Top 20 Occupations Income Report
 
+> Standalone static report. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 This folder contains a polished HTML report highlighting 20 occupations with some of the highest approximate median incomes in the United States.
 
 ## What is included

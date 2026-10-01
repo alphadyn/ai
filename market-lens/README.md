@@ -1,5 +1,7 @@
 # Market Lens
 
+> Market screening dashboard with a Vercel API. See the [repository catalog](../README.md) and [deployment guide](../DEPLOYMENT.md) for shared context.
+
 Market Lens is a dependency-free browser dashboard for screening the entire S&P 500 index. It fetches the current index constituent list, then requests quote and chart data for every constituent from Nasdaq's public market endpoints, calculates a transparent rules-based score for each, and labels each result as Buy, Hold, or Sell. The ranked watchlist table shows only the top 20 highest-conviction results per signal (Buy/Hold/Sell); the summary cards always reflect the single strongest result across the full scan. Selecting a row loads the latest available financial statement rows for that company.
 
 The last ranked results are saved to a shared Supabase table (see [`supabase-schema.sql`](supabase-schema.sql)) so every visitor sees the same saved scan. On page load, the dashboard shows the saved results immediately instead of rescanning the market; use the refresh button to run a new scan on request, which overwrites the shared cache.

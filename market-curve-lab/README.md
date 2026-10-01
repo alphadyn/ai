@@ -1,5 +1,7 @@
 # Market Curve Lab
 
+> Vercel-hosted market analysis app with a static GitHub Pages entrypoint. See the [repository catalog](../README.md) and [deployment guide](../DEPLOYMENT.md) for shared context.
+
 A web app that loads all 500 members of the current S&P 500 index, ranks them by market capitalization, and lets you search for any other listed equity by ticker or company name. Market caps come from Nasdaq's paginated public screener joined to the current S&P constituent list. Multiple share classes are combined by issuer and represented by the class with the largest reported market cap. If market cap is unavailable, the member remains in the list at the bottom; Brown–Forman currently has no screener value. Search results and adjusted monthly price history come from Yahoo Finance.
 
 For the selected company, the app plots split- and dividend-adjusted total performance from a $100 starting value, overlays linear and quadratic least-squares trendlines, compares model fit using R², and reports recent concavity based on a quadratic fit to the latest 24 monthly observations. The full S&P 500 is ranked when the app loads; historical prices and curve analysis are fetched only for the selected ticker.

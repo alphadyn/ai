@@ -1,5 +1,7 @@
 # Car Sketch Project
 
+> Python image-processing utility and report generator. See the [repository catalog](../README.md) for shared setup and testing context.
+
 Convert car photos to beautiful pencil sketch artwork.
 
 ## Features

@@ -1,5 +1,7 @@
 # Business Site
 
+> Standalone static marketing page. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 This folder contains a polished single-page marketing website for a fictional AI company.
 
 ## What is included

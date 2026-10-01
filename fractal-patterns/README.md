@@ -1,5 +1,7 @@
 # Fractal Atlas Web App
 
+> Standalone interactive visualization. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A browser-based web app that generates and displays 10 popular fractal patterns on an HTML canvas.
 
 ## Features

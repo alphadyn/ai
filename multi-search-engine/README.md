@@ -1,5 +1,7 @@
 # Multi-Search Engine Web App
 
+> Browser and Python search aggregation utility. See the [repository catalog](../README.md) for shared setup and testing context.
+
 A web application that takes a word or phrase as input, queries across up to 5 search engines, and produces a report with exact one-line findings: `[Source] Matching Text — Link` (up to 10 results per search engine).
 
 ## Features

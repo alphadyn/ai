@@ -1,5 +1,7 @@
 # Prime Counter
 
+> Standalone browser mathematics utility. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A client-side web application that counts unsigned integer prime numbers up to
 a user-supplied positive number, reports how long the computation took, and
 keeps a log of the last 100 results.

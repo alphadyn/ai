@@ -1,5 +1,7 @@
 # Contact Card Generator
 
+> Standalone browser utility for contact cards and QR output. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A simple browser app for turning a contact form into a standard vCard (.vcf) file and a scannable QR code containing the same contact details.
 
 ## Features

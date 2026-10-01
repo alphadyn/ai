@@ -1,5 +1,7 @@
 # Vault — Secure File Tool
 
+> Standalone browser encryption tool; data stays on-device. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 Vault is a static web app for encrypting and decrypting text or files in your browser. It is designed to be hosted on GitHub Pages: there is no server, account, upload, or build step. The web app files are `index.html`, `styles.css`, and `app.js`.
 
 ## Use it

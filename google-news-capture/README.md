@@ -1,5 +1,7 @@
 # Google News Capture
 
+> Local Flask and Playwright utility for collecting structured news results. See the [repository catalog](../README.md) for shared setup and testing context.
+
 A local web app that opens Google News in headless Chromium, scrolls the feed to load additional stories, and extracts article titles, links, and related reads. Captures are shown in a responsive browser interface and can be downloaded as structured JSON. A copy is also saved beside the app as `google_news.json`.
 
 ## Requirements

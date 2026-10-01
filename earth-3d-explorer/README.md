@@ -1,5 +1,7 @@
 # 3D Earth Explorer
 
+> Standalone Three.js browser visualization. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 An interactive browser app that renders a 3D model of the Earth, lets you inspect the
 latitude/longitude of any point on its surface, and measure the great-circle (surface)
 distance between any two points you click.

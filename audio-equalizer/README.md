@@ -1,5 +1,7 @@
 # Signal Room
 
+> Standalone browser audio experience. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A dependency-free browser audio equalizer and media player. Load an audio or video file to inspect its live frequency spectrum, waveform, peak level, and RMS level while playing.
 
 ## Run locally

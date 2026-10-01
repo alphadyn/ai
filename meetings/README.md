@@ -1,5 +1,7 @@
 # Meetings — Video Conferencing App
 
+> Browser-based WebRTC meeting app with mobile controls. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A browser-based video conferencing app. Enter a name and a meeting code to join a room where
 participants can talk, video chat, message each other, and share files — all peer-to-peer, with
 no application server required, and all strongly encrypted end-to-end.

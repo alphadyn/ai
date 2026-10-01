@@ -1,5 +1,7 @@
 # iPhone 17 Pro Simulator
 
+> Standalone interactive phone simulator. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A self-contained, interactive iPhone 17 Pro-style web simulator built with plain HTML, CSS, and JavaScript.
 
 ## What is included

@@ -1,5 +1,7 @@
 # Pencil Sketch Studio
 
+> Standalone browser image-conversion experiment. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A simple browser app for turning uploaded images into pencil-style sketches. It supports both black-and-white and color pencil effects and lets the user tune how closely the result matches the original, how fine or coarse the pencil strokes feel, and how the image is balanced by brightness and a color tint picker.
 
 The sketch engine follows the same core idea used in the GeeksforGeeks example:

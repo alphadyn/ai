@@ -1,5 +1,7 @@
 # Northstar Horizons Executive Command Center
 
+> Standalone multi-page dashboard demo. See the [repository catalog](../README.md) for shared setup and deployment context.
+
 A polished enterprise dashboard designed for a large-cap company, with an executive overview, regional performance, initiatives, risk tracking, and AI strategic brief.
 
 ## Features
