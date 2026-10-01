@@ -27,8 +27,8 @@
           <input id="roomInput" type="text" placeholder="e.g. team-standup" autocomplete="off" required maxlength="60" />
         </label>
         <div class="join-actions">
-          <button type="submit" class="primary-btn">Join meeting</button>
           <button type="button" id="newMeetingBtn" class="ghost-btn">Generate a new code</button>
+          <button type="submit" class="primary-btn">Join meeting</button>
         </div>
       </form>
 
@@ -108,6 +108,9 @@
       </button>
       <button type="button" id="filesToggleBtn" class="control-btn">
         <span class="control-icon">📎</span><span class="control-label">Files</span>
+      </button>
+      <button type="button" id="fullscreenBtn" class="control-btn" aria-label="Enter fullscreen" aria-pressed="false" title="Enter fullscreen">
+        <span class="control-icon" aria-hidden="true">⛶</span><span class="control-label">Fullscreen</span>
       </button>
       <button type="button" id="leaveBtn" class="control-btn leave-btn">
         <span class="control-icon">📵</span><span class="control-label">Leave</span>

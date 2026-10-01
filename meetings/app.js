@@ -44,6 +44,7 @@
   const chatToggleBtn = document.getElementById('chatToggleBtn');
   const peopleToggleBtn = document.getElementById('peopleToggleBtn');
   const filesToggleBtn = document.getElementById('filesToggleBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
   const peopleCount = document.getElementById('peopleCount');
   const leaveBtn = document.getElementById('leaveBtn');
 
@@ -592,6 +593,43 @@
   peopleToggleBtn.addEventListener('click', () => toggleSidePanel('people'));
   filesToggleBtn.addEventListener('click', () => toggleSidePanel('files'));
 
+  function getFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function updateFullscreenButton() {
+    const isFullscreen = getFullscreenElement() === meetingScreen;
+    const label = isFullscreen ? 'Exit fullscreen' : 'Fullscreen';
+    fullscreenBtn.setAttribute('aria-label', isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen');
+    fullscreenBtn.setAttribute('aria-pressed', String(isFullscreen));
+    fullscreenBtn.title = isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
+    fullscreenBtn.querySelector('.control-label').textContent = label;
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (getFullscreenElement()) {
+        const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exitFullscreen) await exitFullscreen.call(document);
+        return;
+      }
+      const requestFullscreen = meetingScreen.requestFullscreen || meetingScreen.webkitRequestFullscreen;
+      if (!requestFullscreen) throw new Error('Fullscreen is not supported by this browser.');
+      await requestFullscreen.call(meetingScreen);
+    } catch (err) {
+      console.warn('Unable to toggle fullscreen:', err);
+      setStatus(connectionStatus, 'Fullscreen is unavailable in this browser.');
+      setTimeout(() => setStatus(connectionStatus, isHost ? 'You started this meeting' : 'Connected'), 2500);
+    }
+  }
+
+  const canFullscreen = Boolean(meetingScreen.requestFullscreen || meetingScreen.webkitRequestFullscreen);
+  fullscreenBtn.disabled = !canFullscreen;
+  if (!canFullscreen) fullscreenBtn.title = 'Fullscreen is not supported by this browser';
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', updateFullscreenButton);
+  document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+
   copyLinkBtn.addEventListener('click', async () => {
     const url = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(roomLabel.textContent)}`;
     try {
@@ -609,6 +647,8 @@
   });
 
   function leaveMeeting() {
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    if (getFullscreenElement() === meetingScreen && exitFullscreen) exitFullscreen.call(document);
     broadcast({ type: 'peer-left', id: myId });
     participants.forEach(({ conn, call }) => {
       if (conn) conn.close();

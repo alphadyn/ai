@@ -20,6 +20,9 @@ no application server required, and all strongly encrypted end-to-end.
   server
 - **Invite links**: "Copy invite link" puts a URL with `?room=<code>` on the clipboard so others
   can join the same meeting with one click
+- **Fullscreen mode**: expand the meeting view and exit fullscreen with the toolbar control
+- **Mobile-friendly layout**: responsive video tiles, touch-sized controls, and an overlay panel
+  for chat, people, and files on smaller screens
 - Participant list with live join/leave updates
 
 ## Run it
@@ -37,14 +40,15 @@ Then open http://localhost:8000 in your browser. To test locally with multiple p
 the same meeting code in separate browser tabs, windows, or devices.
 
 ## How to use
-1. Enter your name and a meeting code (or click **Generate a new code**) and click **Join
-   meeting**.
+1. Enter your name and a meeting code. Click **Generate a new code** to create one, then click
+  **Join meeting**.
 2. Grant camera/microphone permission when prompted. The app waits for your device permissions
   before starting the meeting; if one device is unavailable, the other can still work. If you
   change browser permissions or connect a device, click **Retry camera / microphone** on the
   join screen. You can also join without either device to use chat and files.
 3. Use the control bar to mute your mic, stop your camera, open **Chat**, view **People**, share
-   **Files**, or **Leave** the meeting.
+  **Files**, enter or exit **Fullscreen**, or **Leave** the meeting. On phones, the toolbar and
+  side panel adapt to the smaller screen.
 4. Click **Copy invite link** and send it to others so they can join the same meeting instantly.
 
 ## Main files
