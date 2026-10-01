@@ -15,7 +15,7 @@ The landing page highlights these projects:
 5. [nexus](nexus/) — Content and media workspace
 6. [online_store_app](online_store_app/) — Storefront and checkout experience
 7. [photo_gallery_app](photo_gallery_app/) — Responsive photo gallery
-8. [video_conference_app](video_conference_app/) — Meeting and communication interface
+8. [meetings](meetings/) — Meeting and communication interface
 
 ## Repository layout
 
@@ -46,7 +46,7 @@ The landing page highlights these projects:
 - [resume](resume/) — Portfolio-style resume page.
 - [market_lens_app](market_lens_app/) — Dashboard for screening and reviewing large-cap equities.
 - [vcard_generator_app](vcard_generator_app/) — Card generation and QR code output.
-- [video_conference_app](video_conference_app/) — Meeting interface with chat and file-sharing UX.
+- [meetings](meetings/) — Meeting interface with chat and file-sharing UX.
 
 ### Reports and presentation pages
 

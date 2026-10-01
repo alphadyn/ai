@@ -29,7 +29,7 @@ the camera and microphone. Camera/microphone access requires a secure context: u
 deployed, or serve the folder on localhost while developing:
 
 ```bash
-cd video_conference_app
+cd meetings
 python3 -m http.server 8000
 ```
 
