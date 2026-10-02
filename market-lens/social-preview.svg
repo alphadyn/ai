@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="44" y1="28" x2="1147" y2="646" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17211F"/>
+      <stop offset="1" stop-color="#0D1114"/>
+    </linearGradient>
+    <linearGradient id="chart" x1="601" y1="126" x2="1105" y2="389" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A9E6C8"/>
+      <stop offset="1" stop-color="#51BE92"/>
+    </linearGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0V56" stroke="#FFFFFF" stroke-opacity=".055"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <path d="M0 504C194 439 304 571 494 499C697 423 836 475 1200 333V630H0V504Z" fill="#55C495" fill-opacity=".055"/>
+  <g font-family="Arial, sans-serif">
+    <rect x="72" y="67" width="31" height="31" rx="8" fill="#6DD0A2"/>
+    <path d="M79 88V79H84V88M87 88V74H92V88M95 88V69H100V88" stroke="#102019" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="116" y="89" fill="#F1F5F2" font-size="22" font-weight="700" letter-spacing=".3">MARKET LENS</text>
+    <text x="74" y="178" fill="#8CDAB4" font-size="15" font-weight="700" letter-spacing="2.5">SYSTEMATIC EQUITY RESEARCH</text>
+    <text x="70" y="260" fill="#F7F9F7" font-size="69" font-weight="700" letter-spacing="-2.5">Signals over</text>
+    <text x="70" y="337" fill="#F7F9F7" font-size="69" font-weight="700" letter-spacing="-2.5">noise.</text>
+    <text x="74" y="397" fill="#AAB7B0" font-size="20">A transparent scan of the S&amp;P 500.</text>
+    <rect x="74" y="456" width="115" height="39" rx="19.5" fill="#18392D" stroke="#317354"/>
+    <circle cx="95" cy="475.5" r="4" fill="#7EE2AE"/>
+    <text x="108" y="481" fill="#A6E8C3" font-size="14" font-weight="700">BUY</text>
+    <rect x="201" y="456" width="118" height="39" rx="19.5" fill="#3A3320" stroke="#76663A"/>
+    <circle cx="222" cy="475.5" r="4" fill="#EBCB71"/>
+    <text x="235" y="481" fill="#EED991" font-size="14" font-weight="700">HOLD</text>
+    <rect x="331" y="456" width="113" height="39" rx="19.5" fill="#402725" stroke="#7C4740"/>
+    <circle cx="352" cy="475.5" r="4" fill="#EF8A7E"/>
+    <text x="365" y="481" fill="#F0A097" font-size="14" font-weight="700">SELL</text>
+    <rect x="559" y="102" width="572" height="418" rx="16" fill="#141A1D" stroke="#303A3D"/>
+    <text x="593" y="144" fill="#83918C" font-size="12" font-weight="700" letter-spacing="1.7">S&amp;P 500 / MARKET MOMENTUM</text>
+    <text x="593" y="188" fill="#F3F7F4" font-size="24" font-weight="700">Ranked watchlist</text>
+    <rect x="1039" y="126" width="61" height="27" rx="13.5" fill="#1C352B"/>
+    <circle cx="1054" cy="139.5" r="3" fill="#73D2A0"/>
+    <text x="1063" y="144" fill="#9DDBB7" font-size="11" font-weight="700">LIVE</text>
+    <path d="M592 214H1098M592 264H1098M592 314H1098M592 364H1098M592 414H1098" stroke="#FFFFFF" stroke-opacity=".08"/>
+    <path d="M609 378L661 350L707 362L757 306L807 322L855 261L906 278L959 218L1006 236L1078 173" stroke="url(#chart)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M609 378L661 350L707 362L757 306L807 322L855 261L906 278L959 218L1006 236L1078 173V414H609V378Z" fill="#5BC494" fill-opacity=".11"/>
+    <circle cx="1078" cy="173" r="6" fill="#9CE2BD" stroke="#173B2D" stroke-width="4"/>
+    <text x="594" y="455" fill="#9AA8A1" font-size="12" font-weight="700" letter-spacing="1.4">BUY</text>
+    <text x="767" y="455" fill="#9AA8A1" font-size="12" font-weight="700" letter-spacing="1.4">HOLD</text>
+    <text x="943" y="455" fill="#9AA8A1" font-size="12" font-weight="700" letter-spacing="1.4">SELL</text>
+    <text x="593" y="486" fill="#6F7C76" font-size="12">Trend · momentum · range · volume</text>
+    <text x="74" y="574" fill="#738078" font-size="13" letter-spacing="1.2">ALPHADYN.GITHUB.IO / MARKET LENS</text>
+  </g>
+</svg>
