@@ -5,6 +5,7 @@ const SUPABASE_CONFIG = window.CHECKIN_MAP_SUPABASE || {};
 const SUPABASE_URL = SUPABASE_CONFIG.url;
 const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
 const SHARE_PREVIEW_ENABLED = SUPABASE_CONFIG.sharePreviewEnabled === true;
+const SHARE_PREVIEW_URL = SUPABASE_CONFIG.sharePreviewUrl;
 const STORAGE_BUCKET = SUPABASE_CONFIG.storageBucket || "checkin-map-media";
 const LOCATIONS_TABLE = "checkin_map_locations";
 const MEDIA_TABLE = "checkin_map_media";
@@ -968,8 +969,8 @@ async function experienceUrl(experience) {
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create the experience URL."));
     experience.public_slug = slug;
   }
-  if (experience.is_public && SHARE_PREVIEW_ENABLED && SUPABASE_URL) {
-    const previewUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/experience-share`);
+  if (experience.is_public && SHARE_PREVIEW_ENABLED && SHARE_PREVIEW_URL) {
+    const previewUrl = new URL(SHARE_PREVIEW_URL);
     previewUrl.searchParams.set("experience", experience.id);
     return previewUrl.toString();
   }

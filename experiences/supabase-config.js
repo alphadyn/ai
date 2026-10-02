@@ -3,4 +3,5 @@ window.CHECKIN_MAP_SUPABASE = {
   anonKey: 'sb_publishable_I8I-cRDhS60UoUgCvVvwnQ_MyKI9u14',
   storageBucket: 'checkin-map-media',
   sharePreviewEnabled: true,
+  sharePreviewUrl: 'https://ai-orcin-eta-15.vercel.app/api/experience-share',
 };
