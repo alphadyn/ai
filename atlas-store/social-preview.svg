@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <clipPath id="photo-clip"><path d="M520 0h680v630H520z"/></clipPath>
+    <linearGradient id="photo-shade" x1="520" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1f2320" stop-opacity=".02"/>
+      <stop offset="1" stop-color="#1f2320" stop-opacity=".28"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#fbfaf4"/>
+  <path d="M0 0h550v630H0z" fill="#f3ead8"/>
+  <path d="M0 0h18v630H0z" fill="#44624a"/>
+  <image href="storefront-photo.jpg" x="490" y="0" width="710" height="630" preserveAspectRatio="xMidYMid slice" clip-path="url(#photo-clip)"/>
+  <path d="M490 0h710v630H490z" fill="url(#photo-shade)"/>
+  <g font-family="Georgia, 'Times New Roman', serif" fill="#1f2320">
+    <circle cx="93" cy="90" r="28" fill="#1f2320"/>
+    <text x="93" y="99" fill="#fbfaf4" font-size="27" font-weight="700" text-anchor="middle">A</text>
+    <text x="137" y="86" font-size="25" font-weight="700">Atlas &amp; Co.</text>
+    <text x="138" y="108" fill="#687064" font-family="Arial, sans-serif" font-size="12" letter-spacing="1.4">GOODS, GEAR, AND SERVICES</text>
+    <text x="76" y="203" fill="#b45f36" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2.5">THE CURATED MARKETPLACE</text>
+    <text x="72" y="290" font-size="61" font-weight="700">Useful things,</text>
+    <text x="72" y="360" font-size="61" font-weight="700">for real life.</text>
+    <text x="77" y="411" fill="#687064" font-family="Arial, sans-serif" font-size="19">Thoughtful picks for home, work, and beyond.</text>
+  </g>
+  <g font-family="Arial, sans-serif" font-size="12" font-weight="700" letter-spacing=".8">
+    <rect x="76" y="468" width="134" height="36" rx="18" fill="#44624a"/>
+    <text x="143" y="491" fill="#fffef9" text-anchor="middle">HOME GOODS</text>
+    <rect x="220" y="468" width="134" height="36" rx="18" fill="#227a82"/>
+    <text x="287" y="491" fill="#fffef9" text-anchor="middle">EVERYDAY TECH</text>
+    <rect x="364" y="468" width="140" height="36" rx="18" fill="#b45f36"/>
+    <text x="434" y="491" fill="#fffef9" text-anchor="middle">SPECIALTY SERVICE</text>
+  </g>
+  <text x="77" y="573" fill="#687064" font-family="Arial, sans-serif" font-size="12" letter-spacing="1.5">ALPHADYN.GITHUB.IO / ATLAS &amp; CO.</text>
+</svg>
