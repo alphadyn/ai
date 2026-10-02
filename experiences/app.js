@@ -215,7 +215,8 @@ let tripPageScrollY = null;
 let draggedTripId = null;
 let authMode = "signin";
 const pageParams = new URLSearchParams(window.location.search);
-const publicExperienceSlug = pageParams.get("experience");
+const experienceShareMatch = window.location.pathname.match(/\/share\/([^/]+)\/?$/);
+const publicExperienceSlug = pageParams.get("experience") || experienceShareMatch?.[1] || null;
 const isExperienceUrl = Boolean(publicExperienceSlug);
 const publicTripSlug = pageParams.get("trip");
 const isPublicTrip = Boolean(publicTripSlug);
@@ -969,10 +970,13 @@ async function experienceUrl(experience) {
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not create the experience URL."));
     experience.public_slug = slug;
   }
-  if (experience.is_public && SHARE_PREVIEW_ENABLED && SHARE_PREVIEW_URL) {
-    const previewUrl = new URL(SHARE_PREVIEW_URL);
-    previewUrl.searchParams.set("experience", experience.id);
-    return previewUrl.toString();
+  if (experience.is_public && SHARE_PREVIEW_ENABLED) {
+    const appBaseUrl = new URL("./", window.location.href);
+    appBaseUrl.pathname = appBaseUrl.pathname.replace(/share\/[^/]+\/?$/, "");
+    if (!appBaseUrl.pathname.endsWith("/")) appBaseUrl.pathname += "/";
+    appBaseUrl.search = "";
+    appBaseUrl.hash = "";
+    return new URL(`share/${encodeURIComponent(slug)}/`, appBaseUrl).href;
   }
   return `${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`;
 }

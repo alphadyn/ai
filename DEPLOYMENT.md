@@ -4,11 +4,11 @@ This repository uses GitHub Pages for the portfolio site and dedicated Vercel pr
 
 ## GitHub Pages
 
-The [deploy-pages.yml](.github/workflows/deploy-pages.yml) workflow builds and publishes the repository to GitHub Pages. It runs after GitHub's branch Pages build, on pushes, on a five-minute schedule, and on manual dispatch. The workflow prepares the Market Lens data snapshot and generates Pulse and Market Curve Lab share-preview pages before uploading the repository as the Pages artifact.
+The [deploy-pages.yml](.github/workflows/deploy-pages.yml) workflow builds and publishes the repository to GitHub Pages. It runs after GitHub's branch Pages build, on pushes, on a five-minute schedule, and on manual dispatch. The workflow prepares the Market Lens data snapshot and generates Pulse, Experiences, and Market Curve Lab share-preview pages before uploading the repository as the Pages artifact.
 
 GitHub repository settings should use **Settings → Pages → Build and deployment → GitHub Actions**. Do not also publish from a branch source; the workflow owns the deployment artifact.
 
-The preview-page generation steps use public app configuration and do not need deployment secrets. Pulse share previews read public posts using the public Supabase configuration in its app directory.
+The preview-page generation steps use public app configuration and do not need deployment secrets. Pulse and Experiences share previews read public data using the public Supabase configuration in their app directories.
 
 ## Vercel projects
 
