@@ -1,4 +1,4 @@
-# Rotating Photo Gallery
+# Photo Gallery
 
 > Standalone responsive browser gallery. See the [repository catalog](../README.md) for shared setup and deployment context.
 
