@@ -1,6 +1,6 @@
 # Alphadyn AI Apps and Experiments
 
-This repository is a portfolio-style collection of 30 independent projects: interactive demos, business mockups, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own. The collection is intentionally mixed: some apps are static browser experiences, while others use Supabase, Flask, or Vercel APIs.
+This repository is a portfolio-style collection of 24 independent projects: interactive demos, data visualizations, browser apps, reports, and Python utilities. Each project is designed to be opened, adapted, or expanded on its own. The collection is intentionally mixed: some apps are static browser experiences, while others use Supabase, Flask, or Vercel APIs.
 
 The root landing page in [index.html](index.html) links to the most relevant app directories and gives a quick overview of the portfolio. It includes a Featured area and a full Catalog of all available apps and experiments.
 
@@ -26,16 +26,11 @@ The landing page highlights these projects:
 - [Market Curve Lab](market-curve-lab/) — Rank all 500 S&P 500 companies by market cap, search stocks, and inspect selected-ticker all-time performance, trendlines, and concavity.
 - [Architectural Design](architectural-design/) — Architectural concept board and home design presentation.
 - [Audio Equalizer](audio-equalizer/) — Browser media player with live waveform and spectrum analysis.
-- [Business Site](business-site/) — Marketing landing page for an AI company.
-- [Car Sketch Project](car-sketch-project/) — Image-to-car-sketch generator.
 - [Experiences](experiences/) — Experiences: a Supabase-backed journal with trips, shareable Experience collections, Event maps, precise location picking, and media carousels.
 - [Earth 3D Explorer](earth-3d-explorer/) — Three.js globe with overlays and inspection interactions.
 - [EHR Web App](ehr-web-app/) — Electronic health record demo interface.
-- [Executive Dashboard](executive-dashboard/) — Multi-page executive dashboard.
 - [Fractal Patterns](fractal-patterns/) — Interactive fractal visualizer.
 - [Game Videos](game-videos/) — Gaming video showcase page.
-- [iPhone 17 Pro](iphone-17-pro/) — Interactive iPhone simulator experience.
-- [iPhone Duo](iphone-duo/) — Dual-device phone simulator with companion UI.
 - [Legal Docketing](legal-docketing/) — Matter and deadline tracking app.
 - [Multi-Search Engine](multi-search-engine/) — Search comparison page across multiple engines.
 - [Nexus](nexus/) — Content and media management system with browser UI, sample media, filtering, metadata editing, and optional Supabase persistence.
@@ -43,7 +38,6 @@ The landing page highlights these projects:
 - [Pencil Sketch](pencil-sketch/) — Image-to-pencil-sketch converter.
 - [Photo Gallery](photo-gallery/) — Responsive gallery app.
 - [Postboard](postboard/) — Personal post archive with rich text, uploads, and Supabase integration.
-- [Prime Counter](prime-counter/) — Prime counting utility with charting and timing.
 - [pulse](pulse/) — Social/news-style app with posts, tags, and discussion flows.
 - [Resume](resume/) — Portfolio-style resume page.
 - [Vault](vault/) — Browser-based text and file encryption app; all processing stays on-device.
@@ -80,7 +74,7 @@ python3 -m http.server 8000
 cd earth-3d-explorer
 python3 -m http.server 8000
 
-cd iphone-17-pro
+cd experiences
 python3 -m http.server 8000
 
 cd atlas-store
