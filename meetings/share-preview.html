@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#eef0f4">
+  <meta name="robots" content="noindex,follow">
+  <title>Meetings · Link Preview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #202127;
+      background: #eef0f4;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100svh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      background: radial-gradient(ellipse at 50% 0%, #fff 0, transparent 55%), #eef0f4;
+    }
+
+    .messages {
+      width: min(100%, 440px);
+      height: min(820px, calc(100svh - 32px));
+      min-height: 560px;
+      display: grid;
+      grid-template-rows: 34px 65px minmax(0, 1fr) 56px;
+      overflow: hidden;
+      border: 1px solid #dfe2e8;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: 0 24px 72px rgb(31 35 46 / 15%);
+    }
+
+    .status-bar,
+    .status-icons,
+    .conversation-header,
+    .contact,
+    .message-row,
+    .composer { display: flex; align-items: center; }
+
+    .status-bar { justify-content: space-between; padding: 0 18px; font-size: 12px; font-weight: 700; }
+    .status-icons { gap: 5px; }
+    .signal { display: flex; align-items: end; gap: 2px; height: 12px; }
+    .signal i { width: 2px; border-radius: 2px; background: #202124; }
+    .signal i:nth-child(1) { height: 4px; }
+    .signal i:nth-child(2) { height: 6px; }
+    .signal i:nth-child(3) { height: 9px; }
+    .signal i:nth-child(4) { height: 12px; }
+    .wifi { width: 14px; height: 12px; }
+    .battery { position: relative; width: 20px; height: 11px; border: 1.4px solid #202124; border-radius: 3px; }
+    .battery::before { position: absolute; inset: 2px 4px 2px 2px; border-radius: 1px; background: #202124; content: ""; }
+    .battery::after { position: absolute; top: 3px; right: -4px; width: 2px; height: 4px; border-radius: 0 2px 2px 0; background: #202124; content: ""; }
+
+    .conversation-header { justify-content: space-between; padding: 0 16px 7px; border-bottom: 1px solid #ededf0; }
+    .back { color: #28998f; font-size: 13px; }
+    .contact { flex-direction: column; gap: 3px; font-size: 10px; font-weight: 650; }
+    .avatar { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: #d8f4ef; color: #277c76; font-size: 13px; }
+    .video { width: 25px; height: 20px; color: #28998f; }
+    .conversation { min-height: 0; padding: 22px 12px; }
+    .date { margin: 0 0 15px; color: #8e9098; font-size: 10px; text-align: center; }
+    .message-row { align-items: flex-end; gap: 7px; }
+    .contact-dot { width: 20px; height: 20px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #d8f4ef; color: #277c76; font-size: 9px; }
+    .bubble { width: min(100%, 338px); overflow: hidden; border: 1px solid #e1e2e6; border-radius: 15px 15px 15px 4px; background: #f1f1f3; }
+    .message-text { margin: 0; padding: 9px 10px 7px; font-size: 12px; line-height: 1.35; }
+    .link-card { display: block; margin: 0 4px 4px; overflow: hidden; border: 1px solid #dedfe4; border-radius: 10px; background: #111827; color: inherit; text-decoration: none; }
+    .link-card:focus-visible { outline: 2px solid #56d8c3; outline-offset: -2px; }
+    .cover { display: block; width: 100%; aspect-ratio: 1200 / 630; object-fit: cover; background: #0b1020; }
+    .copy { padding: 10px 11px 11px; }
+    h1 { margin: 0; color: #fff; font-size: 13px; font-weight: 700; line-height: 1.25; }
+    .description { margin: 4px 0 8px; color: #c4cad6; font-size: 10px; line-height: 1.35; }
+    .domain { display: flex; align-items: center; gap: 5px; color: #9ba9c5; font-size: 8px; text-transform: uppercase; }
+    .domain-mark { width: 13px; height: 13px; display: grid; place-items: center; border-radius: 4px; background: #6ee7d2; color: #0b1020; font-size: 9px; font-weight: 700; }
+    .delivered { margin: 4px 5px 0 0; color: #92949b; font-size: 9px; text-align: right; }
+    .composer { gap: 8px; padding: 7px 12px; border-top: 1px solid #ededf0; }
+    .add { width: 27px; height: 27px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: #f0f0f2; color: #6d7078; font-size: 19px; }
+    .input { height: 31px; flex: 1; display: flex; align-items: center; padding: 0 11px; border: 1px solid #d9dae0; border-radius: 18px; color: #a0a1a8; font-size: 10px; }
+    .mic { width: 14px; height: 19px; color: #858790; }
+
+    @media (max-width: 460px) {
+      .messages { border-radius: 22px; }
+      .conversation { padding: 16px 8px; }
+      .bubble { width: min(100%, 310px); }
+    }
+  </style>
+</head>
+<body>
+  <main class="messages" aria-label="Text message with a Meetings link preview">
+    <div class="status-bar">
+      <time datetime="09:41">9:41</time>
+      <div class="status-icons" aria-hidden="true">
+        <span class="signal"><i></i><i></i><i></i><i></i></span>
+        <svg class="wifi" viewBox="0 0 16 12" fill="none"><path d="M1 4c4-4 10-4 14 0M4 7c2-2 6-2 8 0M7 10c.6-.6 1.4-.6 2 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span class="battery"></span>
+      </div>
+    </div>
+    <header class="conversation-header">
+      <span class="back" aria-hidden="true">&#8249; Messages</span>
+      <div class="contact"><span class="avatar" aria-hidden="true">A</span><span>Alex</span></div>
+      <svg class="video" viewBox="0 0 32 24" fill="none" aria-hidden="true"><rect x="1" y="2" width="22" height="20" rx="6" stroke="currentColor" stroke-width="1.7"/><path d="m24 8 7-4v16l-7-4V8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+    </header>
+    <section class="conversation" aria-label="Message conversation">
+      <p class="date">Today 9:41 AM</p>
+      <div class="message-row">
+        <span class="contact-dot" aria-hidden="true">A</span>
+        <article class="bubble">
+          <p class="message-text">Here’s a secure place for the team call.</p>
+          <a class="link-card" href="https://alphadyn.github.io/ai/meetings/" aria-label="Open Meetings">
+            <img class="cover" src="social-preview.png" alt="Meetings video call with three participants and call controls">
+            <div class="copy">
+              <h1>Meetings — Private Video Calls for Teams</h1>
+              <p class="description">Talk face to face, chat, and share files with your team in encrypted browser meetings.</p>
+              <span class="domain"><span class="domain-mark" aria-hidden="true">M</span> alphadyn.github.io</span>
+            </div>
+          </a>
+        </article>
+      </div>
+      <p class="delivered">Delivered</p>
+    </section>
+    <footer class="composer" aria-hidden="true">
+      <span class="add">+</span>
+      <span class="input">iMessage</span>
+      <svg class="mic" viewBox="0 0 16 22" fill="none"><rect x="5" y="1" width="6" height="13" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 10v1a6 6 0 0 0 12 0v-1M8 17v4m-3 0h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </footer>
+  </main>
+</body>
+</html>
