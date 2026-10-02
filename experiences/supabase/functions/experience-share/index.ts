@@ -54,8 +54,8 @@ function unavailablePage(status: number): Response {
 
 Deno.serve(async (request) => {
   const requestUrl = new URL(request.url);
-  const slug = requestUrl.searchParams.get("slug")?.trim();
-  if (!slug || slug.length > 180) return unavailablePage(404);
+  const identifier = (requestUrl.searchParams.get("experience") ?? requestUrl.searchParams.get("slug"))?.trim();
+  if (!identifier || identifier.length > 180) return unavailablePage(404);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const apiKey = Deno.env.get("SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
@@ -75,9 +75,12 @@ Deno.serve(async (request) => {
   };
 
   try {
+    const experienceFilter = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier)
+      ? { or: `(id.eq.${identifier},public_slug.eq.${identifier})` }
+      : { public_slug: `eq.${identifier}` };
     const experiencesResponse = await apiRequest("checkin_map_experiences", {
       select: "id,name,description,public_slug,is_public",
-      public_slug: `eq.${slug}`,
+      ...experienceFilter,
       is_public: "eq.true",
       limit: "1",
     });

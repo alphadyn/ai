@@ -39,7 +39,7 @@ python3 -m http.server 8000
 Then open http://localhost:8000 in your browser.
 
 ## Deploy mobile share previews
-Public Experience links can use a Supabase Edge Function to return per-Experience Open Graph and Twitter metadata to message previews, plus a compact mobile landing card with an **Open this Experience** link. The function only looks up Experiences marked public; private links continue to open the app directly. Until the function is deployed and enabled, existing direct app links keep working with the generic app preview.
+Public Experience share links use a Supabase Edge Function to return per-Experience Open Graph and Twitter metadata to message previews, plus a compact mobile landing card with an **Open this Experience** link. The function accepts a database UUID or public slug and only looks up Experiences marked public; private links continue to open the app directly. GitHub Pages serves the same static HTML for every `?experience=...` URL, so share the generated preview link for experience-specific metadata. Its open button leads to the app URL.
 
 Deploy it to the same Supabase project configured in [supabase-config.js](supabase-config.js):
 
@@ -47,7 +47,7 @@ Deploy it to the same Supabase project configured in [supabase-config.js](supaba
 supabase functions deploy experience-share --project-ref YOUR_PROJECT_REF
 ```
 
-The function uses Supabase's automatically provided project URL and anonymous key. [supabase/config.toml](supabase/config.toml) disables JWT verification for this public preview endpoint; the function still filters every lookup to public Experiences and relies on the existing anonymous RLS policies. After deploying, set `sharePreviewEnabled: true` in the `window.CHECKIN_MAP_SUPABASE` object in [supabase-config.js](supabase-config.js), then redeploy the static app. Set the `APP_BASE_URL` Edge Function secret if the app is hosted somewhere other than `https://alphadyn.github.io/ai/experiences/`.
+The function uses Supabase's automatically provided project URL and anonymous key. [supabase/config.toml](supabase/config.toml) disables JWT verification for this public preview endpoint; the function still filters every lookup to public Experiences and relies on the existing anonymous RLS policies. `sharePreviewEnabled: true` is already set in [supabase-config.js](supabase-config.js); deploy the function and static app to activate preview links. Set the `APP_BASE_URL` Edge Function secret if the app is hosted somewhere other than `https://alphadyn.github.io/ai/experiences/`.
 
 ## How to use
 1. Open the app to view the welcome screen. Choose **Log in** or **Sign up** before starting a trip or exploring Experiences, then choose an existing trip or create a new one. Type a known location (e.g. "Paris, France" or "350 Fifth Avenue, New York") into the check-in box

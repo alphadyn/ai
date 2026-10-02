@@ -337,8 +337,11 @@ async function loadExperiences(options = {}) {
   const { scopeToUrl = false } = options;
   const publicRequest = { headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` } };
   const useAnonymousExperienceRequest = scopeToUrl && isExperienceUrl && !session;
+  const experienceFilter = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(publicExperienceSlug)
+    ? `or=${encodeURIComponent(`(id.eq.${publicExperienceSlug},public_slug.eq.${publicExperienceSlug})`)}`
+    : `public_slug=eq.${encodeURIComponent(publicExperienceSlug)}`;
   const experiencePath = scopeToUrl && isExperienceUrl
-    ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&public_slug=eq.${encodeURIComponent(publicExperienceSlug)}${useAnonymousExperienceRequest ? "&is_public=eq.true" : ""}&limit=1`
+    ? `/rest/v1/${EXPERIENCES_TABLE}?select=*&${experienceFilter}${useAnonymousExperienceRequest ? "&is_public=eq.true" : ""}&limit=1`
     : `/rest/v1/${EXPERIENCES_TABLE}?select=*&order=sort_order.asc,created_at.asc`;
   const response = await supabaseRequest(experiencePath, useAnonymousExperienceRequest ? publicRequest : undefined);
   if (!response.ok) throw new Error(await getSupabaseError(response, "Could not load experiences."));
@@ -592,7 +595,7 @@ async function addExperienceEvent(event) {
     const { lat, lon, label } = foundLocation;
     const location = { id: createId(), lat, lon, label, eventName, timestamp: timestamp.toISOString(), type: "event", description, media: [], tripId: activeExperience.trip_id || currentTrip?.id, userId: session?.user?.id || activeExperience.user_id };
     const response = canAddPublicEvent
-      ? await supabaseRequest("/rest/v1/rpc/checkin_map_add_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: publicExperienceSlug, event_id: location.id, event_name: eventName, event_label: label, event_lat: lat, event_lon: lon, event_timestamp: location.timestamp, event_description: description }) })
+      ? await supabaseRequest("/rest/v1/rpc/checkin_map_add_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: activeExperience.public_slug, event_id: location.id, event_name: eventName, event_label: label, event_lat: lat, event_lon: lon, event_timestamp: location.timestamp, event_description: description }) })
       : await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}`, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ ...mapCheckInToRow(location), experience_id: activeExperience.id }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not add the event."));
     if (files.length) location.media.push(...await Promise.all(files.map((file) => uploadMediaFile(location, file))));
@@ -682,7 +685,7 @@ async function saveExperienceLocation(event) {
   }
   try {
     const response = isPublicExperience
-      ? await supabaseRequest("/rest/v1/rpc/checkin_map_update_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: publicExperienceSlug, event_id: id, event_name: location.eventName, event_label: location.label, event_lat: location.lat, event_lon: location.lon, event_timestamp: location.timestamp, event_description: location.description }) })
+      ? await supabaseRequest("/rest/v1/rpc/checkin_map_update_public_experience_event", { method: "POST", headers: { Authorization: `Bearer ${SUPABASE_ANON_KEY}` }, body: JSON.stringify({ experience_slug: activeExperience.public_slug, event_id: id, event_name: location.eventName, event_label: location.label, event_lat: location.lat, event_lon: location.lon, event_timestamp: location.timestamp, event_description: location.description }) })
       : await supabaseRequest(`/rest/v1/${LOCATIONS_TABLE}?id=eq.${encodeURIComponent(id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ event_name: location.eventName, label: location.label, lat: location.lat, lon: location.lon, description: location.description, timestamp: location.timestamp, updated_at: new Date().toISOString() }) });
     if (!response.ok) throw new Error(await getSupabaseError(response, "Could not update the experience location."));
     editingExperienceLocationId = null;
@@ -967,7 +970,7 @@ async function experienceUrl(experience) {
   }
   if (experience.is_public && SHARE_PREVIEW_ENABLED && SUPABASE_URL) {
     const previewUrl = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/functions/v1/experience-share`);
-    previewUrl.searchParams.set("slug", slug);
+    previewUrl.searchParams.set("experience", experience.id);
     return previewUrl.toString();
   }
   return `${window.location.origin}${window.location.pathname}?experience=${encodeURIComponent(slug)}`;
