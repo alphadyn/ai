@@ -259,6 +259,7 @@
     lastDeletedItems: [], // for undo toast
     pendingEditFile: null
   };
+  const videoThumbnailCache = new Map();
 
   // ==========================================================================
   // 3. Helper Functions
@@ -1124,6 +1125,8 @@ class SpectrumVisualizer {
 
     if (state.viewMode === 'grid') {
       container.innerHTML = list.map((item, idx) => renderGridCardHtml(item, idx)).join('');
+      list.filter((item) => item.type === 'video' && item.dataUrl && !item.dataUrl.startsWith('data:image/'))
+        .forEach((item) => loadVideoCardThumbnail(item, container));
     } else if (state.viewMode === 'list') {
       container.innerHTML = list.map((item, idx) => renderListRowHtml(item, idx)).join('');
     } else {
@@ -1138,11 +1141,16 @@ class SpectrumVisualizer {
       return `<img src="${item.dataUrl}" alt="${escapeHtml(item.title)}" class="card-thumb-image" loading="lazy">`;
     }
     if (item.type === 'video') {
+      const imagePoster = item.dataUrl && item.dataUrl.startsWith('data:image/')
+        ? `<img src="${item.dataUrl}" alt="${escapeHtml(item.title)}" class="card-thumb-image" loading="lazy">`
+        : '';
       return `
-        <div class="card-thumb-icon-box" style="color: var(--color-video)">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-          <span class="card-thumb-ext-badge">${getFileExtension(item.filename)}</span>
-        </div>
+        ${imagePoster || `
+          <div class="card-thumb-icon-box" style="color: var(--color-video)">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+            <span class="card-thumb-ext-badge">${getFileExtension(item.filename)}</span>
+          </div>
+        `}
         <div class="card-play-overlay-btn" title="Play Video">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
         </div>
@@ -1181,6 +1189,96 @@ class SpectrumVisualizer {
         <span class="card-thumb-ext-badge">${getFileExtension(item.filename)}</span>
       </div>
     `;
+  }
+
+  function loadVideoCardThumbnail(item, container) {
+    const cached = videoThumbnailCache.get(item.id);
+    let thumbnailPromise = cached && cached.source === item.dataUrl ? cached.promise : null;
+
+    if (!thumbnailPromise) {
+      thumbnailPromise = captureVideoThumbnail(item.dataUrl).catch((error) => {
+        console.warn(`Could not generate video thumbnail for "${item.filename}":`, error);
+        return null;
+      });
+      videoThumbnailCache.set(item.id, { source: item.dataUrl, promise: thumbnailPromise });
+    }
+
+    thumbnailPromise.then((thumbnail) => {
+      if (!thumbnail) return;
+      const card = Array.from(container.querySelectorAll('.file-card')).find((element) => element.dataset.id === item.id);
+      if (!card || !state.items.some((currentItem) => currentItem.id === item.id && currentItem.dataUrl === item.dataUrl)) return;
+
+      let image = card.querySelector('.card-thumb-image');
+      if (!image) {
+        image = document.createElement('img');
+        image.className = 'card-thumb-image';
+        image.alt = item.title || '';
+        image.loading = 'lazy';
+        card.querySelector('.card-thumb-icon-box')?.replaceWith(image);
+      }
+      image.src = thumbnail;
+    });
+  }
+
+  function captureVideoThumbnail(source) {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (!context) {
+        reject(new Error('Canvas is unavailable for video thumbnail capture'));
+        return;
+      }
+
+      let settled = false;
+      const finish = (thumbnail, error = null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        video.removeAttribute('src');
+        video.load();
+        if (error) reject(error);
+        else resolve(thumbnail);
+      };
+      const captureFrame = () => {
+        if (!video.videoWidth || !video.videoHeight) return;
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          finish(canvas.toDataURL('image/jpeg', 0.82));
+        } catch (error) {
+          finish(null, error);
+        }
+      };
+      const timeout = setTimeout(() => finish(null, new Error('Timed out while loading video for thumbnail capture')), 15000);
+
+      video.muted = true;
+      video.preload = 'metadata';
+      video.playsInline = true;
+      if (!source.startsWith('data:') && !source.startsWith('blob:')) {
+        video.crossOrigin = 'anonymous';
+      }
+      video.addEventListener('loadedmetadata', () => {
+        if (video.duration > 0) {
+          try {
+            video.currentTime = Math.min(1, video.duration * 0.1);
+          } catch (error) {
+            finish(null, error);
+          }
+        }
+      }, { once: true });
+      video.addEventListener('loadeddata', () => {
+        if (!video.seeking && video.currentTime === 0) captureFrame();
+      }, { once: true });
+      video.addEventListener('seeked', captureFrame, { once: true });
+      video.addEventListener('error', () => finish(null, new Error(`Browser could not load video (${video.error?.message || 'unsupported format or inaccessible media'})`)), { once: true });
+      try {
+        video.src = source;
+      } catch (error) {
+        finish(null, error);
+      }
+    });
   }
 
   function renderGridCardHtml(item, idx) {
