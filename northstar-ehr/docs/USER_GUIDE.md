@@ -2,7 +2,7 @@
 
 ## Overview
 
-Northstar Health EHR is a desktop-friendly, responsive web application for reviewing patient information, scheduling care, and recording clinical encounters. It is intentionally polished for demos, stakeholder presentations, or as a foundation for a larger healthcare product.
+Northstar EHR is a desktop-friendly, responsive web application for reviewing patient information, scheduling care, and recording clinical encounters. It is intentionally polished for demos, stakeholder presentations, or as a foundation for a larger healthcare product.
 
 ## Main workflow
 

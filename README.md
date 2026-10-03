@@ -28,7 +28,7 @@ The landing page highlights these projects:
 - [Audio Equalizer](audio-equalizer/) — Browser media player with live waveform and spectrum analysis.
 - [Experiences](experiences/) — Experiences: a Supabase-backed journal with trips, shareable Experience collections, Event maps, precise location picking, and media carousels.
 - [Earth 3D Explorer](earth-3d-explorer/) — Three.js globe with overlays and inspection interactions.
-- [Northstar Health EHR](northstar-health-ehr/) — Responsive electronic health record demo for patient care workflows and encounter documentation.
+- [Northstar EHR](northstar-ehr/) — Responsive electronic health record demo for patient care workflows and encounter documentation.
 - [Fractal Patterns](fractal-patterns/) — Interactive fractal visualizer.
 - [Game Videos](game-videos/) — Gaming video showcase page.
 - [Legal Docketing](legal-docketing/) — Matter and deadline tracking app.

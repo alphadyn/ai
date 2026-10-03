@@ -1,4 +1,4 @@
-# Northstar Health EHR
+# Northstar EHR
 
 > Standalone browser-based EHR interface demo. See the [repository catalog](../README.md) for shared setup and deployment context.
 
@@ -27,14 +27,14 @@ A polished, single-page electronic health record web application designed to loo
 Open the app directly in a browser from the project folder:
 
 ```bash
-cd northstar-health-ehr
+cd northstar-ehr
 open index.html
 ```
 
 For a local server:
 
 ```bash
-cd northstar-health-ehr
+cd northstar-ehr
 python3 -m http.server 8000
 ```
 
