@@ -27,14 +27,14 @@ A polished, single-page electronic health record web application designed to loo
 Open the app directly in a browser from the project folder:
 
 ```bash
-cd ehr-web-app
+cd northstar-health-ehr
 open index.html
 ```
 
 For a local server:
 
 ```bash
-cd ehr-web-app
+cd northstar-health-ehr
 python3 -m http.server 8000
 ```
 

@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f5f2">
-  <title>Signal — Google News Capture</title>
+  <title>Signal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="/" aria-label="Signal home">
+      <a class="brand" href="../" aria-label="Signal home">
         <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
         <span>signal<span class="brand-period">.</span></span>
       </a>
       <div class="topbar-right">
-        <span class="local-indicator"><span class="live-dot" aria-hidden="true"></span> LOCAL WORKSPACE</span>
+        <span class="local-indicator"><span class="live-dot" aria-hidden="true"></span> GITHUB PAGES</span>
         <a class="source-link" href="https://news.google.com/" target="_blank" rel="noopener noreferrer">Google News <span aria-hidden="true">↗</span></a>
       </div>
     </header>
@@ -27,20 +27,20 @@
     <main>
       <section class="hero" aria-labelledby="page-title">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> YOUR DAILY BRIEFING, STRUCTURED</div>
+          <div class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> SIGNAL / YOUR DAILY BRIEFING</div>
           <h1 id="page-title">Headlines,<br><span>in focus.</span></h1>
-          <p class="hero-description">Collect the latest stories from Google News and turn the noise into a clean, structured reading list.</p>
+          <p class="hero-description">Signal turns the latest Google News stories into a focused, searchable reading list you can save as JSON.</p>
           <button class="capture-button" id="capture-button" type="button">
             <span class="button-label">Capture today’s headlines</span>
             <span class="button-icon" aria-hidden="true">↗</span>
           </button>
-          <p class="button-note"><span class="tiny-lock" aria-hidden="true">⌑</span> Runs privately on this device. No account needed.</p>
+          <p class="button-note"><span class="tiny-lock" aria-hidden="true">⌑</span> Runs in the browser and stays lightweight.</p>
         </div>
 
         <aside class="hero-aside" aria-label="Capture details">
           <div class="aside-top"><span class="aside-label">THE PROCESS</span><span class="aside-index">01 — 03</span></div>
           <div class="process-step"><span class="step-number">01</span><div><strong>Open the feed</strong><small>Google News, live</small></div><span class="step-check" aria-hidden="true">✓</span></div>
-          <div class="process-step"><span class="step-number">02</span><div><strong>Gather stories</strong><small>Headlines + related reads</small></div><span class="step-check" aria-hidden="true">✓</span></div>
+          <div class="process-step"><span class="step-number">02</span><div><strong>Gather stories</strong><small>Headlines + links</small></div><span class="step-check" aria-hidden="true">✓</span></div>
           <div class="process-step"><span class="step-number">03</span><div><strong>Save your brief</strong><small>Download as structured JSON</small></div><span class="step-check" aria-hidden="true">✓</span></div>
           <div class="aside-foot"><span class="sparkle" aria-hidden="true">✳</span> A little more signal. A little less scroll.</div>
         </aside>
@@ -52,7 +52,13 @@
             <div class="eyebrow section-eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> YOUR COLLECTION</div>
             <h2 id="results-title">Latest capture</h2>
           </div>
-          <a class="download-button" id="download-button" href="/api/download" hidden><span aria-hidden="true">↓</span> Download JSON</a>
+          <div class="toolbar">
+            <label class="search-field" for="article-search" aria-label="Search captured articles">
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input id="article-search" type="search" placeholder="Search articles" autocomplete="off">
+            </label>
+            <button class="download-button" id="download-button" type="button" hidden><span aria-hidden="true">↓</span> Download JSON</button>
+          </div>
         </div>
         <div class="status-panel" id="status-panel" data-state="idle" role="status" aria-live="polite" aria-atomic="true">
           <span class="status-icon" id="status-icon" aria-hidden="true">✳</span>

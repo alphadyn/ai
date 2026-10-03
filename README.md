@@ -28,7 +28,7 @@ The landing page highlights these projects:
 - [Audio Equalizer](audio-equalizer/) — Browser media player with live waveform and spectrum analysis.
 - [Experiences](experiences/) — Experiences: a Supabase-backed journal with trips, shareable Experience collections, Event maps, precise location picking, and media carousels.
 - [Earth 3D Explorer](earth-3d-explorer/) — Three.js globe with overlays and inspection interactions.
-- [EHR Web App](ehr-web-app/) — Electronic health record demo interface.
+- [Northstar Health EHR](northstar-health-ehr/) — Responsive electronic health record demo for patient care workflows and encounter documentation.
 - [Fractal Patterns](fractal-patterns/) — Interactive fractal visualizer.
 - [Game Videos](game-videos/) — Gaming video showcase page.
 - [Legal Docketing](legal-docketing/) — Matter and deadline tracking app.
@@ -52,7 +52,7 @@ The landing page highlights these projects:
 ### Python utilities and tooling
 
 - [Crawler Indexer](crawler-indexer/) — Domain-scoped crawler and indexer utility.
-- [Google News Capture](google-news-capture/) — Local Flask web app that captures Google News headlines and related stories, displays them in a browser, and downloads the results as JSON.
+- [Signal](signal/) — Focused, searchable news-reading list that captures Google News headlines and related stories and downloads them as structured JSON.
 
 ## Quick start
 
@@ -123,12 +123,12 @@ Run utility scripts from the repo root or from the project folder as needed:
 
 ```bash
 python3 crawler-indexer/indexer.py https://example.com --same-domain --max-pages 5 --output index.json
-python3 -m pip install -r google-news-capture/requirements.txt
+python3 -m pip install -r signal/requirements.txt
 python3 -m playwright install chromium
-python3 google-news-capture/app.py
+python3 signal/app.py
 ```
 
-The Google News Capture app runs as a local web app. After starting it, open <http://127.0.0.1:5000> to capture and view headlines, then download the structured JSON results.
+Signal runs as a local web app. After starting it, open <http://127.0.0.1:5000> to capture and search headlines, then download the structured JSON results.
 
 ## Testing
 
