@@ -282,6 +282,9 @@ async function fetchAvatars(ids) {
   return map;
 }
 
+// Feed rows omit `attachments` (large base64 payloads); they are loaded after first paint.
+const FEED_COLUMNS = 'id,author_id,author_name,title,body,link_url,tags,upvotes,downvotes,is_deleted,created_at';
+
 function mapPostRow(row, commentCount = 0, myVote = 0, authorAvatar = null) {
   return {
     id: row.id,
@@ -506,28 +509,34 @@ const pulse = {
     }
   },
 
+  async listAttachments(ids) {
+    if (!ids.length) return {};
+    const { data } = await restFetch('GET', 'posts', { params: { id: `in.(${ids.join(',')})`, select: 'id,attachments' } });
+    const map = {};
+    (data || []).forEach((row) => { map[row.id] = row.attachments || []; });
+    return map;
+  },
+
   async listPosts({ sort = 'hot', tag = null, query = null, limit = 30, offset = 0 } = {}) {
     const pageLimit = Math.min(Math.max(30, limit) + offset + 50, 300);
-    const [{ data: rows }, { data: commentRows }, voterKey] = await Promise.all([
+    const voterKey = await currentVoterKey();
+    const [{ data: rows }, { data: commentRows }, { data: voteRows }] = await Promise.all([
       restFetch('GET', 'posts', {
         params: {
           is_deleted: 'eq.false',
-          select: '*',
+          select: FEED_COLUMNS,
           order: 'created_at.desc',
           limit: String(pageLimit),
         },
       }),
       restFetch('GET', 'comments', { params: { is_deleted: 'eq.false', select: 'post_id', limit: '500' } }),
-      currentVoterKey(),
+      restFetch('GET', 'post_votes', { params: { voter_key: `eq.${voterKey}`, select: 'post_id,value' } }),
     ]);
     const posts = rows || [];
     const counts = {};
     (commentRows || []).forEach((c) => { counts[c.post_id] = (counts[c.post_id] || 0) + 1; });
 
-    const [{ data: voteRows }, avatars] = await Promise.all([
-      restFetch('GET', 'post_votes', { params: { voter_key: `eq.${voterKey}`, select: 'post_id,value' } }),
-      fetchAvatars(posts.map((p) => p.author_id)),
-    ]);
+    const avatars = await fetchAvatars(posts.map((p) => p.author_id));
     const myVotes = {};
     (voteRows || []).forEach((v) => { myVotes[v.post_id] = v.value; });
 
@@ -576,7 +585,7 @@ const pulse = {
     if (!title) throw new Error('Title is required.');
     if (title.length > 300) throw new Error('Title is too long.');
     const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
-    const safeAttachments = validateAttachments(attachments);
+    const safeAttachments = await uploadAttachments(validateAttachments(attachments));
     const session = getSession();
     const authorId = session && session.user_id ? session.user_id : null;
     const authorName = authorId && state.user ? state.user.name : 'Anonymous';
@@ -600,7 +609,7 @@ const pulse = {
     if (!title) throw new Error('Title is required.');
     if (title.length > 300) throw new Error('Title is too long.');
     const cleanTags = [...new Set((tags || []).map((t) => t.trim().toLowerCase().slice(0, 32)).filter(Boolean))].slice(0, 12);
-    const safeAttachments = validateAttachments(attachments);
+    const safeAttachments = await uploadAttachments(validateAttachments(attachments));
     const { data } = await restFetch('PATCH', 'posts', {
       params: { id: `eq.${id}` },
       body: {
@@ -1416,7 +1425,7 @@ function postCardHtml(post) {
         ${post.linkUrl ? `<a href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener noreferrer">🔗 link</a>` : ''}
       </div>
       ${excerpt ? `<div class="post-excerpt">${excerpt}</div>` : ''}
-      ${renderAttachments(post.attachments)}
+      <div class="post-attachments" data-attachments-slot></div>
       ${tags ? `<div class="post-tags">${tags}</div>` : ''}
       <div class="post-actions">
         <button data-open="${post.id}" type="button">💬 ${post.commentCount} comments</button>
@@ -1442,10 +1451,23 @@ async function loadFeed(reset) {
     document.getElementById('load-more-btn').hidden = posts.length < state.limit;
     state.offset += posts.length;
     bindFeedEvents();
-    bindAttachmentCarousels();
+    hydrateFeedAttachments(posts.map((p) => p.id));
   } catch (err) {
     list.innerHTML = `<p class="form-error">Failed to load posts: ${escapeHtml(err.message)}</p>`;
   }
+}
+
+async function hydrateFeedAttachments(ids) {
+  try {
+    const map = await pulse.listAttachments(ids);
+    ids.forEach((id) => {
+      const slot = document.querySelector(`.post-card[data-id="${id}"] [data-attachments-slot]`);
+      const atts = map[id];
+      if (!slot || !atts || !atts.length) return;
+      slot.innerHTML = renderAttachments(atts);
+      bindAttachmentCarousels(slot);
+    });
+  } catch (_) { /* Text posts stay usable if media fails to load. */ }
 }
 
 function bindFeedEvents() {
@@ -2079,6 +2101,38 @@ async function readAttachmentDataUrl(file) {
     };
     img.src = objectUrl;
   });
+}
+
+const ATTACHMENT_BUCKET = 'pulse-attachments';
+
+async function uploadAttachment(att) {
+  if (!att || typeof att.dataUrl !== 'string' || !att.dataUrl.startsWith('data:')) return att;
+  try {
+    const blob = await (await fetch(att.dataUrl)).blob();
+    const ext = (att.name && att.name.includes('.') ? att.name.split('.').pop() : (att.mimeType || '').split('/')[1] || 'bin')
+      .toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) || 'bin';
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const token = await getAccessToken();
+    const res = await fetch(`${CONFIG.url}/storage/v1/object/${ATTACHMENT_BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        apikey: CONFIG.anonKey,
+        Authorization: `Bearer ${token || CONFIG.anonKey}`,
+        'Content-Type': att.mimeType || blob.type || 'application/octet-stream',
+        'Cache-Control': 'max-age=31536000',
+      },
+      body: blob,
+    });
+    if (!res.ok) return att;
+    return { ...att, dataUrl: `${CONFIG.url}/storage/v1/object/public/${ATTACHMENT_BUCKET}/${path}` };
+  } catch (_) {
+    // Bucket missing or offline: keep the inline data URL so posting still works.
+    return att;
+  }
+}
+
+function uploadAttachments(attachments) {
+  return Promise.all(attachments.map(uploadAttachment));
 }
 
 function validateAttachments(attachments) {

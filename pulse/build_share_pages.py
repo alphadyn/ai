@@ -175,6 +175,30 @@ def video_screenshot(video_bytes):
         return None
 
 
+def attachment_bytes(attachment, mime, max_bytes):
+    """Return attachment bytes from an inline data URL or this project's public storage bucket."""
+    url = attachment.get('dataUrl') or ''
+    if not isinstance(url, str):
+        return None
+    prefix = f'data:{mime};base64,'
+    if url.startswith(prefix):
+        if len(url) > max_bytes * 4 // 3 + 16:
+            return None
+        try:
+            return base64.b64decode(url[len(prefix):], validate=True)
+        except ValueError:
+            return None
+    storage_prefix = public_config()[0] + '/storage/v1/object/public/pulse-attachments/'
+    if not url.startswith(storage_prefix):
+        return None
+    try:
+        with urlopen(Request(url, headers={'User-Agent': 'pulse-share-builder'}), timeout=20) as response:
+            data = response.read(max_bytes + 1)
+    except OSError:
+        return None
+    return data if len(data) <= max_bytes else None
+
+
 def cover_image(post, post_dir, share_url):
     image = None
     attachments = post.get('attachments') or []
@@ -184,28 +208,19 @@ def cover_image(post, post_dir, share_url):
     first_attachment = attachments[0] if attachments else None
     first_mime = str(first_attachment.get('mimeType') or '').lower() if isinstance(first_attachment, dict) else ''
     if first_mime.startswith('video/'):
-        data_url = first_attachment.get('dataUrl') or ''
-        prefix = f'data:{first_mime};base64,'
-        if isinstance(data_url, str) and data_url.startswith(prefix) and len(data_url) <= MAX_VIDEO_BYTES * 4 // 3 + 16:
-            try:
-                video_bytes = base64.b64decode(data_url[len(prefix):], validate=True)
-                if len(video_bytes) <= MAX_VIDEO_BYTES:
-                    image = video_screenshot(video_bytes)
-            except ValueError:
-                pass
+        video_bytes = attachment_bytes(first_attachment, first_mime, MAX_VIDEO_BYTES)
+        if video_bytes:
+            image = video_screenshot(video_bytes)
     else:
         for attachment in attachments:
             if not isinstance(attachment, dict):
                 continue
             mime = str(attachment.get('mimeType') or '').lower()
-            data_url = attachment.get('dataUrl') or ''
-            if (mime not in IMAGE_TYPES or not isinstance(data_url, str)
-                    or len(data_url) > 3 * 1024 * 1024
-                    or not data_url.startswith(f'data:{mime};base64,')):
+            if mime not in IMAGE_TYPES:
                 continue
             try:
-                data = base64.b64decode(data_url.split(',', 1)[1], validate=True)
-                if len(data) > 2 * 1024 * 1024:
+                data = attachment_bytes(attachment, mime, 2 * 1024 * 1024)
+                if not data:
                     continue
                 with Image.open(BytesIO(data)) as original:
                     if original.format.lower() != mime.split('/')[-1]:
