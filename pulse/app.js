@@ -1290,9 +1290,10 @@ document.getElementById('share-more-btn').addEventListener('click', async () => 
   await sharePost(sharePreview.post, { text: shareMessageWithoutUrl(message, sharePreview.url) });
 });
 
-function renderAttachmentItem(att) {
+function renderAttachmentItem(att, { eager = false } = {}) {
   if (attachmentIsImage(att)) {
-    return `<img class="attachment-media" src="${att.dataUrl}" alt="${escapeHtml(att.name || 'attachment')}" loading="lazy">`;
+    // Carousel slides are display:none until shown, so lazy images would not load until first navigation.
+    return `<img class="attachment-media" src="${att.dataUrl}" alt="${escapeHtml(att.name || 'attachment')}" loading="${eager ? 'eager' : 'lazy'}">`;
   }
   if ((att.mimeType || '').startsWith('audio/')) {
     return `<audio class="attachment-media" controls src="${att.dataUrl}"></audio>`;
@@ -1309,7 +1310,7 @@ function renderAttachments(attachments) {
 
   const slides = attachments.map((att, index) => `
     <div class="attachment-slide${index === 0 ? ' is-active' : ''}">
-      ${renderAttachmentItem(att)}
+      ${renderAttachmentItem(att, { eager: true })}
     </div>
   `).join('');
 
@@ -1338,6 +1339,7 @@ function openCarouselModal(carousel) {
     .findIndex((slide) => slide.classList.contains('is-active'));
   const maximizedCarousel = carousel.cloneNode(true);
   maximizedCarousel.removeAttribute('data-carousel-bound');
+  maximizedCarousel.classList.add('is-maximized');
   maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('tabindex');
   maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('role');
   maximizedCarousel.querySelector('.attachment-carousel-track')?.removeAttribute('aria-label');
